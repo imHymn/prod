@@ -182,9 +182,6 @@ inputQty.addEventListener('input', function () {
 
         totalQtyElements[i].innerText = totalQty[i];
     }
-
-    console.log('qtyValues (qty input):', qtyValues);
-    console.log('totalQty (qty input):', totalQty);
 });
 
 
@@ -211,8 +208,7 @@ container.addEventListener('input', function(event) {
             totalQtyElements[i].innerText = totalQty[i];
         }
 
-        console.log('qtyValues (supplement input):', qtyValues);
-        console.log('totalQty (supplement input):', totalQty);
+  
     }
 });
 
