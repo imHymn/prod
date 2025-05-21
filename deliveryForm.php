@@ -146,6 +146,8 @@ document.addEventListener('DOMContentLoaded', function () {
             modelSelect.addEventListener('change', function () {
                 const selectedModel = modelSelect.value;
                 const customerValue = customerSelect.value;
+             
+
 
                 if (selectedModel && customerValue) {
                     // Fetch models based on the selected customer
@@ -153,18 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         .then(response => response.json()) 
                         .then(data => {
                          document.getElementById('material_components').innerHTML = data.tableHtml;
-                        })
-                        .catch(error => {
-                            console.error('Error fetching models:', error);  // Log any errors
-                        });
-                } else {
-                  
-                }
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching customers:', error);  // Log any errors
-        });
+
 
 const qtyValues = [];
 const inputQty = document.getElementById('qty');
@@ -174,21 +165,49 @@ inputQty.addEventListener('input', function () {
     const totalQtyElements = container.getElementsByClassName('totalQty');
     qtyValues.length = 0;  // clear previous values
 
-    for (let i = 0; i < totalQtyElements.length; i++) {
-        totalQtyElements[i].innerText = inputQty.value;
-        qtyValues.push(inputQty.value); // Save value to array
+for (let i = 0; i < totalQtyElements.length; i++) {
+    totalQtyElements[i].innerText = inputQty.value;
+    
+    // Update existing values or initialize if undefined
+    if (i < qtyValues.length) {
+        qtyValues[i] = inputQty.value;
+    } else {
+        qtyValues[i] = inputQty.value;  // Or you can handle differently if needed
     }
+}
+
 
     console.log(qtyValues); // See the array in the console
 });
 
+                      const supplementInputs = document.querySelectorAll('#material_components input[id^="supplement"]');
 
-const inputs = document.querySelectorAll('#material_components input[id*="supplement"]');
+                supplementInputs.forEach(input => {
+                    input.addEventListener('input', function () {
+                        console.log(  `${input.value}`);
+                        // You can add more logic here if needed
+                    });
+                });
 
-inputs.forEach(input => {
-  input.value = 'test';
-});
+                        })
+                        .catch(error => {
+                            console.error('Error fetching models:', error);  // Log any errors
+                        });
+
+                } else {
+                  
+                }
+            
+    
      
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching customers:', error);  // Log any errors
+        });
+
+
+
 
 
 
@@ -213,12 +232,6 @@ inputs.forEach(input => {
     //         });
     // });
 });
-$(document).ready(function() {
-    var ids = $('#material_components input[id*="supplement"]').map(function() {
-        return this.id;
-    }).get();
 
-    console.log(ids); // Output the array of IDs
-});
 </script>
 
