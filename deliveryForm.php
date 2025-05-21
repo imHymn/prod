@@ -237,30 +237,36 @@ container.addEventListener('input', function(event) {
 
 
 document.getElementById('delivery_submit_btn').addEventListener('click', function() {
-  const formData = new FormData();
-  formData.append('qty', qtyInput.value);
+    const currentQty = parseFloat(document.getElementById('qty').value) || 0;
+    const rows = document.querySelectorAll('#material_components table tr'); // all rows in your table
+    const results = [];
 
-  const rows = container.querySelectorAll('tbody tr');
+    // Start from 1 to skip header row
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const materialNumber = row.querySelector('.materialNo')?.innerText.trim() || '';
+        const materialDescription = row.querySelector('.materialDesc')?.innerText.trim() || '';
+        const supplementInput = row.querySelector('input[id^="supplement"]');
+        const supplementVal = parseFloat(supplementInput?.value) || 0;
+        const totalQty = currentQty + supplementVal;
 
-  rows.forEach((row, i) => {
-    const materialNumber = row.querySelector('.materialNo').innerText.trim();
-    const materialDescription = row.querySelector('.materialDesc').innerText.trim();
-    const supplementVal = row.querySelector('input.supplement-input').value.trim();
-    const totalQtyVal = row.querySelector('.totalQty').innerText.trim();
+          if (materialNumber === '' || materialDescription === '') continue;
 
-    formData.append(`materials[${i}][materialNumber]`, materialNumber);
-    formData.append(`materials[${i}][materialDescription]`, materialDescription);
-    formData.append(`materials[${i}][supplement]`, supplementVal);
-    formData.append(`materials[${i}][totalQty]`, totalQtyVal);
-  });
+        results.push({
+            materialNumber,
+            materialDescription,
+            qty: currentQty,
+            supplementOrder: supplementInput?.value || '', // keep it as string if empty
+            totalQuantity: totalQty
+        });
 
-  // For demo: output all formData entries to console
-  for (let pair of formData.entries()) {
-    console.log(pair[0], ':', pair[1]);
-  }
+    }
 
-  // TODO: Send formData with fetch or XMLHttpRequest here
+    console.log('Compiled values:', results);
+
+    // You can send this data via fetch/ajax or further process it here
 });
+
 
     // Handle form submission
     // document.getElementById('delivery_submit_btn').addEventListener('click', function () {
