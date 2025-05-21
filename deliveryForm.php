@@ -158,36 +158,64 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 const qtyValues = [];
+const totalQty = [];
 const inputQty = document.getElementById('qty');
+const container = document.getElementById('material_components');
 
 inputQty.addEventListener('input', function () {
-    const container = document.getElementById('material_components');
     const totalQtyElements = container.getElementsByClassName('totalQty');
-    qtyValues.length = 0;  // clear previous values
+    const supplementInputs = container.querySelectorAll('input[id^="supplement"]');
+    const currentQty = parseFloat(inputQty.value) || 0;
 
-for (let i = 0; i < totalQtyElements.length; i++) {
-    totalQtyElements[i].innerText = inputQty.value;
-    
-    // Update existing values or initialize if undefined
-    if (i < qtyValues.length) {
-        qtyValues[i] = inputQty.value;
-    } else {
-        qtyValues[i] = inputQty.value;  // Or you can handle differently if needed
+    qtyValues.length = 0;
+    totalQty.length = 0;
+
+    for (let i = 0; i < totalQtyElements.length; i++) {
+        const supplementVal = parseFloat(supplementInputs[i]?.value) || 0;
+
+        qtyValues[i] = {
+            qty: currentQty,
+            supplement: supplementVal
+        };
+
+        totalQty[i] = currentQty + supplementVal;
+
+        totalQtyElements[i].innerText = totalQty[i];
     }
-}
 
-
-    console.log(qtyValues); // See the array in the console
+    console.log('qtyValues (qty input):', qtyValues);
+    console.log('totalQty (qty input):', totalQty);
 });
 
-                      const supplementInputs = document.querySelectorAll('#material_components input[id^="supplement"]');
 
-                supplementInputs.forEach(input => {
-                    input.addEventListener('input', function () {
-                        console.log(  `${input.value}`);
-                        // You can add more logic here if needed
-                    });
-                });
+container.addEventListener('input', function(event) {
+    const target = event.target;
+    if (target.matches('input[id^="supplement"]')) {
+        const totalQtyElements = container.getElementsByClassName('totalQty');
+        const supplementInputs = container.querySelectorAll('input[id^="supplement"]');
+        const currentQty = parseFloat(inputQty.value) || 0;
+
+        qtyValues.length = 0;
+        totalQty.length = 0;
+
+        for (let i = 0; i < totalQtyElements.length; i++) {
+            const supplementVal = parseFloat(supplementInputs[i]?.value) || 0;
+
+            qtyValues[i] = {
+                qty: currentQty,
+                supplement: supplementVal
+            };
+
+            totalQty[i] = currentQty + supplementVal;
+
+            totalQtyElements[i].innerText = totalQty[i];
+        }
+
+        console.log('qtyValues (supplement input):', qtyValues);
+        console.log('totalQty (supplement input):', totalQty);
+    }
+});
+
 
                         })
                         .catch(error => {
@@ -208,9 +236,31 @@ for (let i = 0; i < totalQtyElements.length; i++) {
 
 
 
+document.getElementById('delivery_submit_btn').addEventListener('click', function() {
+  const formData = new FormData();
+  formData.append('qty', qtyInput.value);
 
+  const rows = container.querySelectorAll('tbody tr');
 
+  rows.forEach((row, i) => {
+    const materialNumber = row.querySelector('.materialNo').innerText.trim();
+    const materialDescription = row.querySelector('.materialDesc').innerText.trim();
+    const supplementVal = row.querySelector('input.supplement-input').value.trim();
+    const totalQtyVal = row.querySelector('.totalQty').innerText.trim();
 
+    formData.append(`materials[${i}][materialNumber]`, materialNumber);
+    formData.append(`materials[${i}][materialDescription]`, materialDescription);
+    formData.append(`materials[${i}][supplement]`, supplementVal);
+    formData.append(`materials[${i}][totalQty]`, totalQtyVal);
+  });
+
+  // For demo: output all formData entries to console
+  for (let pair of formData.entries()) {
+    console.log(pair[0], ':', pair[1]);
+  }
+
+  // TODO: Send formData with fetch or XMLHttpRequest here
+});
 
     // Handle form submission
     // document.getElementById('delivery_submit_btn').addEventListener('click', function () {

@@ -32,8 +32,8 @@ if (isset($_GET['customer'])) {
           <td>Material Description </td>
           <td>Supplement Order</td></tr>
           <tr>
-          <td>$materialNumber</td>
-          <td>$materialDescription</td> 
+      <td class='materialNo'>$materialNumber</td>
+            <td class='materialDesc'>$materialDescription</td>
       <td>
     <div class='d-flex align-items-center'>
         <input class='form-control mb-2' id='supplement$counter' />
