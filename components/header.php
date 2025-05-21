@@ -1,0 +1,269 @@
+<?php
+session_start();
+if (isset($_SESSION['section'])){
+  $section = $_SESSION['section'];
+}
+
+?>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Roberts</title>
+	<!-- core:css -->
+     	<link rel="stylesheet" href="assets/vendors/core/core.css">
+	<link rel="stylesheet" href="assets/vendors/core/core.css">
+	<!-- endinject -->
+  <!-- plugin css for this page -->
+  <link rel="stylesheet" href="assets/vendors/datatables.net-bs4/dataTables.bootstrap4.css">
+  <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="assets/vendors/prismjs/themes/prism.css">
+	<!-- end plugin css for this page -->
+	<!-- inject:css -->
+	<link rel="stylesheet" href="assets/fonts/feather-font/css/iconfont.css">
+	<link rel="stylesheet" href="assets/vendors/flag-icon-css/css/flag-icon.min.css">
+	<!-- endinject -->
+  <!-- Layout styles -->  
+	<link rel="stylesheet" href="assets/css/demo_1/style.css">
+  <!-- End layout styles -->
+  <link rel="shortcut icon" href="assets/images/roberts_icon.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+</head>
+<body>
+	<div class="main-wrapper">
+
+		<!-- partial:partials/_sidebar.html -->
+		<nav class="sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="sidebar-brand">
+          Roberts<span></span>
+        </a>
+        <div class="sidebar-toggler not-active">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="sidebar-body">
+        <ul class="nav">
+          <li class="nav-item nav-category">Main</li>
+          <li class="nav-item">
+  <a href="?page_active=dashboard" class="nav-link" data-page="dashboard">
+    <i class="link-icon" data-feather="box"></i>
+    <span class="link-title">Dashboard</span>
+  </a>
+</li>
+
+          
+<!-- jowell          -->
+<li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#attendance" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="calendar"></i>
+    <span class="link-title">Delivery</span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="attendance">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=deliveryForm" class="nav-link" data-page="report">Submit Form</a>
+      </li>
+   
+      
+    </ul>
+  </div>
+</li>
+<!-- jowell end     -->
+<li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#tables" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="layout"></i>
+    <span class="link-title">Pages</span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="tables">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=fg_delivery_form" class="nav-link" data-page="fg_delivery_form">FG</a>
+      </li>
+         <li class="nav-item">
+        <a href="?page_active=form_sample" class="nav-link" data-page="fg_delivery_form">Form</a>
+      </li>
+      <li class="nav-item">
+        <a href="QR.html" class="nav-link">QR</a>
+      </li>
+     
+    </ul>
+  </div>
+</li>
+<!-- <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#authPages" role="button" aria-expanded="false" aria-controls="authPages">
+    <i class="link-icon" data-feather="unlock"></i>
+    <span class="link-title">Authentication</span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="authPages">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=masterdata2" class="nav-link" data-page="masterdata2">Register</a>
+      </li>
+      
+    </ul>
+  </div>
+</li> -->
+      
+       
+        </ul>
+      </div>
+    </nav>
+   
+		<!-- partial -->
+	
+		<div class="page-wrapper">
+				
+			<!-- partial:partials/_navbar.html -->
+			<nav class="navbar">
+				<a href="#" class="sidebar-toggler">
+					<i data-feather="menu"></i>
+				</a>
+				<div class="navbar-content">
+		
+						
+<!-- 						
+                  <div style="margin: 0;margin-left: 0;">
+                    <img src="assets/images/roberts2.png" alt="" width="235px;">
+                  </div> -->
+                  
+								
+							
+               
+					
+				
+					<ul class="navbar-nav">
+						
+						<li class="nav-item dropdown nav-apps">
+							<a class="nav-link dropdown-toggle" href="#" id="appsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								<i data-feather="grid"></i>
+							</a>
+							<div class="dropdown-menu" aria-labelledby="appsDropdown">
+								<div class="dropdown-header d-flex align-items-center justify-content-between">
+									<p class="mb-0 font-weight-medium">Muffler</p>
+								</div>
+								<div class="dropdown-body">
+									<div class="d-flex align-items-center apps">
+                    <a href="?page_active=MUF-EPA1/MUF-EPA1"><i data-feather="calendar" class="icon-lg"></i><p>MUF-EPA1</p></a>
+                    <a href="?page_active=MUF-EPA2/MUF-EPA2"><i data-feather="calendar" class="icon-lg"></i><p>MUF-EPA2</p></a>
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>test</p></a>
+                 
+									</div>
+                 
+                  
+								</div>
+                <div class="dropdown-header d-flex align-items-center justify-content-between">
+									<p class="mb-0 font-weight-medium">Metal Fab</p>
+								</div>
+								<div class="dropdown-body">
+									<div class="d-flex align-items-center apps">
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 1</p></a>
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 2</p></a>
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 3</p></a>
+                 
+									</div>
+                 
+                  
+								</div>
+                <div class="dropdown-header d-flex align-items-center justify-content-between">
+									<p class="mb-0 font-weight-medium">Leafspring</p>
+								</div>
+								<div class="dropdown-body">
+									<div class="d-flex align-items-center apps">
+                  <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 1</p></a>
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 2</p></a>
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 3</p></a>
+                 
+									</div>
+                 
+                  
+								</div>
+                <div class="dropdown-header d-flex align-items-center justify-content-between">
+									<p class="mb-0 font-weight-medium">Radiator</p>
+								</div>
+								<div class="dropdown-body">
+									<div class="d-flex align-items-center apps">
+                  <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 1</p></a>
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 2</p></a>
+                    <a href="?page_active=AttendanceMuff"><i data-feather="calendar" class="icon-lg"></i><p>SECTION 3</p></a>
+                 
+									</div>
+                 
+                  
+								</div>
+							
+							</div>
+						</li>
+						
+						
+						<li class="nav-item dropdown nav-profile">
+							<a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i data-feather="user"></i>
+							</a>
+							<div class="dropdown-menu" aria-labelledby="profileDropdown">
+								<div class="dropdown-header d-flex flex-column align-items-center">
+									<div class="figure mb-3">
+                    <i data-feather="user"></i>
+									</div>
+									<div class="info text-center">
+										<p class="name font-weight-bold mb-0"><?php echo $_SESSION['username_ps']; ?></p>
+										<p class="email text-muted mb-3"></p>
+									</div>
+								</div>
+								<div class="dropdown-body">
+									<ul class="profile-nav p-0 pt-3">
+								
+										<li class="nav-item">
+											<a href="/mes/auth/logout.php" class="nav-link">
+												<i data-feather="log-out"></i>
+												<span>Log Out</span>
+											</a>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</nav>
+      <script>
+  // Get the current page_active from the URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const pageActive = urlParams.get('page_active');  // e.g., 'test', 'dashbord', etc.
+
+  // If there's a page_active value in the URL, proceed
+  if (pageActive) {
+    // Select all nav links that have the 'data-page' attribute
+    const navLinks = document.querySelectorAll('.nav-link[data-page]');
+
+    // Loop through all the nav links
+    navLinks.forEach(link => {
+      // If the data-page attribute matches the page_active value, mark it as active
+      if (link.getAttribute('data-page') === pageActive) {
+        link.classList.add('active'); // Add 'active' class to the matching link
+        
+        // Expand the parent collapse section if it's not already expanded
+        const parentCollapse = link.closest('.collapse');
+        if (parentCollapse && !parentCollapse.classList.contains('show')) {
+          parentCollapse.classList.add('show');
+          
+          // Set aria-expanded to true
+          const parentLink = parentCollapse.previousElementSibling;
+          if (parentLink) {
+            parentLink.setAttribute('aria-expanded', 'true');
+          }
+        }
+      }
+    });
+  }
+</script>
