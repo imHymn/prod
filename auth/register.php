@@ -52,9 +52,8 @@ if (isset($_SESSION['success_message'])) {
     <?php endif; ?>
 
     <div class="form-group">
-      <input type="text" name="username" class="form-control" placeholder="User ID" required>
+      <input type="text" name="user_id" class="form-control" placeholder="User ID" required>
     </div>
-
     <div class="form-group">
       <input type="email" name="email" class="form-control" placeholder="Email address" required>
     </div>
@@ -66,7 +65,7 @@ if (isset($_SESSION['success_message'])) {
     <button class="btn btn-primary btn-block btn-signin" type="submit">Register</button>
 
     <div class="text-center mt-3">
-      <a href="/mes/auth/login" class="d-block">Already have an account? Sign In</a>
+      <a href="/mes/auth/login.php" class="d-block">Already have an account? Sign In</a>
     </div>
   </div>
 </form>

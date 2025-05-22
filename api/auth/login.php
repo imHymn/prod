@@ -11,30 +11,31 @@ $page_request = $_SESSION['url_request'] ?? null; // Default to null if the sess
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get and sanitize form data
-    $username = trim($_POST['username']);
+    $user_id = trim($_POST['user_id']);
     $password = $_POST['password'];
-
-    // Validate username and password
-    if (empty($username) || empty($password)) {
-        $_SESSION['error_message'] = "Username and password are required.";
+    echo $user_id . $password;
+   
+    if (empty($user_id) || empty($password)) {
+        $_SESSION['error_message'] = "user_id and password are required.";
         header("Location: login.php");
         exit();
     }
 
-    // Prepare the SQL query to retrieve user details based on the username
+    // Prepare the SQL query to retrieve user details based on the user_id
     try {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username");
-        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = :user_id");
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // If the user exists, verify the password using SHA-512
         if ($user && hash('sha512', $password) === $user['password']) {
             // Password is correct, set session variables
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username_ps'] = $user['username'];
+            $_SESSION['id'] = $user['id'];
+            $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['section'] = $user['section'];
-            $_SESSION['department_ps'] = $user['department'];
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['department'] = $user['department'];
             // Redirect to the requested page or default to index2.php
             if (isset($page_request) && !empty($page_request)) {
                 header("Location: $page_request");
@@ -47,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         } else {
             // Invalid login credentials
-            $_SESSION['error_message'] = "Invalid username or password!";
+            $_SESSION['error_message'] = "Invalid user_id or password!";
             header("Location: /mes/auth/login.php"); // Redirect back to the login page
             exit();
         }

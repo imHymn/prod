@@ -6,26 +6,27 @@ error_reporting(E_ALL);
 session_start(); // Start the session
 require_once __DIR__ . '/../../database/db_connection.php'; // Include database connection
 
-
-    $username = trim($_POST['username']);
+   $user_id = trim($_POST['user_id']);
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $section='ADMINISTRATOR';
+
+    echo $user_id . $user_id . $email . $password . $section;
     // Basic validation
-    if (empty($username) || empty($email) || empty($password)) {
+    if (empty($user_id) || empty($email) || empty($password)) {
         $_SESSION['error_message'] = "All fields are required.";
         header("Location: ../auth/register.php");
         exit();
     }
 
     try {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username OR email = :email");
-        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = :user_id OR email = :email");
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $_SESSION['error_message'] = "Username or email already in use.";
+            $_SESSION['error_message'] = "user_id or email already in use.";
             header("Location: ../auth/register.php");
             exit();
         }
@@ -34,8 +35,8 @@ require_once __DIR__ . '/../../database/db_connection.php'; // Include database 
         $hashed_password = hash('sha512',$password);
 
         // Insert new user into the database
-        $stmt = $pdo->prepare("INSERT INTO users (username, email, password,section) VALUES (:username, :email, :password,:section )");
-        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $stmt = $pdo->prepare("INSERT INTO users (user_id, email, password,section) VALUES (:user_id, :email, :password,:section )");
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_STR);
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->bindParam(':section', $section, PDO::PARAM_STR);
         $stmt->bindParam(':password', $hashed_password, PDO::PARAM_STR);

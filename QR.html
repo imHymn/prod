@@ -1,0 +1,491 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>MUFFLER</title>
+	<!-- core:css -->
+	<link rel="stylesheet" href="assets/vendors/core/core.css">
+	<!-- endinject -->
+  <!-- plugin css for this page -->
+  <link rel="stylesheet" href="assets/vendors/datatables.net-bs4/dataTables.bootstrap4.css">
+  <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="assets/vendors/prismjs/themes/prism.css">
+	<!-- end plugin css for this page -->
+	<!-- inject:css -->
+	<link rel="stylesheet" href="assets/fonts/feather-font/css/iconfont.css">
+	<link rel="stylesheet" href="assets/vendors/flag-icon-css/css/flag-icon.min.css">
+	<!-- endinject -->
+  <!-- Layout styles -->  
+	<link rel="stylesheet" href="assets/css/demo_1/style.css">
+  <!-- End layout styles -->
+  <link rel="shortcut icon" href="assets/images/roberts_icon.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+</head>
+<style>
+    #videoElement {
+           width: 499px;
+           height: 377px;
+           border: 1px solid rgb(167, 141, 141);
+
+       }
+       #video_style {
+          text-align: center;
+
+       }
+       #result {
+           margin-top: 10px;
+           font-size: 16px;
+           font-weight: bold;
+           text-align: center;
+       }
+       .header_logo{
+        padding-top: 10px;
+        text-align: center;
+        padding-bottom: 50px;
+       }
+
+     
+</style>
+<body style="background-color: #112335;">
+
+                <div class="header_logo">
+                    <img src="assets/images/roberts2.png" alt="Tiger Super Molye Logo" width="350" class="mx-3">
+                </div>
+                <div id="video_style">
+                <video id="videoElement" autoplay></video>
+                <div>
+                </div>
+                
+                </div>
+                <div id="result">
+
+                </div>
+            <div class="container">
+                <div class="form-group">
+                    <div class="row">
+                            <div class="col-md-12">
+                            <!-- <label for="Employee_Number">Employee_Number</label> -->
+                            <input type="text" id="Employee_Number" name="Employee_Number" class="form-control" readonly hidden>
+                            <!-- <label for="Area_Name_QR">Area</label> -->
+                            <input type="text" id="EMP_NAME_QR" name="EMP_NAME_QR" class="form-control" readonly hidden>
+                            </div>
+                    </div>
+                    <!-- <button type="button" class="btn btn-success" id="savemoveQR">Submit</button> -->
+                </div>
+                </div>
+            
+                <div id="modal_in_out" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header justify-content-center" style="border-bottom: none !important;">
+                                <h5 class="modal-title"  id="exampleModalCenterTitle">CHOOSE ACTION</h5>
+                            </div>
+                            <div class="container">
+                                <div class="form-group">
+                                    <div class="row justify-content-center">
+                                        <div class="col-auto text-center">
+                                            <div class="modal-body">
+
+                                            </div>
+                                            <div class="button_area">
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modal_in" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header justify-content-center" style="border-bottom: none !important;">
+                                <h5 class="modal-title"  id="exampleModalCenterTitle">CHOOSE WORK TYPE</h5>
+                            </div>
+                            <div class="container">
+                                <div class="form-group">
+                                    <div class="row justify-content-center">
+                                        <div class="col-auto text-center">
+                                            <div class="modal-body">
+                                                <div class="form-group">
+                                                        <div class="row">
+                                                            <div class="col-md-12">
+                                                                    <select name="work_type" id="work_type">
+                                                                        <option disabled selected>CHOOSE</option>
+                                                                        <option value="DIRECT">DIRECT</option>
+                                                                        <option value="INDIRECT">INDIRECT</option>
+                                                                    </select>
+                                                                    
+                                                            </div>
+                                                        </div>
+                                                      
+                                                           
+
+
+                                                        
+                                                </div>
+                                                <div id="time_in_content">
+
+                                                </div>
+                                                <div id="btn-submit" style="margin-top: 10px;">
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+
+
+
+
+<script src="assets/js/sweetalert2@11.js"></script>
+<script src="assets/js/jquery.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+<script>
+    $(document).ready(function(){
+        const videoElement = document.getElementById("videoElement");
+        const resultElement = $("#result");
+
+        // Create the canvas element and set the willReadFrequently attribute
+        const canvasElement = document.createElement('canvas');
+        const canvasContext = canvasElement.getContext("2d");
+
+        // Set the willReadFrequently attribute for better performance
+        canvasElement.willReadFrequently = true;
+
+        let streaming = false;
+        let currentStream = null;  // Hold the reference to the current camera stream
+        let scanStatus = false; // Initially, no QR code has been scanned
+
+        // Function to start the camera
+        function startCamera() {
+            if (!streaming) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                    .then(function(stream) {
+                        currentStream = stream;  // Store the current stream
+                        videoElement.srcObject = stream;
+                        streaming = true;
+                        if(scanStatus == false){
+                            requestAnimationFrame(scanQRCode); // Start QR code scanning when camera is ready
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error("Error accessing webcam: ", error);
+                    });
+            }
+        }
+
+        // Function to stop the camera
+        function stopCamera() {
+            if (streaming) {
+                const tracks = currentStream.getTracks();
+                tracks.forEach(track => track.stop());  // Stop all the tracks (video and audio)
+                videoElement.srcObject = null;  // Disconnect the video stream from the element
+                streaming = false;
+                currentStream = null;  // Clear the stream reference
+            }
+        }
+
+        // Function to scan the QR code
+        function scanQRCode() {
+            if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+
+                // Draw the video frame to the canvas
+                canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+                // Get image data from the canvas
+                const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+
+                // Use jsQR to scan for a QR code
+                const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+
+                if (code && !scanStatus) { // Only scan if QR code found and not already scanned
+                    // Assuming QR data is like "EMP_NAME_QR: A1"
+                    const EMP_NO_QR = code.data.match(/TmFtZQ==:\s*(\S+)/);
+                    const EMP_NAME_QR = code.data.match(/EMP_NAME_QR:\s*(.*)/);
+
+                    if (EMP_NO_QR && EMP_NO_QR[1] && EMP_NAME_QR && EMP_NAME_QR[1]) {
+                        scanStatus = true; // Mark as scanned
+                        var EMP_NAME_QR_VALUE = EMP_NAME_QR[1];
+                        var EMP_NO_QR_VALUE = EMP_NO_QR[1];
+                        let decoded = atob(EMP_NO_QR_VALUE); // Base64 decode
+                        let reencoded = btoa(decoded);       // Base64 re-encode
+                        function getEmployeeValues() {
+                                                return {
+                                                    EMP_NO_QR_VALUE: EMP_NO_QR_VALUE,
+                                                    EMP_NAME_QR_VALUE: EMP_NAME_QR_VALUE
+                                                };
+                                            }
+                        // Show modal with QR code data
+                        $('#modal_in_out').modal('show');
+                        $('#modal_in_out .modal-body').html(`
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <input name="EMP_NAME_QR_INPUT" id="EMP_NAME_QR_INPUT" value="${EMP_NAME_QR_VALUE}" readonly style="border:none;text-align:center;">
+                                </div>
+                                <div class="col-md-12">
+                                 <input name="EMP_NO_QR_INPUT" id="EMP_NO_QR_INPUT" value="${decoded}" readonly style="border:none;text-align:center">
+                                </div>
+                            </div>`);
+                        
+                        $('#modal_in_out .button_area').html(`
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button type="button" id="time_in_btn" data-emp_no_qr="${EMP_NO_QR_VALUE}" data-emp_name_qr="${EMP_NAME_QR_VALUE}" class="btn btn-success">TIME IN</button>
+                                    <button type="button" id="time_out_btn" data-emp_no_qr="${EMP_NO_QR_VALUE}" data-emp_name_qr="${EMP_NAME_QR_VALUE}" class="btn btn-danger">TIME OUT</button>
+                                </div>
+                            </div>`);
+                   
+                    } else {
+                        resultElement.text("No valid QR code data found.");
+                    }
+                }
+            }
+
+            // Repeat the scan process if streaming is still active and QR hasn't been scanned
+            if (streaming && !scanStatus) {
+                requestAnimationFrame(scanQRCode);
+            }
+        }
+
+        // Event to trigger when modal is hidden
+        $('#modal_in_out').on('hidden.bs.modal', function () {
+            // Once modal is hidden, continue scanning the QR code
+            scanStatus = false;  // Reset scan status to allow scanning again
+            requestAnimationFrame(scanQRCode); // Restart the scan process after modal is closed
+        });
+
+        // Automatically start the camera when the page loads
+        startCamera();
+
+        // Event delegation for dynamically added buttons (time_in_btn and time_out_btn)
+ $(document).on('click', '#time_in_btn', function() {
+        var empNo = $(this).data('emp_no_qr');
+        var empName = $(this).data('emp_name_qr');
+        
+    $('#modal_in').modal('show');
+    $('#modal_in').on('change','#work_type',function(){
+            var work_type = $(this).val();
+          
+    if(work_type == 'DIRECT') {
+        $('#time_in_content').html(`
+         <div class="container mt-2">
+             <div class="row">
+             <div class="col-md-12">
+                <label for="select_machine">MACHINE</label>
+                <select id="select_machine" class="form-select">
+                </select>
+            </div>
+            <div class="col-md-12">
+                <label for="select_parts">PARTS</label>
+                <select id="select_parts" class="form-select">
+                </select>
+            </div> </div>
+              </div>
+            
+        `);
+        var selectedDepartment = 'MUFFLER';
+        $.ajax({
+        url: 'get_machines.php', // Your PHP file to get machines
+        method: 'GET',
+        data: { department: selectedDepartment }, // Pass the department parameter
+        success: function(response) {
+            // Check if the response has machines
+            if (response.machines && response.machines.length > 0) {
+                var machineOptions = '<option selected disabled>Select Machine</option>';
+                response.machines.forEach(function(machine) {
+                    machineOptions += `<option value="${machine.machine_id}">${machine.machine_name}</option>`;
+                });
+                $('#select_machine').html(machineOptions); // Populating the "MACHINE" dropdown
+            } else {
+                $('#select_machine').html('<option selected disabled>No machines found</option>');
+            }
+        },
+        error: function(error) {
+            console.error("Error fetching machines:", error);
+        }
+    });
+
+       // When a machine is selected, fetch corresponding parts
+       $('#select_machine').on('change', function() {
+    var selectedMachineId = $(this).val();
+    console.log(selectedMachineId);
+
+    // Assuming `selectedDepartment` remains unchanged during the session
+    var department = selectedDepartment;
+
+    if (selectedMachineId) {
+        // Encode both parameters to ensure special characters are handled
+        var encodedMachineId = encodeURIComponent(selectedMachineId);
+        var encodedDepartment = encodeURIComponent(department);
+
+        // Fetch parts for the selected machine and department
+        $.ajax({
+            url: 'get_parts.php', // The PHP file for fetching parts
+            method: 'GET',
+            data: {
+                selectedMachinevalue: encodedMachineId,
+                department: encodedDepartment // Pass department as well
+            },
+            success: function(response) {
+                if (response.parts && response.parts.length > 0) {
+                    var partsOptions = '<option selected disabled>Select Part</option>';
+                    response.parts.forEach(function(part) {
+                        partsOptions += `<option value="${part.parts_id}">${part.parts_name}</option>`;
+                    });
+                    $('#select_parts').html(partsOptions); // Populate the parts dropdown
+                } else {
+                    $('#select_parts').html('<option selected disabled>No parts found</option>');
+                }
+            },
+            error: function(error) {
+                console.error("Error fetching parts:", error);
+            }
+        });
+    }
+});
+                //Display the button if already select parts
+                $('#modal_in').on('change','#select_parts',function(){
+                                var select_parts_val = $(this).val();
+                                if(select_parts_val != ''){
+                                    $('#btn-submit').html(`<button data-emp_no_val="${empNo}" data-emp_name_val="${empName}" id="save_btn_in" class="btn btn-success">submit</button>`);
+                                }else{
+                                
+                                }
+                });
+
+
+                //btn save to database
+                $('#modal_in').on('click','#save_btn_in',function(){
+
+                    Swal.fire({
+     
+    title: 'Are you sure?',           // Title of the toast
+    toast: true,             // Enable toast style
+    position: 'center',
+    icon: 'question',     
+    showConfirmButton: true,// Don't show the confirm button (common for toasts)
+    // timer: 1500,             // Auto-dismiss after 1.5 seconds
+    timerProgressBar: true,  // Show a progress bar that fills up as the timer counts down
+    didOpen: () => {
+     // Swal.showLoading();    // Optionally show loading animation if desired
+    }
+  });
+                });
+
+
+
+    } else if (work_type == 'INDIRECT') {
+        $('#time_in_content').html(`<select>
+  <option value="maintenance">Maintenance</option>
+  <option value="quality_control">Quality Control (QC) and Inspection</option>
+  <option value="inventory_management">Inventory Management</option>
+  <option value="training_development">Training and Development</option>
+  <option value="logistics_material_handling">Logistics and Material Handling</option>
+  <option value="supervision_management">Supervision and Management</option>
+  <option value="safety_compliance">Safety and Compliance</option>
+  <option value="planning_scheduling">Planning and Scheduling</option>
+  <option value="support_services">Support Services</option>
+  <option value="administrative_work">Administrative Work</option>
+  <option value="engineering_support">Engineering Support</option>
+  <option value="waste_environmental_management">Waste and Environmental Management</option>
+  <option value="it_systems_support">IT and Systems Support</option>
+</select>`);
+    }
+
+        });
+
+
+
+ });
+
+
+
+
+        $(document).on('click', '#time_out_btn', function() {
+            $('#modal_out').modal('show');
+        });
+
+        // Reset selected option in #work_type when modal_in is hidden
+        $('#modal_in').on('hidden.bs.modal', function() {
+            $('#work_type').prop('selectedIndex', 0);  // Reset to the first option (usually "Select Work Type")
+            $('#select_machine').empty();  
+            $('#select_parts').empty();
+            $('#btn-submit').html('');
+            $('#time_in_content').html('');
+        });
+
+       
+
+
+
+
+
+
+       
+
+
+    });
+</script>
+
+
+
+
+<footer class="footer d-flex flex-column flex-md-row align-items-center justify-content-between py-4 px-3" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #f8f9fa; padding: 10px 0;">
+	<!-- Footer Text Section -->
+	<p class="text-muted text-center text-md-left mb-0">
+		<!-- <img src="assets/images/roberts2.png" alt="Tiger Super Molye Logo" width="100" class="mx-3"> -->
+	  <a href="https://roberts.com.ph" target="_blank" class="text-decoration-none text-muted hover:text-primary">
+		ROBERTS AUTOMOTIVE AND INDUSTRIAL PARTS MANUFACTURING CORPORATION</a>
+	</p>
+	
+	<!-- Logo Images Section -->
+	<div class="footer-logos d-flex justify-content-center align-items-center mt-3 mt-md-0">
+
+	  <img src="assets/images/tigersupermolye-logo.jpg" alt="Tiger Super Molye Logo" width="100" class="mx-3">
+	  <img src="assets/images/car_evercool_radiator.png" alt="Evercool Logo" width="100" class="mx-3">
+	  <img src="assets/images/car_Metal.jpg" alt="Evercool Logo" width="100" class="mx-3">
+	  <img src="assets/images/car_steel_tubes.png" alt="Evercool Logo" width="100" class="mx-3">
+	  <img src="assets/images/car_TigerSuperMolye.png" alt="Evercool Logo" width="100" class="mx-3">
+	  <img src="assets/images/evercool-logo.png" alt="Evercool Logo" width="100" class="mx-3">
+	</div>
+  </footer>
+  
+	
+
+
+	<!-- core:js -->
+	<!-- <script src="assets/js/jquery.js"></script> -->
+	<script src="assets/vendors/core/core.js"></script>
+	<!-- endinject -->
+
+  <!-- plugin js for this page -->
+  <script src="assets/vendors/datatables.net/jquery.dataTables.js"></script>
+  <script src="assets/vendors/datatables.net-bs4/dataTables.bootstrap4.js"></script>
+  
+
+	<!-- end plugin js for this page -->
+	<!-- inject:js -->
+	<script src="assets/vendors/feather-icons/feather.min.js"></script>
+	<script src="assets/js/template.js"></script>
+	<!-- endinject -->
+  <!-- custom js for this page -->
+  <script src="assets/js/data-table.js"></script>
+  <script src="assets/vendors/apexcharts/apexcharts.min.js"></script>
+	<!-- end custom js for this page -->
+</body>
+</html>

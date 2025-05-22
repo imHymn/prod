@@ -4,6 +4,7 @@ if (isset($_SESSION['section'])){
   $section = $_SESSION['section'];
 }
 
+
 ?>
 
 
@@ -52,39 +53,68 @@ if (isset($_SESSION['section'])){
       <div class="sidebar-body">
         <ul class="nav">
           <li class="nav-item nav-category">Main</li>
-          <li class="nav-item">
-  <a href="?page_active=dashboard" class="nav-link" data-page="dashboard">
-    <i class="link-icon" data-feather="box"></i>
-    <span class="link-title">Dashboard</span>
+ <li class="nav-item">
+  <a class="nav-link" href="?page_active=accounts">
+    <i class="link-icon" data-feather="calendar"></i>
+    <span class="link-title">Accounts</span>
   </a>
 </li>
 
-          
-<!-- jowell          -->
-<li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#attendance" role="button" aria-expanded="false" aria-controls="tables">
+<?php if (isset($section)){
+  $sec = strtolower($section);
+  if($sec =='delivery' || $sec == 'administrator') {
+  echo'
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#delivery" role="button" aria-expanded="false" aria-controls="tables">
     <i class="link-icon" data-feather="calendar"></i>
     <span class="link-title">Delivery</span>
     <i class="link-arrow" data-feather="chevron-down"></i>
   </a>
-  <div class="collapse" id="attendance">
+  <div class="collapse" id="delivery">
     <ul class="nav sub-menu">
       <li class="nav-item">
         <a href="?page_active=deliveryForm" class="nav-link" data-page="report">Submit Form</a>
       </li>
-   
+    </ul>
+  </div>
+</li>
+    
+    ';
+  } 
+  
+  if ($sec =='assembly' || $sec =='administrator') {
+  echo '<li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#assembly" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="calendar"></i>
+    <span class="link-title">Assembly</span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="assembly">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=deliveryList" class="nav-link" data-page="report">Delivery List</a>
+      </li>
+    <li class="nav-item">
+        <a href="?page_active=assemblyList" class="nav-link" data-page="report">Assembly List</a>
+      </li>
       
     </ul>
   </div>
 </li>
-<!-- jowell end     -->
-<li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#tables" role="button" aria-expanded="false" aria-controls="tables">
+';
+  }
+  
+  if($sec =='qc' ||$sec=='administrator') {
+  echo '
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#qc" role="button" aria-expanded="false" aria-controls="tables">
     <i class="link-icon" data-feather="layout"></i>
-    <span class="link-title">Pages</span>
+
+
+    <span class="link-title">QA/QC </span>
     <i class="link-arrow" data-feather="chevron-down"></i>
   </a>
-  <div class="collapse" id="tables">
+  <div class="collapse" id="qc">
     <ul class="nav sub-menu">
       <li class="nav-item">
         <a href="?page_active=fg_delivery_form" class="nav-link" data-page="fg_delivery_form">FG</a>
@@ -99,22 +129,69 @@ if (isset($_SESSION['section'])){
     </ul>
   </div>
 </li>
-<!-- <li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#authPages" role="button" aria-expanded="false" aria-controls="authPages">
-    <i class="link-icon" data-feather="unlock"></i>
-    <span class="link-title">Authentication</span>
+    ';
+  }
+
+
+  if($sec =='wh' || $sec=='administrator') {
+  echo '
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#wh" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="layout"></i>
+
+
+    <span class="link-title">Warehouse </span>
     <i class="link-arrow" data-feather="chevron-down"></i>
   </a>
-  <div class="collapse" id="authPages">
+  <div class="collapse" id="wh">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=masterdata2" class="nav-link" data-page="masterdata2">Register</a>
+        <a href="?page_active=fg_delivery_form" class="nav-link" data-page="fg_delivery_form">FG</a>
       </li>
-      
+         <li class="nav-item">
+        <a href="?page_active=form_sample" class="nav-link" data-page="fg_delivery_form">Form</a>
+      </li>
+      <li class="nav-item">
+        <a href="QR.html" class="nav-link">QR</a>
+      </li>
+     
     </ul>
   </div>
-</li> -->
-      
+</li>
+    ';
+  }
+  
+  if($sec =='stamping' ||$sec=='administrator') {
+  echo '
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="layout"></i>
+
+
+    <span class="link-title">Stamping </span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="stamping">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=fg_delivery_form" class="nav-link" data-page="fg_delivery_form">FG</a>
+      </li>
+         <li class="nav-item">
+        <a href="?page_active=form_sample" class="nav-link" data-page="fg_delivery_form">Form</a>
+      </li>
+      <li class="nav-item">
+        <a href="QR.html" class="nav-link">QR</a>
+      </li>
+     
+    </ul>
+  </div>
+</li>
+    ';
+  }
+} ?>
+
+
+
        
         </ul>
       </div>
@@ -130,7 +207,7 @@ if (isset($_SESSION['section'])){
 					<i data-feather="menu"></i>
 				</a>
 				<div class="navbar-content">
-		
+	
 						
 <!-- 						
                   <div style="margin: 0;margin-left: 0;">
@@ -216,13 +293,21 @@ if (isset($_SESSION['section'])){
                     <i data-feather="user"></i>
 									</div>
 									<div class="info text-center">
-										<p class="name font-weight-bold mb-0"><?php echo $_SESSION['username_ps']; ?></p>
-										<p class="email text-muted mb-3"></p>
-									</div>
+  <p class="name font-weight-bold mb-0"><?php echo $_SESSION['section']; ?></p>
+  <p class="name font-weight-bold mb-0"><?php echo $_SESSION['user_id_ps']; ?></p>
+  <p class="email text-muted mb-3"></p>
+</div>
+
 								</div>
 								<div class="dropdown-body">
 									<ul class="profile-nav p-0 pt-3">
-								
+                  <li class="nav-item">
+                    <a href="?page_active=settings" class="nav-link">
+                      <i data-feather="settings"></i>
+                      <span> Settings</span>
+                    </a>
+                  </li>
+
 										<li class="nav-item">
 											<a href="/mes/auth/logout.php" class="nav-link">
 												<i data-feather="log-out"></i>

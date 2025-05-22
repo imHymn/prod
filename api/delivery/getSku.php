@@ -30,16 +30,22 @@ if (isset($_GET['customer'])) {
 
           <tr><td>Material No.</td>
           <td>Material Description </td>
-          <td>Supplement Order</td></tr>
+          <td>Supplement Order</td>
+          <td class='d-flex justify-content-center align-items-center'>Total Quantity</td></tr>
           <tr>
       <td class='materialNo'>$materialNumber</td>
             <td class='materialDesc'>$materialDescription</td>
       <td>
-    <div class='d-flex align-items-center'>
+    <div class='d-flex '>
         <input class='form-control mb-2' id='supplement$counter' />
-        <label class='totalQty'></label>
+       
     </div>
 </td>
+<td class='d-flex justify-content-center align-items-center'>
+  <label class='totalQty'></label>
+</td>
+
+
 
                                 </tr>";
                                 $counter++;

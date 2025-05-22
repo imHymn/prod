@@ -58,7 +58,7 @@ if (isset($_SESSION['error_message'])) {
                 <?php endif; ?>
 
                 <div class="form-group">
-                    <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+                    <input type="text" name="user_id" class="form-control" placeholder="Enter your username" required>
                 </div><!-- form-group -->
                 <div class="form-group mg-b-50">
                     <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
