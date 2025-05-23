@@ -1,5 +1,6 @@
-<?php session_start(); ?>
-
+<?php
+session_start();
+?>
 <div class="page-content">
   <nav class="page-breadcrumb d-flex justify-content-between align-items-center">
     <ol class="breadcrumb mb-0">
@@ -18,6 +19,7 @@
             <ul class="list-group list-group-flush" id="profileFields">
               <?php
               $fields = [
+                'name'=>'Full Name',
                 'user_id' => 'User ID',
                 'section' => 'Section',
                 'email' => 'Email',
@@ -111,19 +113,3 @@
 
 <!-- Bootstrap JS Bundle (with Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-   document.addEventListener('DOMContentLoaded', function () {
-        // document.getElementById('email_submit').addEventListener('click',(event)=>{
-        //     event.preventDefault();
-        //     const new_email = document.getElementById('newEmail').value;
-        //     console.log(new_email);
-
-        // })
-    
-    
-
-
-
-   });
-
-</script>

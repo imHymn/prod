@@ -11,6 +11,7 @@ header('Content-Type: application/json');
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 
+$name = $input['name'];
 $user_id = trim($input['user_id'] ?? '');
 $email = trim($input['email'] ?? '');
 $password = $input['password'] ?? '';
@@ -35,10 +36,11 @@ try {
     $hashed_password = hash('sha512', $password);
 
     $stmt = $pdo->prepare("
-        INSERT INTO users (user_id, email, password, section, department)
-        VALUES (:user_id, :email, :password, :section, :department)
+        INSERT INTO users (name,user_id, email, password, section, department)
+        VALUES (:name,:user_id, :email, :password, :section, :department)
     ");
     $stmt->execute([
+        ':name'=> $name,
         ':user_id' => $user_id,
         ':email' => $email,
         ':password' => $hashed_password,

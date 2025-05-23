@@ -18,6 +18,10 @@ class DatabaseClass {
         $stmt = $this->executeStatement($sql, $params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+public function Update($sql, $params = []) {
+        $stmt = $this->executeStatement($sql, $params);
+        return $stmt->rowCount();  // Number of affected rows
+    }
 
  public function Insert($sql, $params = []) {
     $stmt = $this->executeStatement($sql, $params);
@@ -36,6 +40,27 @@ class DatabaseClass {
         $stmt->execute($params);
         return $stmt;
     }
+    public function beginTransaction() {
+    return $this->connection->beginTransaction();
+}
+public function SelectOne($sql, $params = []) {
+    $stmt = $this->executeStatement($sql, $params);
+    return $stmt->fetch(PDO::FETCH_ASSOC); // Fetch one row as an associative array
+}
+
+public function commit() {
+    return $this->connection->commit();
+}
+
+public function rollBack() {
+    if ($this->connection->inTransaction()) {
+        return $this->connection->rollBack();
+    }
+    // Optional: Log or silently ignore
+    return false;
+}
+
+
 }
 ?>
 

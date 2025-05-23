@@ -75,6 +75,9 @@ if (isset($_SESSION['section'])){
       <li class="nav-item">
         <a href="?page_active=deliveryForm" class="nav-link" data-page="report">Submit Form</a>
       </li>
+        <li class="nav-item">
+        <a href="?page_active=deliveryList" class="nav-link" data-page="report">Delivery List</a>
+      </li>
     </ul>
   </div>
 </li>
@@ -91,11 +94,12 @@ if (isset($_SESSION['section'])){
   </a>
   <div class="collapse" id="assembly">
     <ul class="nav sub-menu">
-      <li class="nav-item">
-        <a href="?page_active=deliveryList" class="nav-link" data-page="report">Delivery List</a>
-      </li>
+ 
     <li class="nav-item">
         <a href="?page_active=assemblyList" class="nav-link" data-page="report">Assembly List</a>
+      </li>
+      <li class="nav-item">
+        <a href="?page_active=assemblyData" class="nav-link" data-page="report">Assembly Data</a>
       </li>
       
     </ul>
@@ -117,14 +121,9 @@ if (isset($_SESSION['section'])){
   <div class="collapse" id="qc">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=fg_delivery_form" class="nav-link" data-page="fg_delivery_form">FG</a>
+        <a href="?page_active=qcList" class="nav-link" data-page="qcList">QC List</a>
       </li>
-         <li class="nav-item">
-        <a href="?page_active=form_sample" class="nav-link" data-page="fg_delivery_form">Form</a>
-      </li>
-      <li class="nav-item">
-        <a href="QR.html" class="nav-link">QR</a>
-      </li>
+     
      
     </ul>
   </div>

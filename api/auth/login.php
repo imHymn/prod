@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($user && hash('sha512', $password) === $user['password']) {
             // Password is correct, set session variables
             $_SESSION['id'] = $user['id'];
+            $_SESSION['name']=$user['name'];
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['section'] = $user['section'];
             $_SESSION['email'] = $user['email'];

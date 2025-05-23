@@ -77,6 +77,7 @@ foreach ($data as $item) {
         ':lot_no' => $lot_value,
         ':created_at' => $currentDateTime,
         ':updated_at' => $currentDateTime,
+        'date_needed' => $item['date_needed']
     ];
 
     $result = $db->Insert($sql, $params);

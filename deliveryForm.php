@@ -353,14 +353,18 @@ document.getElementById('delivery_submit_btn').addEventListener('click', functio
                 .then(response => response.json())
                 .then(responseData => {
                     console.log('Server response:', responseData);
-                     Swal.fire({
+         Swal.fire({
   icon: 'success',
   title: 'Success',
   text: 'Your operation was successful!',
   confirmButtonColor: '#3085d6'
 }).then(() => {
-  location.reload(); // Reload the page
-});;
+  // Delay reload by 2 seconds (2000 ms)
+  setTimeout(() => {
+    location.reload();
+  }, 3000);
+});
+
 
                     if (responseData?.length > 0) {
                         document.getElementById('lot').value = parseInt(responseData[0].lot_no) + 1;
