@@ -44,26 +44,6 @@
 
   <!-- Separator line added on the previous container's right border -->
 
-  <div class="d-flex flex-column ps-3" style="min-width: 130px;">
-    <label for="column-select" class="form-label mb-1">Filter by</label>
-    <select id="column-select" class="form-select form-select-sm">
-      <option value="material_no">Material No</option>
-      <option value="model_name">Model</option>
-      <option value="lot_no">Lot</option>
-      <option value="shift">Shift</option>
-      <option value="section">Status</option>
-      <option value="handler_name">Handler Name</option>
-    </select>
-  </div>
-
-  <div class="d-flex flex-column" style="min-width: 150px;">
-    <label for="column-input" class="form-label mb-1">Search</label>
-    <input type="text" id="column-input" class="form-control form-control-sm" placeholder="Search...">
-  </div>
-   <div class="d-flex flex-column" style="min-width: 100px; margin-top: 1.75rem;">
-    <button id="clear-filters" class="btn btn-outline-secondary btn-sm" style="white-space: nowrap;">Reset Filters</button>
-  </div>
-</div>
 
 
 
@@ -71,16 +51,17 @@
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-      <th style="width: 15%; text-align: center;">Material No</th>
+      <th style="width: 10%; text-align: center;">Material No</th>
       <!-- <th style="width: 20%; text-align: center;">Description</th> -->
-      <th style="width: 15%; text-align: center;">Model</th>
+      <th style="width: 10%; text-align: center;">Model</th>
       <th style="width: 8%; text-align: center;">Qty</th>
       <th style="width: 8%; text-align: center;">Supplement</th>
       <th style="width: 8%; text-align: center;">Total Qty</th>
       <th style="width: 8%; text-align: center;">Shift</th>
       <th style="width: 8%; text-align: center;">Lot</th>
       <th style="width: 8%; text-align: center;">Status</th>
-      <th style="width: 25%; text-align: center;">Handler Name</th>
+      <th style="width: 8%; text-align: center;">Section</th>
+      <th style="width: 20%; text-align: center;">Person Incharge</th>
       <th style="width: 25%; text-align: center;">Date Needed</th>
     </tr>
   </thead>
@@ -115,50 +96,7 @@
 <script>
 
 </script>
-<script>
-let html5QrcodeScanner =null;
 
-document.addEventListener('DOMContentLoaded', function () {
-    fetch('api/assembly/getDeliveryforms.php')
-        .then(response => response.json())
-        .then(data => {
-            const tbody = document.getElementById('data-body');
-            data.forEach(item => {
-                const row = document.createElement('tr');
-      row.innerHTML = `
-  <td style="text-align: center;">${item.material_no}</td>
-  <!-- <td style="text-align: center;">${item.material_description}</td> -->
-  <td style="text-align: center;">${item.model_name}</td>
-  <td style="text-align: center;">${item.quantity}</td>
-  <td style="text-align: center;">${item.supplement_order ?? '0'}</td>
-  <td style="text-align: center;">${item.total_quantity}</td>
-  <td style="text-align: center;">${item.shift}</td>
-  <td style="text-align: center;">${item.lot_no}</td>
-<td >${ item.section.toUpperCase()}
-</td>
-<td style="text-align: center;">${item.handler_name || '<i>NONE</i>'}</td>
-<td style="text-align: center;">${item.date_needed || '<i>NONE</i>'}</td>
-
-
-`;
-
-
-
-                tbody.appendChild(row);
-            });
-
-            // Attach event listeners to TIME IN buttons
-            document.querySelectorAll('.time-in-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const materialId = this.getAttribute('data-id');
-                    openQRModal(materialId);
-                });
-            });
-        })
-        .catch(error => console.error('Error fetching data:', error));
-});
-
-</script>
 
 
 <script>
@@ -197,9 +135,32 @@ function renderTable(data) {
       <td style="text-align: center;">${item.total_quantity}</td>
       <td style="text-align: center;">${item.shift}</td>
       <td style="text-align: center;">${item.lot_no}</td>
-      <td style="text-align: center;">${item.section.toUpperCase()}</td>
-      <td style="text-align: center;">${item.handler_name || '<i>NONE</i>'}</td>
-      <td style="text-align: center;">${item.date_needed || '<i>NONE</i>'}</td>
+      <td style="text-align: center;">${
+  item.section === 'QC' && !item.person_incharge_qc 
+    ? 'PENDING' 
+    : item.status.toUpperCase()
+}</td>
+
+<td style="text-align: center;">
+  ${item.section ? item.section.toUpperCase() : ''}
+  ${
+    (item.person_incharge_qc
+    && !(item.person_incharge_rework && !['ASSEMBLY', 'QC'].includes(item.section?.toUpperCase()))
+    ) ? '<br>(REWORK)' : ''
+  }
+</td>
+
+
+  <td style="text-align: center;">${
+    item.section === 'QC'
+      ? (item.person_incharge_qc || '<i>NONE</i>')
+      : item.section === 'ASSEMBLY'
+        ? (item.person_incharge_rework || item.person_incharge_assembly || '<i>NONE</i>')
+        : '<i>NONE</i>'
+  }</td>
+
+<td style="text-align: center;">${item.date_needed || '<i>NONE</i>'}</td>
+
     `;
     tbody.appendChild(row);
   });
@@ -226,20 +187,6 @@ function applyHierarchicalFilters() {
   document.getElementById(id).addEventListener('change', applyHierarchicalFilters);
 });
 
-document.getElementById('column-input').addEventListener('input', function () {
-  const col = document.getElementById('column-select').value;
-  const val = this.value.toLowerCase();
-
-  const filtered = originalData.filter(item => {
-    // Ensure the field exists and convert to string before .toLowerCase()
-    const fieldVal = item[col];
-    if (!fieldVal) return false; // no match if falsy (null/undefined)
-
-    return fieldVal.toString().toLowerCase().includes(val);
-  });
-
-  renderTable(filtered);
-});
 
 
 // Initial load
@@ -247,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
   fetch('api/assembly/getDeliveryforms.php')
     .then(response => response.json())
     .then(data => {
+    console.log(data)
       originalData = data;
       populateFilterOptions(data);
       renderTable(data);

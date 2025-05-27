@@ -12,10 +12,12 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env');
 $dotenv->load();
 require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php'; // Adjust the path to your class file
 $db = new DatabaseClass();
+$data = json_decode(file_get_contents("php://input"), true);
+$materialId = $data['materialId'];
 
 try {
     // SQL query to fetch customer names
-    $sql = "SELECT * FROM users";
+    $sql = "SELECT * FROM `components_inventory` WHERE material_no ='$materialId' ";
     // Use the Select method to fetch data
     $users = $db->Select($sql);
     // Return the results as a JSON response

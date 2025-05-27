@@ -73,10 +73,14 @@ if (isset($_SESSION['section'])){
   <div class="collapse" id="delivery">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=deliveryForm" class="nav-link" data-page="report">Submit Form</a>
+        <a href="?page_active=deliveryForm" class="nav-link" data-page="deliveryForm">Submit Form</a>
       </li>
         <li class="nav-item">
-        <a href="?page_active=deliveryList" class="nav-link" data-page="report">Delivery List</a>
+        <a href="?page_active=deliveryList" class="nav-link" data-page="deliveryList">Delivery List</a>
+      </li>
+        </li>
+        <li class="nav-item">
+        <a href="?page_active=readytoDeliver" class="nav-link" data-page="readytoDeliver">Pulled-Out</a>
       </li>
     </ul>
   </div>
@@ -84,6 +88,29 @@ if (isset($_SESSION['section'])){
     
     ';
   } 
+  
+  if($sec =='wh' || $sec=='administrator') {
+  echo '
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#wh" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="layout"></i>
+
+
+    <span class="link-title">Warehouse </span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="wh">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=warehouse" class="nav-link" data-page="inventory">Inventory</a>
+      </li>
+      
+     
+    </ul>
+  </div>
+</li>
+    ';
+  }
   
   if ($sec =='assembly' || $sec =='administrator') {
   echo '<li class="nav-item">
@@ -96,12 +123,14 @@ if (isset($_SESSION['section'])){
     <ul class="nav sub-menu">
  
     <li class="nav-item">
-        <a href="?page_active=assemblyList" class="nav-link" data-page="report">Assembly List</a>
+        <a href="?page_active=assemblyList" class="nav-link" data-page="assemblyList">Assembly Todo-List</a>
       </li>
       <li class="nav-item">
-        <a href="?page_active=assemblyData" class="nav-link" data-page="report">Assembly Data</a>
+        <a href="?page_active=assemblyData" class="nav-link" data-page="assemblyData">Manpower Data</a>
       </li>
-      
+       <li class="nav-item">
+        <a href="?page_active=queueRework" class="nav-link" data-page="queueRework1">Queue Rework</a>
+      </li>
     </ul>
   </div>
 </li>
@@ -121,9 +150,11 @@ if (isset($_SESSION['section'])){
   <div class="collapse" id="qc">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=qcList" class="nav-link" data-page="qcList">QC List</a>
+        <a href="?page_active=qcList" class="nav-link" data-page="qcList">QC Todo-List</a>
       </li>
-     
+      <li class="nav-item">
+        <a href="?page_active=queueRework" class="nav-link" data-page="queueRework2">Queue Rework</a>
+      </li>
      
     </ul>
   </div>
@@ -132,34 +163,6 @@ if (isset($_SESSION['section'])){
   }
 
 
-  if($sec =='wh' || $sec=='administrator') {
-  echo '
-    <li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#wh" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="layout"></i>
-
-
-    <span class="link-title">Warehouse </span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="wh">
-    <ul class="nav sub-menu">
-      <li class="nav-item">
-        <a href="?page_active=fg_delivery_form" class="nav-link" data-page="fg_delivery_form">FG</a>
-      </li>
-         <li class="nav-item">
-        <a href="?page_active=form_sample" class="nav-link" data-page="fg_delivery_form">Form</a>
-      </li>
-      <li class="nav-item">
-        <a href="QR.html" class="nav-link">QR</a>
-      </li>
-     
-    </ul>
-  </div>
-</li>
-    ';
-  }
-  
   if($sec =='stamping' ||$sec=='administrator') {
   echo '
     <li class="nav-item">
@@ -173,13 +176,10 @@ if (isset($_SESSION['section'])){
   <div class="collapse" id="stamping">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=fg_delivery_form" class="nav-link" data-page="fg_delivery_form">FG</a>
+        <a href="?page_active=componentsInventory" class="nav-link" data-page="componentsInventory">Components Inventory</a>
       </li>
-         <li class="nav-item">
-        <a href="?page_active=form_sample" class="nav-link" data-page="fg_delivery_form">Form</a>
-      </li>
-      <li class="nav-item">
-        <a href="QR.html" class="nav-link">QR</a>
+  <li class="nav-item">
+        <a href="?page_active=rawmaterialsInventory" class="nav-link" data-page="rawmaterialsInventory">Raw Materials Inventory</a>
       </li>
      
     </ul>
@@ -201,11 +201,12 @@ if (isset($_SESSION['section'])){
 		<div class="page-wrapper">
 				
 			<!-- partial:partials/_navbar.html -->
-			<nav class="navbar">
+			<nav class="navbar" >
 				<a href="#" class="sidebar-toggler">
 					<i data-feather="menu"></i>
 				</a>
-				<div class="navbar-content">
+				<div class="navbar-content" >
+
 	
 						
 <!-- 						

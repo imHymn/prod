@@ -19,8 +19,16 @@ if (isset($_GET['customer'])) {
         
         // Fetch the models for the selected customer and model name
         $sku = $db->Select($sql, ['customer_name' => $customerName ,'model_name' => $modelName]);
-       $tableHtml.="<table class='table table'>
-                           ";
+  $tableHtml = "<table class='table table'>
+    <thead>
+        <tr>
+            <th>Material No.</th>
+            <th>Material Description</th>
+            <th>Supplement Order</th>
+            <th class='text-center'>Total Quantity</th>
+        </tr>
+    </thead>
+    <tbody>";
         if ($sku) {
             $counter = 0;
         foreach ($sku as $row) {
@@ -28,10 +36,7 @@ if (isset($_GET['customer'])) {
                 $materialDescription =   $row['material_description'];
           $tableHtml.=" 
 
-          <tr><td>Material No.</td>
-          <td>Material Description </td>
-          <td>Supplement Order</td>
-          <td class='d-flex justify-content-center align-items-center'>Total Quantity</td></tr>
+        
           <tr>
       <td class='materialNo'>$materialNumber</td>
             <td class='materialDesc'>$materialDescription</td>

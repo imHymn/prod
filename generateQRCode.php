@@ -45,11 +45,19 @@
 </div>
 
 
-    <!-- Multiple Tab -->
-    <div class="tab-pane fade" id="multiple" role="tabpanel" aria-labelledby="multiple-tab">
-      <textarea id="qrTextMultiple" class="form-control mb-3" rows="4" placeholder="Enter multiple lines (1 per QR code)"></textarea>
-      <button class="btn btn-success w-100" onclick="generateMultiple()">Generate Multiple QR</button>
-    </div>
+<div class="tab-pane fade" id="multiple" role="tabpanel" aria-labelledby="multiple-tab">
+  <label for="multiUserSelect" class="form-label">Select Multiple Users:</label>
+  <select id="multiUserSelect" class="form-select mb-2" multiple size="6">
+    <!-- Populated by JS -->
+  </select>
+
+  <!-- Selected Users Badge List -->
+  <div id="selectedUserBadges" class="mb-3 d-flex flex-wrap gap-2"></div>
+
+  <button class="btn btn-success w-100" onclick="generateMultiple()">Generate Multiple QR</button>
+</div>
+
+
 
     <!-- All Tab -->
     <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
@@ -71,108 +79,169 @@
     </div>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
- <script>
-    // Update detailName on user selection
-    document.getElementById('singleUserSelect').addEventListener('change', function() {
-      const names = {
-        '001': 'Alice Johnson',
-        '002': 'Bob Smith'
-      };
-      document.getElementById('detailName').textContent = names[this.value] || '-';
+<script src="lib/login_lib/lib/qrcode/qrcode.min.js"></script>
+<script>
+let userData = [];
+
+// Fetch and populate selects
+fetch('api/accounts/getAccounts.php')
+  .then(res => res.json())
+  .then(data => {
+    userData = data.filter(u => u.user_id && u.name);
+    populateUserSelect('singleUserSelect', userData, false);
+    populateUserSelect('multiUserSelect', userData, true);
+    setupSingleSelectListener();
+    setupMultiSelectListener();
+  });
+
+// Populate <select> options helper
+function populateUserSelect(selectId, users, multiple) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = ''; // clear previous
+
+  if (!multiple) {
+    const placeholder = document.createElement('option');
+    placeholder.textContent = 'Select User ID';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+  }
+
+  users.forEach(user => {
+    const opt = document.createElement('option');
+    opt.value = user.user_id;
+    opt.textContent = multiple ? `${user.user_id} - ${user.name}` : user.user_id;
+    select.appendChild(opt);
+  });
+}
+
+// Single user select listener: show details
+function setupSingleSelectListener() {
+  const singleSelect = document.getElementById('singleUserSelect');
+  singleSelect.addEventListener('change', () => {
+    const user = userData.find(u => u.user_id === singleSelect.value);
+    const details = document.getElementById('userDetails');
+    if (user) {
+      details.style.display = 'block';
+      document.getElementById('detailName').textContent = user.name;
+      document.getElementById('detailEmail').textContent = user.email || '-';
+      document.getElementById('detailDepartment').textContent = user.department || '-';
+      document.getElementById('detailSection').textContent = user.section || '-';
+    } else {
+      details.style.display = 'none';
+    }
+  });
+}
+
+// Multiple user select listener: show badges
+function setupMultiSelectListener() {
+  const multiSelect = document.getElementById('multiUserSelect');
+  const badgeContainer = document.getElementById('selectedUserBadges');
+  multiSelect.addEventListener('change', () => {
+    const selected = Array.from(multiSelect.selectedOptions);
+    badgeContainer.innerHTML = '';
+    selected.forEach(opt => {
+      const user = userData.find(u => u.user_id === opt.value);
+      if (user) {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-primary';
+        badge.textContent = `${user.user_id} - ${user.name}`;
+        badgeContainer.appendChild(badge);
+      }
+    });
+  });
+}
+
+// Reusable QR code canvas generator, returns Promise<canvas>
+function createQRCodeCanvas(userId, fullName) {
+  return new Promise((resolve, reject) => {
+    const qrContent = `ID: ${userId}\nName: ${fullName}`;
+    const tempDiv = document.createElement('div');
+
+    new QRCode(tempDiv, {
+      text: qrContent,
+      width: 200,
+      height: 200,
+      correctLevel: QRCode.CorrectLevel.H
     });
 
-    function generateSingleQR() {
-      const select = document.getElementById('singleUserSelect');
-      const userId = select.value;
-      const fullName = document.getElementById('detailName').textContent;
+    setTimeout(() => {
+      const qrImg = tempDiv.querySelector('img');
+      if (!qrImg) return reject('QR code image not found.');
 
-      if (!userId || fullName === '-') {
-        alert("Please select a user.");
-        return;
-      }
+      const margin = 10;
+      const qrSize = 120;
+      const headerHeight = 40;
+      const nameHeight = 20;
+      const canvasSize = Math.max(margin + headerHeight + margin + qrSize + margin + nameHeight + margin, qrSize + margin * 2);
 
-      const qrContent = `ID: ${userId}\nName: ${fullName}`;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+      const ctx = canvas.getContext('2d');
 
-      // Clear previous QR
-      const qrContainer = document.getElementById('qrcode');
-      qrContainer.innerHTML = '';
-      document.getElementById('downloadQR').style.display = 'none';
+      // Background white
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-      // Temporary container for QR code
-      const tempDiv = document.createElement('div');
-      qrContainer.appendChild(tempDiv);
+      // Header image
+      const headerImg = new Image();
+      headerImg.src = 'assets/images/roberts2.png';
 
-      const qr = new QRCode(tempDiv, {
-        text: qrContent,
-        width: 200,
-        height: 200,
-        correctLevel: QRCode.CorrectLevel.H
-      });
-setTimeout(() => {
-  const qrImg = tempDiv.querySelector('img');
-  if (!qrImg) return;
+      headerImg.onload = () => {
+        const scale = headerHeight / headerImg.height;
+        const headerWidth = headerImg.width * scale;
+        const headerX = (canvasSize - headerWidth) / 3;
+        const headerY = margin;
+        ctx.drawImage(headerImg, headerX, headerY, headerWidth, headerHeight);
 
-  const margin = 10;
-  const qrSize = 120;
-  const headerHeight = 40;
-  const nameHeight = 20;
+        // QR code image
+        const qrX = (canvasSize - qrSize) / 2;
+        const qrY = headerY + headerHeight + margin;
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-  // Calculate total needed height (header + qr + name + margins)
-  const totalContentHeight = margin + headerHeight + margin + qrSize + margin + nameHeight + margin;
-  const totalContentWidth = qrSize + margin * 2;
+        // Text below QR
+        ctx.fillStyle = '#000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(fullName, canvasSize / 2, qrY + qrSize + margin + 10);
 
-  // Choose the max dimension for square canvas
-  const canvasSize = Math.max(totalContentHeight, totalContentWidth);
+        // Border
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#000';
+        ctx.strokeRect(0.75, 0.75, canvasSize - 1.5, canvasSize - 1.5);
 
-  const canvas = document.createElement('canvas');
-  canvas.width = canvasSize;
-  canvas.height = canvasSize;
-  const ctx = canvas.getContext('2d');
+        resolve(canvas);
+      };
 
-  // White background
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, canvasSize, canvasSize);
+      headerImg.onerror = () => reject('Failed to load header image.');
+    }, 100);
+  });
+}
 
-  // Load header image (relative path)
-  const headerImg = new Image();
-  headerImg.src = 'assets/images/roberts2.png';  // <-- relative path to your image
 
-  headerImg.onload = () => {
-    // Draw header image centered horizontally
-    const scale = headerHeight / headerImg.height;
-    const headerWidth = headerImg.width * scale;
-    const headerX = (canvasSize - headerWidth) / 3;
-    const headerY = margin;
-    ctx.drawImage(headerImg, headerX, headerY, headerWidth, headerHeight);
+// Generate single QR and show with download button
+async function generateSingleQR() {
+  const select = document.getElementById('singleUserSelect');
+  const userId = select.value;
+  const fullName = document.getElementById('detailName').textContent;
 
-    // Draw QR code below header
-    const qrX = (canvasSize - qrSize) / 2;
-    const qrY = headerY + headerHeight + margin;
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+  if (!userId || fullName === '-') {
+    alert("Please select a user.");
+    return;
+  }
 
-    // Draw user name below QR
-    ctx.fillStyle = '#000';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
-    const nameX = canvasSize / 2;
-    const nameY = qrY + qrSize + margin + 10;
-    ctx.fillText(fullName, nameX, nameY);
+  const qrContainer = document.getElementById('qrcode');
+  qrContainer.innerHTML = '';
+  const downloadBtn = document.getElementById('downloadQR');
+  downloadBtn.style.display = 'none';
 
-    // Draw border around entire canvas
-    const borderWidth = 1.5;
-    ctx.lineWidth = borderWidth;
-    ctx.strokeStyle = '#000';
-    ctx.strokeRect(borderWidth / 2, borderWidth / 2, canvasSize - borderWidth, canvasSize - borderWidth);
-
-    // Clear temp div and append canvas
-    qrContainer.innerHTML = '';
+  try {
+    const canvas = await createQRCodeCanvas(userId, fullName);
     qrContainer.appendChild(canvas);
 
-    // Setup download button
-    const downloadBtn = document.getElementById('downloadQR');
     downloadBtn.style.display = 'block';
     downloadBtn.onclick = () => {
       const link = document.createElement('a');
@@ -180,12 +249,101 @@ setTimeout(() => {
       link.href = canvas.toDataURL('image/png');
       link.click();
     };
-  };
+  } catch (e) {
+    alert(e);
+  }
+}
 
-  headerImg.onerror = () => {
-    alert('Failed to load header image.');
-  };
-}, 100);
+// Generate multiple QR codes, display, AND save PDF
+async function generateMultiple() {
+  const select = document.getElementById('multiUserSelect');
+  const selectedIds = Array.from(select.selectedOptions).map(opt => opt.value);
+  if (selectedIds.length === 0) {
+    alert("Please select at least one user.");
+    return;
+  }
 
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const qrSize = 50;
+  const gap = 10;
+  let x = 10, y = 10, count = 0;
+
+  const qrContainer = document.getElementById('qrcode');
+  qrContainer.innerHTML = '';
+
+  for (const userId of selectedIds) {
+    const user = userData.find(u => u.user_id === userId);
+    if (!user) continue;
+
+    try {
+      const canvas = await createQRCodeCanvas(user.user_id, user.name);
+
+      // Show on page
+      const wrapper = document.createElement('div');
+      wrapper.className = 'text-center';
+      wrapper.appendChild(canvas);
+
+      const caption = document.createElement('p');
+      caption.className = 'small mt-1 mb-4';
+      caption.textContent = user.name;
+      wrapper.appendChild(caption);
+      qrContainer.appendChild(wrapper);
+
+      // Add to PDF
+      const imgData = canvas.toDataURL('image/png');
+      doc.addImage(imgData, 'PNG', x, y, qrSize, qrSize);
+
+      doc.setFontSize(10);
+      doc.text(user.name, x + qrSize / 2, y + qrSize + 7, { align: 'center' });
+
+      count++;
+      x += qrSize + gap;
+      if (count % 3 === 0) {
+        x = 10;
+        y += qrSize + 20;
+        if (y > 250) {
+          doc.addPage();
+          y = 10;
+        }
+      }
+    } catch (e) {
+      console.error(e);
     }
-  </script>
+  }
+
+  doc.save('multiple_qr_codes.pdf');
+}
+
+// Generate all QR codes in PDF only
+async function generateAll() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let x = 5, y = 10, count = 0;
+
+  for (const user of userData) {
+    if (!user.user_id || !user.name) continue;
+
+    try {
+      const canvas = await createQRCodeCanvas(user.user_id, user.name);
+      const imgData = canvas.toDataURL('image/png');
+      doc.addImage(imgData, 'PNG', x, y, 50, 50);
+
+      x += 55;
+      count++;
+      if (count % 3 === 0) {
+        x = 10;
+        y += 60;
+        if (y > 250) {
+          doc.addPage();
+          y = 10;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  doc.save('all_qr_codes.pdf');
+}
+</script>

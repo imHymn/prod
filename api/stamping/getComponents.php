@@ -15,7 +15,7 @@ $db = new DatabaseClass();
 
 try {
     // SQL query to fetch customer names
-    $sql = "SELECT * FROM users";
+    $sql = "SELECT * FROM `components_inventory`";
     // Use the Select method to fetch data
     $users = $db->Select($sql);
     // Return the results as a JSON response

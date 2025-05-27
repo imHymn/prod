@@ -15,15 +15,16 @@
 <table class="table table" style="table-layout: fixed; width: 100%;">
 <thead>
   <tr>
-    <th style="width: 15%; text-align: center;">Material No</th>
-    <th style="width: 15%; text-align: center;">Model</th>
+    <th style="width: 10%; text-align: center;">Material No</th>
+    <th style="width: 10%; text-align: center;">Model</th>
     <th style="width: 8%; text-align: center;">Total Qty</th>
     <th style="width: 8%; text-align: center;">Shift</th>
     <th style="width: 8%; text-align: center;">Lot</th>
+    
+    <th style="width: 20%; text-align: center;">Person Incharge</th>
+    <th style="width: 15%; text-align: center;">Time In</th>
+    <th style="width: 15%; text-align: center;">Time Out</th>
     <th style="width: 8%; text-align: center;">Status</th>
-    <th style="width: 25%; text-align: center;">Handler Name</th>
-    <th style="width: 12%; text-align: center;">Time In</th>
-    <th style="width: 12%; text-align: center;">Time Out</th>
   </tr>
 </thead>
 
@@ -45,10 +46,10 @@ fetch('api/assembly/getAssemblyData.php')
     tbody.innerHTML = ''; // clear existing rows
 
   data.forEach(item => {
-  const isDone = item.status && item.status.toLowerCase() === 'done';
+  const isDone = item.status_assembly && item.status_assembly.toLowerCase() === 'done';
   const statusColor = isDone ? '#28a745' 
-                    : (item.status && item.status.toLowerCase() === 'pending' ? '#ffc107' : 'inherit');
-  const statusText = isDone ? 'DONE' : (item.status ? item.status.toUpperCase() : '');
+                    : (item.status_assembly && item.status_assembly.toLowerCase() === 'pending' ? '#ffc107' : 'inherit');
+  const statusText = isDone ? 'DONE' : (item.status_assembly ? item.status_assembly.toUpperCase() : '');
 
   const row = document.createElement('tr');
   row.innerHTML = `
@@ -57,10 +58,11 @@ fetch('api/assembly/getAssemblyData.php')
     <td style="text-align: center;">${item.total_qty || ''}</td>
     <td style="text-align: center;">${item.shift || ''}</td> 
     <td style="text-align: center;">${item.lot_no || ''}</td>
-    <td style="text-align: center; color: ${statusColor};">${statusText}</td> 
-    <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
+    
+    <td style="text-align: center;">${item.person_incharge_assembly || '<i>NONE</i>'}</td>
     <td style="text-align: center;">${item.time_in || ''}</td>
     <td style="text-align: center;">${item.time_out || ''}</td>
+    <td style="text-align: center; color: ${statusColor};">${statusText}</td> 
   `;
   tbody.appendChild(row);
 });

@@ -15,11 +15,11 @@ $db = new DatabaseClass();
 
 try {
     // SQL query to fetch customer names
-    $sql = "SELECT * FROM users";
+    $sql = "SELECT * from warehouse";
     // Use the Select method to fetch data
-    $users = $db->Select($sql);
+    $customers = $db->Select($sql);
     // Return the results as a JSON response
-    echo json_encode($users);
+    echo json_encode($customers);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();
 } catch (Exception $e) {

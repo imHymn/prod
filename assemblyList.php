@@ -26,7 +26,7 @@
       <th style="width: 8%; text-align: center;">Shift</th>
       <th style="width: 8%; text-align: center;">Lot</th>
       <th style="width: 8%; text-align: center;">Status</th>
-      <th style="width: 25%; text-align: center;">Handler Name</th>
+      <th style="width: 25%; text-align: center;">Person Incharge</th>
       <th style="width: 15%; text-align: center;">Time In | Time out</th>
     </tr>
   </thead>
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(assemblyData => {
       // Map assembly items by their ID for fast lookup
 
-      console.log(assemblyData)
+
       assemblyData.forEach(entry => {
         assemblyMap.set(entry.id, entry);
       });
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
   ${isDone ? 'DONE' : item.status.toUpperCase()}
 </td>
 
-<td style="text-align: center;">${item.handler_name || '<i>NONE</i>'}</td>
+<td style="text-align: center;">${item.person_incharge_assembly || '<i>NONE</i>'}</td>
 <td style="text-align: center;">
   ${isDone ? `
     <span 
@@ -117,9 +117,9 @@ document.addEventListener('DOMContentLoaded', function () {
       class="btn btn-sm btn-primary time-in-btn" 
       data-id="${item.material_no}"
       data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
-      data-mode="${item.handler_name ? 'timeOut' : 'timeIn'}"
+      data-mode="${item.person_incharge_assembly ? 'timeOut' : 'timeIn'}"
     >
-      ${item.handler_name ? 'TIME OUT' : 'TIME IN'}
+      ${item.person_incharge_assembly ? 'TIME OUT' : 'TIME IN'}
     </button>
   `}
 </td>
@@ -134,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function () {
     .catch(error => console.error('Error fetching data:', error));
 });
 
-
 document.addEventListener('click', function (event) {
   if (event.target.classList.contains('time-in-btn')) {
     const button = event.target;
@@ -142,12 +141,124 @@ document.addEventListener('click', function (event) {
     const item = JSON.parse(button.getAttribute('data-item').replace(/&apos;/g, "'"));
     const mode = button.getAttribute('data-mode');
 
-    openQRModal(materialId, item, mode);
-  }
+
+if(mode==='timeIn'){
+  console.log(item)
+  fetch('api/assembly/getSpecificComponent.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ materialId })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data)
+      const totalQty = item.total_quantity;
+      let blockDueToStock = false;
+      let criticalItems = [];
+      let warningItems = [];
+      let insufficientItems = [];
+      let normalItems=[];
+      data.forEach(component => {
+        const {
+          actual_inventory,
+          critical,
+          minimum,
+          reorder,
+          normal,
+          components_name
+        } = component;
+        console.log(normal)
+        if (actual_inventory < totalQty) {
+          insufficientItems.push(component);
+          blockDueToStock = true;
+        } else if (actual_inventory >= normal || actual_inventory >=minimum) {
+          normalItems.push(component);
+        }else if (actual_inventory <= critical) {
+          criticalItems.push(component);
+        } else if (actual_inventory <= minimum || actual_inventory <= reoder) {
+          warningItems.push(component);
+        }
+      });
+
+      // 🚫 Insufficient stock? Stop and show error
+      if (insufficientItems.length > 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cannot Proceed',
+          html: `The following components don't have enough stock:<br><ul style="text-align: left;">${
+            insufficientItems.map(i => `<li>${i.components_name}: ${i.actual_inventory} in stock</li>`).join('')
+          }</ul>`
+        });
+        return;
+      }
+      if(normalItems.length>0){
+           let htmlContent = '';
+            Swal.fire({
+          icon: 'success',
+          title: 'Material Stocks',
+          html: htmlContent + `The following components are all sufficiently stocked.<br>Proceed?`,
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Proceed',
+          cancelButtonText: 'Cancel'
+        }).then(result => {
+          if (result.isConfirmed) {
+            openQRModal(materialId, item, mode);
+          }
+        });
+      }
+      // ⚠️ Display all low/critical in a single alert
+      else if (criticalItems.length > 0 || warningItems.length > 0) {
+        let htmlContent = '';
+
+        if (criticalItems.length > 0) {
+          htmlContent += `<strong style="color: red;">Critical Level:</strong><ul style="text-align: left;">${
+            criticalItems.map(i => `<li>${i.components_name}: ${i.actual_inventory} in stock</li>`).join('')
+          }</ul>`;
+        }
+
+        if (warningItems.length > 0) {
+          htmlContent += `<strong style="color: orange;">Low Stock Warning:</strong><ul style="text-align: left;">${
+            warningItems.map(i => `<li>${i.components_name}: ${i.actual_inventory} in stock</li>`).join('')
+          }</ul>`;
+        }
+
+        Swal.fire({
+          icon: 'warning',
+          title: 'Stock Level Alert',
+          html: htmlContent + `<br>Proceed anyway?`,
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Proceed',
+          cancelButtonText: 'Cancel'
+        }).then(result => {
+          if (result.isConfirmed) {
+            openQRModal(materialId, item, mode);
+          }
+        });
+        return;
+      }
+
+
+    })
+    .catch(error => {
+      console.error('There was a problem with the fetch operation:', error);
+    });
+  }else if(mode==='timeOut'){
+  openQRModal(materialId, item, mode);
+}
+}
+    
 });
+
+
 function openQRModal(materialId, item, mode) {
   console.log(item)
-  console.log(mode)
   const modalElement = document.getElementById('qrModal');
   const modal = new bootstrap.Modal(modalElement);
   modal.show();
@@ -180,7 +291,8 @@ function openQRModal(materialId, item, mode) {
           
           const user_id = idMatch ? idMatch[1].trim() : null;
           const full_name = nameMatch ? nameMatch[1].trim() : null;
-
+          
+          console.log(materialId)
           const data = {
             full_name: full_name,
             id: item.id,
@@ -192,7 +304,7 @@ function openQRModal(materialId, item, mode) {
             total_qty: item.total_quantity,
             quantity: item.quantity,
             supplement_order: item.supplement_order,
-            handler_name: item.handler_name,
+            person_incharge_assembly: item.person_incharge_assembly,
             date_needed: item.date_needed,
             mode: mode // Pass mode to server
           };
