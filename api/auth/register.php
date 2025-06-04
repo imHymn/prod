@@ -1,10 +1,19 @@
 <?php
+// Show errors (for debugging)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-session_start(); // Start the session
-require_once __DIR__ . '/../../database/db_connection.php'; // Include database connection
+// Include Composer autoloader
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env');
+$dotenv->load();
+
+// Include database class
+require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
+$db = new DatabaseClass();
 
    $user_id = trim($_POST['user_id']);
     $email = trim($_POST['email']);

@@ -4,48 +4,45 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../database/db_connection.php'; 
-
-// Set response type
 header('Content-Type: application/json');
 
-// Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 
-$name = $input['name'];
+$name = trim($input['name'] ?? '');
 $user_id = trim($input['user_id'] ?? '');
-$email = trim($input['email'] ?? '');
 $password = $input['password'] ?? '';
-$section = trim($input['section'] ?? '');
-$department = trim($input['department'] ?? '');
+$production = trim($input['section'] ?? '');
+$role = trim($input['role'] ?? '');
 
 // Basic validation
-if (empty($user_id) || empty($email) || empty($password)) {
-    echo json_encode(['success' => false, 'message' => 'All required fields are missing.']);
+if (empty($user_id) || empty($password) || empty($name)) {
+    echo json_encode(['success' => false, 'message' => 'Required fields are missing.']);
     exit;
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = :user_id OR email = :email");
-    $stmt->execute([':user_id' => $user_id, ':email' => $email]);
+    // Check if user_id already exists
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = :user_id");
+    $stmt->execute([':user_id' => $user_id]);
 
     if ($stmt->rowCount() > 0) {
-        echo json_encode(['success' => false, 'message' => 'user_id or email already in use.']);
+        echo json_encode(['success' => false, 'message' => 'User ID already in use.']);
         exit;
     }
 
     $hashed_password = hash('sha512', $password);
 
+    // Insert user
     $stmt = $pdo->prepare("
-        INSERT INTO users (name,user_id, email, password, section, department)
-        VALUES (:name,:user_id, :email, :password, :section, :department)
+        INSERT INTO users (name, user_id, password, production, role)
+        VALUES (:name, :user_id, :password, :production, :role)
     ");
     $stmt->execute([
-        ':name'=> $name,
+        ':name' => $name,
         ':user_id' => $user_id,
-        ':email' => $email,
         ':password' => $hashed_password,
-        ':section' => $section,
-        ':department' => $department
+        ':production' => $production,
+        ':role' => $role
     ]);
 
     echo json_encode(['success' => true, 'message' => 'Account created successfully.']);

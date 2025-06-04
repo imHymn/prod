@@ -1,4 +1,8 @@
 <?php
+if (!defined('MES_ACCESS')) {
+    http_response_code(403);
+    exit('Direct access not allowed.');
+}
 session_start();
 
 // If the user is already logged in, redirect to dashboard or home
@@ -26,8 +30,8 @@ if (isset($_SESSION['success_message'])) {
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>Register - Roberts Prod</title>
 
-  <link href="../lib/login_lib/lib/font-awesome/css/font-awesome.css" rel="stylesheet">
-  <link href="../lib/login_lib/lib/Ionicons/css/ionicons.css" rel="stylesheet">
+  <link href="../lib/lib/font-awesome/css/font-awesome.css" rel="stylesheet">
+  <link href="../lib/lib/Ionicons/css/ionicons.css" rel="stylesheet">
   <link rel="stylesheet" href="../lib/login_lib/css/slim.css">
 </head>
 <body>
@@ -72,8 +76,8 @@ if (isset($_SESSION['success_message'])) {
 
   </div>
 
-  <script src="../lib/login_lib/lib/jquery/js/jquery.js"></script>
-  <script src="../lib/login_lib/lib/popper.js/js/popper.js"></script>
+  <script src="../lib/lib/jquery/js/jquery.js"></script>
+  <script src="../lib/lib/popper.js/js/popper.js"></script>
   <script src="../lib/login_lib/lib/bootstrap/js/bootstrap.js"></script>
   <script src="../lib/login_lib/js/slim.js"></script>
   

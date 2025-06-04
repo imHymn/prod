@@ -3,42 +3,73 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 header("Expires: 0");
 date_default_timezone_set('Asia/Manila');
+
 include 'components/session.php';
 include 'components/header.php';
 
+define('MES_ACCESS', true);
+
+// ✅ Grouped page map: folder => [allowed page_active => filename]
+$pageMap = [
+    'admin' => [
+        'accounts' => 'accounts.php',
+    ],
+    'assembly' => [
+        'assembly_todolist' => 'todo_list.php',
+        'assembly_worklogs' => 'work_logs.php',
+        'assembly_manpower_efficiency'=>'manpower_efficiency.php',
+        'assembly_rework'    => 'rework.php',
+    ],
+    'delivery' => [
+        'submit_form' => 'submit_form.php',
+        'pulled_out'  => 'pulled_out.php',
+        'restocked'  => 'restocked.php',
+    ],
+    'qc' => [
+        'qc_todolist' => 'todo_list.php',
+        'qc_worklogs' => 'work_logs.php',
+        'qc_rework'    => 'rework.php',
+        'qc_manpower_efficiency'    => 'manpower_efficiency.php',
+    ],
+    'rm' => [
+        'pending_orders' => 'pending_orders.php',
+  
+    ],
+    'stamping' => [
+        'stamping_todolist'   => 'todo_list.php',
+        'components_inventory' => 'components_inventory.php',
+        'stamping_monitoring_data' => 'monitoring_data.php',
+    ],
+    'warehouse' => [
+        'materials_inventory' => 'materials_inventory.php',
+        'for_pulling'    => 'for_pulling.php',
+        'pulling_history'    => 'pulling_history.php',
+    ],
+];
 
 if (isset($_GET['page_active'])) {
-    $page = $_GET['page_active'] . '.php';
-    $paths = [
-        '',
-        'dtr/',
-        'Stamping/',
-        'mes/',
-        'auth/',
-        'yet_another_subdirectory/'
-    ];
+    $requestedPage = basename($_GET['page_active']); // sanitize input
 
     $found = false;
-    foreach ($paths as $path) {
-        if (file_exists($path . $page)) {
-            include $path . $page;
-            $found = true;
-            break;
+
+    // ✅ Loop through folders and see if requestedPage exists in any
+    foreach ($pageMap as $folder => $pages) {
+        if (array_key_exists($requestedPage, $pages)) {
+            $file = "pages/{$folder}/{$pages[$requestedPage]}";
+            if (file_exists($file)) {
+                include $file;
+                $found = true;
+                break;
+            }
         }
     }
 
     if (!$found) {
-        include 'error.php'; // Or include 'home.php' for the default page
+        include 'error.php';
     }
 } else {
-    include 'error.php'; // Or include 'home.php' for the default page
+    include 'error.php';
 }
 
-
-
-
 include 'components/footer.php';
-
-
-
 ?>

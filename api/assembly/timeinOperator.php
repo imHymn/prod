@@ -15,73 +15,80 @@ $dotenv->load();
 require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
 $db = new DatabaseClass();
 
-// 🔄 Read JSON input
+
 $input = json_decode(file_get_contents('php://input'), true);
 
-// Safely extract values
 $id = $input['id'] ?? null;
-$full_name = $input['full_name'] ?? null;
+$itemID = $input['itemID'] ?? null;
+$reference_no = $input['reference_no'] ?? null;
 $material_no = $input['material_no'] ?? null;
-$material_description = $input['material_description'] ?? null;
-$model = $input['model'] ?? null;
-$lot_no = $input['lot_no'] ?? null;
-$shift = $input['shift'];
 $total_qty = $input['total_qty'] ?? null;
-$quantity = $input['quantity'] ?? null;
-$supplement_order = $input['supplement_order'] ?? null;
-$date_needed = $input['date_needed'] ?? null;
-$person_incharge = $full_name;
+$full_name = $input['full_name'] ?? null;
+$material_description = $input['material_description'] ?? null;
 $time_in = date('Y-m-d H:i:s');
+$model = $input['model'] ?? null; 
+$shift = $input['shift'] ?? null; 
+$lot_no = $input['lot_no'] ?? null; 
+$date_needed = $input['date_needed'] ?? null; 
 
-if ($id !== null && $full_name !== null && $model !== null && $material_no !== null) {
+
+
+
     try {
         // Begin transaction
         $db->beginTransaction();
 
-        // Step 1: Update delivery_forms to set person_incharge_assembly
-        $sqlUpdate = "UPDATE delivery_forms SET person_incharge_assembly = :full_name WHERE id = :id";
+        $sqlUpdate = "UPDATE delivery_form_new SET section = 'ASSEMBLY' WHERE id = :id";
         $paramsUpdate = [
-            ':full_name' => $full_name,
-            ':id' => $id
+            ':id' => $id,
         ];
         $updated = $db->Update($sqlUpdate, $paramsUpdate);
-        $status_assembly='pending';
-        $section='ASSEMBLY';
-        // Step 2: Insert or update record in assembly_list
-        $sqlInsert = "INSERT INTO assembly_list 
-            (id, model, material_no,material_description, lot_no, total_qty, person_incharge_assembly, time_in,shift,status_assembly,prev_section, date_needed)
-            VALUES 
-            (:id, :model, :material_no,:material_description, :lot_no, :total_qty, :person_incharge, :time_in,:shift,:status_assembly,:prev_section, :date_needed)
-           ";
-                
-        $paramsInsert = [
-            ':id' => $id,
-            ':model' => $model,
-            ':material_no' => $material_no,
-            ':material_description' => $material_description,
-            ':lot_no' => $lot_no,
-            ':total_qty' => $total_qty,
-            ':person_incharge' => $person_incharge,
-            ':time_in' => $time_in,
-            ':prev_section'=>$section,
-            ':shift'=>$shift,
-            ':status_assembly'=>$status_assembly,
-            ':date_needed' => $date_needed,
-        ];
 
-        $insertedId = $db->Insert($sqlInsert, $paramsInsert);
+     // Step 1: Get the latest pending_quantity for the same reference_no
+            $sqlGetLatestPending = "SELECT pending_quantity 
+                                    FROM assembly_list_new 
+                                    WHERE reference_no = :reference_no 
+                                    ORDER BY time_in DESC 
+                                    LIMIT 1";
 
-        // Step 3: Update section to 'ASSEMBLY' in delivery_forms
-        $sqlInsertDelivery = "UPDATE delivery_forms SET section = :section WHERE id = :id AND lot_no = :lot_no";
-        $paramsInsertDelivery = [
-            ':section' => 'ASSEMBLY',
-            ':id' => $id,
-            ':lot_no' => $lot_no,
-        ];
-        $updatedDelivery = $db->Update($sqlInsertDelivery, $paramsInsertDelivery);
+            $paramsGetLatestPending = [
+                ':reference_no' => $reference_no
+            ];
 
-        // === Inventory deduction block for ALL components of this material_no ===
-        $sqlComponents = "SELECT components_name, usage_type, actual_inventory 
+            $latestRecord = $db->SelectOne($sqlGetLatestPending, $paramsGetLatestPending);
+
+            // Step 2: Use the value if found, else fallback to $total_qty
+            $pending_quantity = isset($latestRecord['pending_quantity']) && $latestRecord['pending_quantity'] !== null
+                ? (int)$latestRecord['pending_quantity']
+                : (int)$total_qty;
+
+            // Step 3: Proceed to insert
+            $sqlInsert = "INSERT INTO assembly_list_new
+                (itemID, model, shift, lot_no, date_needed, reference_no, material_no, material_description, pending_quantity, total_quantity, person_incharge, time_in, status, section, created_at)
+                VALUES 
+                (:itemID, :model, :shift, :lot_no, :date_needed, :reference_no, :material_no, :material_description, :pending_quantity, :total_qty, :person_incharge, :time_in, :status, :section, :time_in)";
+
+            $paramsInsert = [
+                ':itemID'               => $itemID,
+                ':model'                => $model,
+                ':shift'                => $shift,
+                ':lot_no'               => $lot_no,
+                ':date_needed'         => $date_needed,
+                ':reference_no'         => $reference_no,
+                ':material_no'          => $material_no,
+                ':material_description' => $material_description,
+                ':pending_quantity'     => $pending_quantity,  // <-- dynamic value here
+                ':total_qty'            => $total_qty,
+                ':person_incharge'      => $full_name,
+                ':time_in'              => $time_in,
+                ':status'               => 'pending',
+                ':section'              => 'assembly'
+            ];
+
+            // Execute insert
+            $insertedId = $db->Insert($sqlInsert, $paramsInsert);
+
+          $sqlComponents = "SELECT components_name, usage_type, actual_inventory 
                           FROM components_inventory 
                           WHERE material_no = :material_no";
         $components = $db->Select($sqlComponents, [':material_no' => $material_no]);
@@ -95,11 +102,9 @@ if ($id !== null && $full_name !== null && $model !== null && $material_no !== n
             $usageType = (int)$component['usage_type'];
             $currentInventory = (int)$component['actual_inventory'];
 
-            // Calculate deduction
             $deductQty = $total_qty * $usageType;
             $newInventory = max(0, $currentInventory - $deductQty);
 
-            // Update inventory
             $sqlUpdateInventory = "UPDATE components_inventory 
                                    SET actual_inventory = :new_inventory 
                                    WHERE material_no = :material_no AND components_name = :components_name";
@@ -112,17 +117,11 @@ if ($id !== null && $full_name !== null && $model !== null && $material_no !== n
 
             $db->Update($sqlUpdateInventory, $paramsUpdateInventory);
         }
-
-        // === End inventory deduction block ===
-
-        // Commit transaction
         $db->commit();
 
         echo json_encode([
             'success' => true,
             'message' => 'Update and insert successful. Inventory updated.',
-            'rows_updated' => $updated,
-            'inserted_id' => $insertedId,
         ]);
     } catch (PDOException $e) {
         $db->rollBack();
@@ -133,7 +132,3 @@ if ($id !== null && $full_name !== null && $model !== null && $material_no !== n
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
-} else {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Missing required data (id, full_name, model, material_no)']);
-}

@@ -29,13 +29,10 @@ if (isset($_SESSION['error_message'])) {
 
     <title>Roberts Prod</title>
 
-    <!-- Vendor css -->
      
-    <link href="../lib/login_lib/lib/font-awesome/css/font-awesome.css" rel="stylesheet">
-    <link href="../lib/login_lib/lib/Ionicons/css/ionicons.css" rel="stylesheet">
-
-    <!-- Slim CSS -->
-    <link rel="stylesheet" href="../lib/login_lib/css/slim.css">
+    <!-- <link href="../assets/lib/lib/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <link href="../assets/lib/lib/Ionicons/css/ionicons.css" rel="stylesheet"> -->
+    <link rel="stylesheet" href="../assets/css/slim.css">
 
   </head>
   <!-- style="background: radial-gradient(#624dc7, #071b2f);" -->
@@ -66,7 +63,6 @@ if (isset($_SESSION['error_message'])) {
                 <button class="btn btn-primary btn-block btn-signin" type="submit">Sign In</button>
                 <div class="text-center ">
 
-<a href="#" id="forgot-password-link" class="d-block">Forgot Password?</a>
 
 </div>
             </div><!-- signin-box -->
@@ -117,44 +113,14 @@ window.addEventListener('pageshow', function(event) {
   }
 });
 
-    
-
-    const forgotPasswordLink = document.getElementById('forgot-password-link');
-    const forgotPasswordModalEl = document.getElementById('forgotPasswordModal');
-
-    // Create Bootstrap Modal instance
-    const forgotPasswordModal = new bootstrap.Modal(forgotPasswordModalEl);
-
-    forgotPasswordLink.addEventListener('click', function (e) {
-      e.preventDefault();
-
-      // Optional: Load content dynamically before showing modal (using fetch)
-      fetch('forgotPassword.php')
-        .then(response => response.text())
-        .then(html => {
-          document.getElementById('forgotPasswordContent').innerHTML = html;
-          forgotPasswordModal.show();
-        });
-
-      // For now, just show the modal
-      forgotPasswordModal.show();
-    });
+  
   });
 </script>
 
 <script>
 
-window.addEventListener('popstate', function(event) {
-    console.log('Back button was pressed');
-    // You can trigger any JavaScript code here when going back
-});
 
 </script>
-    <script src="../lib/login_lib/lib/jquery/js/jquery.js"></script>
-    <script src="../lib/login_lib/lib/popper.js/js/popper.js"></script>
-    <script src="../lib/login_lib/lib/bootstrap/js/bootstrap.js"></script>
-
-    <script src="../lib/login_lib/js/slim.js"></script>
-
+  
   </body>
 </html>

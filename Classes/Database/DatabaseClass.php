@@ -59,6 +59,33 @@ public function rollBack() {
     // Optional: Log or silently ignore
     return false;
 }
+public function DuplicateAndModify($selectSql, $selectParams, callable $modifyCallback, $insertSql) {
+    // Step 1: Select existing rows
+    $rows = $this->Select($selectSql, $selectParams);
+    if (empty($rows)) {
+        return 0; // nothing to duplicate
+    }
+    
+    $insertCount = 0;
+    
+    // Step 2: For each row, modify and insert
+    foreach ($rows as $row) {
+        $modifiedRow = $modifyCallback($row);
+
+        // Prepare parameters for insert (keys starting with ':' for binding)
+        $insertParams = [];
+        // Assuming your insertSql uses named placeholders like :material_no, etc.
+        foreach ($modifiedRow as $key => $value) {
+            $insertParams[":$key"] = $value;
+        }
+        
+        $this->Insert($insertSql, $insertParams);
+        $insertCount++;
+    }
+    
+    return $insertCount;
+}
+
 
 
 }

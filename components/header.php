@@ -1,11 +1,18 @@
 <?php
 session_start();
-if (isset($_SESSION['section'])){
-  $section = $_SESSION['section'];
+
+$role = '';
+$production = '';
+
+if (!empty($_SESSION['role'])) {
+  $role = $_SESSION['role'];
 }
 
-
+if (!empty($_SESSION['production'])) {
+  $production = $_SESSION['production'];
+}
 ?>
+
 
 
 <!DOCTYPE html>
@@ -53,16 +60,31 @@ if (isset($_SESSION['section'])){
       <div class="sidebar-body">
         <ul class="nav">
           <li class="nav-item nav-category">Main</li>
- <li class="nav-item">
+
+
+<?php if (isset($role)&&isset($production)){
+  $role = strtolower($role);
+$production = strtolower($production);
+
+  if($role == 'administrator') {
+  echo'
+     <li class="nav-item">
   <a class="nav-link" href="?page_active=accounts">
     <i class="link-icon" data-feather="calendar"></i>
     <span class="link-title">Accounts</span>
   </a>
 </li>
+    <!--<li class="nav-item">
+  <a class="nav-link" href="?page_active=production">
+    <i class="link-icon" data-feather="calendar"></i>
+    <span class="link-title">Production</span>
+  </a>
+</li>-->
+    ';
+  } 
 
-<?php if (isset($section)){
-  $sec = strtolower($section);
-  if($sec =='delivery' || $sec == 'administrator') {
+
+  if($role == 'administrator' || ($production=='delivery' && $role=='supervisor')) {
   echo'
     <li class="nav-item">
   <a class="nav-link" data-toggle="collapse" href="#delivery" role="button" aria-expanded="false" aria-controls="tables">
@@ -73,14 +95,14 @@ if (isset($_SESSION['section'])){
   <div class="collapse" id="delivery">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=deliveryForm" class="nav-link" data-page="deliveryForm">Submit Form</a>
+        <a href="?page_active=submit_form" class="nav-link" data-page="submit_form">Submit Form</a>
       </li>
         <li class="nav-item">
-        <a href="?page_active=deliveryList" class="nav-link" data-page="deliveryList">Delivery List</a>
+        <a href="?page_active=pulled_out" class="nav-link" data-page="pulled_out">Pulled-Out</a>
       </li>
         </li>
         <li class="nav-item">
-        <a href="?page_active=readytoDeliver" class="nav-link" data-page="readytoDeliver">Pulled-Out</a>
+        <a href="?page_active=restocked" class="nav-link" data-page="restocked">Restocked</a>
       </li>
     </ul>
   </div>
@@ -89,7 +111,7 @@ if (isset($_SESSION['section'])){
     ';
   } 
   
-  if($sec =='wh' || $sec=='administrator') {
+if($role == 'administrator' || ($production=='fg_warehouse' && $role=='supervisor')) {
   echo '
     <li class="nav-item">
   <a class="nav-link" data-toggle="collapse" href="#wh" role="button" aria-expanded="false" aria-controls="tables">
@@ -102,42 +124,20 @@ if (isset($_SESSION['section'])){
   <div class="collapse" id="wh">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=warehouse" class="nav-link" data-page="inventory">Inventory</a>
+        <a href="?page_active=materials_inventory" class="nav-link" data-page="materials_inventory">Materials Inventory</a>
       </li>
-      
-     
+      <li class="nav-item">
+        <a href="?page_active=for_pulling" class="nav-link" data-page="for_pulling">For Pulling </a>
+      </li>
+     <li class="nav-item">
+        <a href="?page_active=pulling_history" class="nav-link" data-page="pulling_history">Pulling History </a>
+      </li>
     </ul>
   </div>
 </li>
     ';
   }
-  
-  if ($sec =='assembly' || $sec =='administrator') {
-  echo '<li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#assembly" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="calendar"></i>
-    <span class="link-title">Assembly</span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="assembly">
-    <ul class="nav sub-menu">
- 
-    <li class="nav-item">
-        <a href="?page_active=assemblyList" class="nav-link" data-page="assemblyList">Assembly Todo-List</a>
-      </li>
-      <li class="nav-item">
-        <a href="?page_active=assemblyData" class="nav-link" data-page="assemblyData">Manpower Data</a>
-      </li>
-       <li class="nav-item">
-        <a href="?page_active=queueRework" class="nav-link" data-page="queueRework1">Queue Rework</a>
-      </li>
-    </ul>
-  </div>
-</li>
-';
-  }
-  
-  if($sec =='qc' ||$sec=='administrator') {
+    if($role == 'administrator' || ($production=='qc' && $role=='supervisor')) {
   echo '
     <li class="nav-item">
   <a class="nav-link" data-toggle="collapse" href="#qc" role="button" aria-expanded="false" aria-controls="tables">
@@ -150,20 +150,54 @@ if (isset($_SESSION['section'])){
   <div class="collapse" id="qc">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=qcList" class="nav-link" data-page="qcList">QC Todo-List</a>
+        <a href="?page_active=qc_todolist" class="nav-link" data-page="qc_todolist">Todo-List</a>
       </li>
       <li class="nav-item">
-        <a href="?page_active=queueRework" class="nav-link" data-page="queueRework2">Queue Rework</a>
+        <a href="?page_active=qc_rework" class="nav-link" data-page="qc_rework">Queue Rework</a>
       </li>
-     
+     <li class="nav-item">
+        <a href="?page_active=qc_manpower_efficiency" class="nav-link" data-page="qc_manpower_efficiency">Manpower Data</a>
+      </li>
+      <li class="nav-item">
+        <a href="?page_active=qc_worklogs" class="nav-link" data-page="qc_worklogs">Work Logs</a>
+      </li>
     </ul>
   </div>
 </li>
     ';
   }
+  if($role == 'administrator' || ($production=='assembly' && $role=='supervisor')) {
+  echo '<li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#assembly" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="calendar"></i>
+    <span class="link-title">Assembly</span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="assembly">
+    <ul class="nav sub-menu">
+ 
+    <li class="nav-item">
+        <a href="?page_active=assembly_todolist" class="nav-link" data-page="assembly_todolist">Todo-List</a>
+      </li>
+          <li class="nav-item">
+        <a href="?page_active=assembly_rework" class="nav-link" data-page="assembly_rework">Queue Rework</a>
+      </li>
+      <li class="nav-item">
+        <a href="?page_active=assembly_manpower_efficiency" class="nav-link" data-page="assembly_manpower_efficiency">Manpower Data</a>
+      </li>
+      <li class="nav-item">
+        <a href="?page_active=assembly_worklogs" class="nav-link" data-page="assembly_worklogs">Work Logs</a>
+      </li>
+    </ul>
+  </div>
+</li>
+';
+  }
+  
 
 
-  if($sec =='stamping' ||$sec=='administrator') {
+
+ if($role == 'administrator' || ($production=='stamping' && $role=='supervisor')) {
   echo '
     <li class="nav-item">
   <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="tables">
@@ -175,13 +209,38 @@ if (isset($_SESSION['section'])){
   </a>
   <div class="collapse" id="stamping">
     <ul class="nav sub-menu">
+        <li class="nav-item">
+          <a href="?page_active=stamping_todolist" class="nav-link" data-page="stamping_todolist">To-do List</a>
+        </li>
       <li class="nav-item">
-        <a href="?page_active=componentsInventory" class="nav-link" data-page="componentsInventory">Components Inventory</a>
+        <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
       </li>
-  <li class="nav-item">
-        <a href="?page_active=rawmaterialsInventory" class="nav-link" data-page="rawmaterialsInventory">Raw Materials Inventory</a>
-      </li>
+    <li class="nav-item">
+          <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
+        </li>
      
+    </ul>
+  </div>
+</li>
+    ';
+  }
+
+
+ if($role == 'administrator' || ($production=='rm_warehouse' && $role=='supervisor')) {
+  echo '
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#rmw" role="button" aria-expanded="false" aria-controls="tables">
+    <i class="link-icon" data-feather="layout"></i>
+
+
+    <span class="link-title">RM Warehouse </span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
+  </a>
+  <div class="collapse" id="rmw">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=pending_orders" class="nav-link" data-page="pending_orders">Pending Orders</a>
+      </li>
     </ul>
   </div>
 </li>
@@ -293,8 +352,13 @@ if (isset($_SESSION['section'])){
                     <i data-feather="user"></i>
 									</div>
 									<div class="info text-center">
-  <p class="name font-weight-bold mb-0"><?php echo $_SESSION['section']; ?></p>
-  <p class="name font-weight-bold mb-0"><?php echo $_SESSION['user_id_ps']; ?></p>
+                    <p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['user_id']); ?></p>
+<p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['role']); ?></p>
+<?php if (!empty($_SESSION['production'])): ?>
+  <p class="name font-weight-bold mb-0">(<?php echo strtoupper($_SESSION['production']); ?>)</p>
+<?php endif; ?>
+
+
   <p class="email text-muted mb-3"></p>
 </div>
 
