@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
 $db = new DatabaseClass();
 
 try {
-   $sql = "SELECT * FROM stamping WHERE created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
+   $sql = "SELECT * FROM stamping WHERE  created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
     $data = $db->Select($sql);
     echo json_encode($data);
 

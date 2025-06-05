@@ -4,25 +4,24 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Include Composer autoloader
+// Include Composer autoloader with correct relative path
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Load environment variables
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env');
 $dotenv->load();
-
-require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
+require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php'; // Adjust the path to your class file
 $db = new DatabaseClass();
 
-header('Content-Type: application/json');
-
 try {
-    // Fetch users with role supervisor or administrator
-    $sql = "SELECT * FROM users WHERE role IN ('supervisor', 'administrator')";
+    // SQL query to fetch customer names
+    $sql = "SELECT * FROM `stamping` WHERE status ='done'";
+    // Use the Select method to fetch data
     $users = $db->Select($sql);
+    // Return the results as a JSON response
     echo json_encode($users);
 } catch (PDOException $e) {
-    echo json_encode(['error' => 'DB Error', 'message' => $e->getMessage()]);
+    echo "DB Error: " . $e->getMessage();
 } catch (Exception $e) {
-    echo json_encode(['error' => 'Error', 'message' => $e->getMessage()]);
+    echo "Error: " . $e->getMessage();
 }

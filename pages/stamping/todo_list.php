@@ -83,7 +83,7 @@
    let mode = null;
   let selectedRowData = null;
   let fullData = null;
-fetch('api/stamping/getstamping_todolist.php')
+fetch('api/stamping/getTodoList.php')
   .then(response => response.json())
   .then(data => {
     console.log(data);
@@ -107,6 +107,7 @@ fetch('api/stamping/getstamping_todolist.php')
     dataBody.innerHTML = ''; // Clear existing rows if any
 
     sorted.forEach(item => {
+      if(item.status ==='done'){return;}
       const row = document.createElement('tr');
       const status = item.status?.toLowerCase();
       const statusCellContent = status ? status.toUpperCase() : '<i>None</i>';
@@ -162,7 +163,7 @@ document.getElementById('data-body').addEventListener('click', (event) => {
   console.log('Selected Row:', selectedRowData);
 
   if (mode === 'time-in') {
-
+console.log(fullData);
 
  const stage = parseInt(selectedRowData.stage || 0);
   const material_no = selectedRowData.material_no;
@@ -214,29 +215,6 @@ document.getElementById('data-body').addEventListener('click', (event) => {
   openQRModal(mode);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // const stage = parseInt(selectedRowData.stage || 0);
     // const material_no = selectedRowData.material_no;
 
@@ -263,46 +241,71 @@ document.getElementById('data-body').addEventListener('click', (event) => {
     // openQRModal(mode);
 
   } else if (mode === 'time-out') {
-const quantityModal = new bootstrap.Modal(document.getElementById('quantityModal'));
-document.getElementById('timeoutQuantity').value = selectedRowData.total_quantity || 1;
+  const quantityModal = new bootstrap.Modal(document.getElementById('quantityModal'));
+  document.getElementById('timeoutQuantity').value = selectedRowData.total_quantity || 1;
 
-const confirmBtn = document.getElementById('confirmQuantityBtn');
-confirmBtn.onclick = () => {
-  const inputQuantity = parseInt(document.getElementById('timeoutQuantity').value, 10);
+  const confirmBtn = document.getElementById('confirmQuantityBtn');
+  confirmBtn.onclick = () => {
+    const inputQuantity = parseInt(document.getElementById('timeoutQuantity').value, 10);
 
-  if (!inputQuantity || inputQuantity <= 0) {
-    Swal.fire('Invalid Quantity', 'Please enter a valid quantity.', 'warning');
-    return;
-  }
+    if (!inputQuantity || inputQuantity <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Quantity',
+        text: 'Please enter a valid, positive quantity greater than 0.'
+      });
+      return;
+    }
 
-  const referenceNo = selectedRowData.reference_no;
-  const totalQuantity = parseInt(selectedRowData.total_quantity, 10) || 0;
+    const referenceNo = selectedRowData.reference_no;
+    const totalQuantity = parseInt(selectedRowData.total_quantity, 10) || 0;
+    const pendingQuantity = parseInt(selectedRowData.pending_quantity, 10) || 0;
 
-  // Sum current quantity from fullData with the same reference_no
-  const sumQuantity = fullData
-    .filter(row => row.reference_no === referenceNo)
-    .reduce((sum, row) => sum + (parseInt(row.quantity, 10) || 0), 0);
+    // Sum current quantity from fullData with the same reference_no
+    const sumQuantity = fullData
+      .filter(row => row.reference_no === referenceNo)
+      .reduce((sum, row) => sum + (parseInt(row.quantity, 10) || 0), 0);
 
-  // Check if the inputQuantity would exceed total_quantity
-  if (sumQuantity + inputQuantity > totalQuantity) {
-    Swal.fire(
-      'Quantity Limit Exceeded',
-      `Total quantity for reference #${referenceNo} would exceed the allowed maximum (${totalQuantity}).`,
-      'error'
-    );
-    return;
-  }
+    // Check if input exceeds pending quantity
+    if (inputQuantity > pendingQuantity) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Pending Quantity Limit Exceeded',
+        html: `
+          <p>You entered <strong>${inputQuantity}</strong> units.</p>
+          <p>But only <strong>${pendingQuantity}</strong> units are pending for processing.</p>
+          <p>Please adjust your quantity accordingly.</p>
+        `
+      });
+      return;
+    }
 
-  selectedRowData.inputQuantity = inputQuantity;
+    // Check if input causes sum to exceed total quantity
+    if (sumQuantity + inputQuantity > totalQuantity) {
+      const remaining = totalQuantity - sumQuantity;
+      Swal.fire({
+        icon: 'error',
+        title: 'Total Quantity Limit Exceeded',
+        html: `
+          <p>Reference #: <strong>${referenceNo}</strong></p>
+          <p>Already processed: <strong>${sumQuantity}</strong> / ${totalQuantity}</p>
+          <p>Your input of <strong>${inputQuantity}</strong> would exceed the total allowed.</p>
+          <p>You can only process up to <strong>${remaining}</strong> more units.</p>
+        `
+      });
+      return;
+    }
 
-  quantityModal.hide();
-  console.log('Ready for QR Time-Out with:', selectedRowData);
-  openQRModal(mode);
-};
+    selectedRowData.inputQuantity = inputQuantity;
 
-quantityModal.show();
+    quantityModal.hide();
+    console.log('Ready for QR Time-Out with:', selectedRowData);
+    openQRModal(mode);
+  };
 
-  }
+  quantityModal.show();
+}
+
 });
 
 
@@ -354,29 +357,32 @@ function openQRModal(mode) {
           }
 
        const {
-  material_no,
-  material_description,
-  id,
-
-  quantity,
-  inputQuantity,
-  stage,
-  process_quantity
-} = selectedRowData;
+        material_no,
+        material_description,
+        id,
+        pending_quantity,
+        quantity,
+        inputQuantity,
+        stage,
+        total_quantity,
+        process_quantity
+      } = selectedRowData;
 
 
           const postData = {
             id,
             material_no,
             material_description,
+            pending_quantity,
             name: parsedName,
             quantity,
             inputQuantity,
             stage,
-            process_quantity
+            process_quantity,
+            total_quantity
           };
 
-         console.log("Using mode:", mode);
+         console.log("Using mode:", postData);
 
           const endpoint = mode === 'time-in'
             ? 'api/stamping/postTimeInTask.php'
@@ -392,12 +398,16 @@ function openQRModal(mode) {
               userId: parsedId,
               name: parsedName,
               quantity,
-              inputQuantity
+              inputQuantity,
+              pending_quantity,
+              total_quantity
             })
           })
           .then(res => res.json())
           .then(response => {
+            console.log(response)
             if (response.status === 'success') {
+                console.log('Calling Swal success...');
               Swal.fire('Success', response.message || `${mode.replace('-', ' ')} recorded.`, 'success');
               qrReader.stop().then(() => {
                 qrReader.clear();

@@ -29,19 +29,29 @@ try {
     $material_description = $input['material_description'] ?? null;
     $name = $input['name'] ?? null;
     $quantity = $input['quantity'] ?? null;
-     $inputQuantity = $input['inputQuantity'] ?? null;
-  
+    $inputQuantity = $input['inputQuantity'] ?? null;
+    $pending_quantity = $input['pending_quantity'] ?? null;
+    $total_quantity = $input['total_quantity'] ?? null;
+    
+    if($pending_quantity>0){
+        $pending_quantity = $pending_quantity - $inputQuantity;
+    }else{
+        $pending_quantity = $total_quantity - $inputQuantity;
+    }
+
+
     $timeout = date('Y-m-d H:i:s');
 
-    $sql = "UPDATE `stamping` SET person_incharge=:name,time_out=:timeout,status=:status,quantity=:inputQuantity,updated_at=:updated_at WHERE id=:id";
-        $sqlParams = [
-            ':name'=>$name,
-            ':timeout'=>$timeout,
-            ':id'=>$id,
-            ':inputQuantity'=>$inputQuantity,
-            ':status'=>'done',
-            ':updated_at'=>$timeout
-        ];
+    $sql = "UPDATE `stamping` SET person_incharge=:name,time_out=:timeout,status=:status,quantity=:inputQuantity,pending_quantity=:pending_quantity,updated_at=:updated_at WHERE id=:id";
+            $sqlParams = [
+                ':name'=>$name,
+                ':timeout'=>$timeout,
+                ':id'=>$id,
+                ':inputQuantity'=>$inputQuantity,
+                ':status'=>'done',
+                ':updated_at'=>$timeout,
+                ':pending_quantity'=>$pending_quantity
+            ];
     
             $result = $db->Update($sql, $sqlParams);
             $selectSql = "SELECT * FROM stamping WHERE id = :id";
@@ -80,6 +90,7 @@ try {
                         'process_quantity' => $row['process_quantity'],
                         'stage' => $row['stage'],
                         'total_quantity' => $row['total_quantity'],
+                        'pending_quantity' => $row['pending_quantity'],
                         'time_in' => null,
                         'time_out' => null,
                         'status' => 'pending',
@@ -90,11 +101,11 @@ try {
                 };
 
                 $insertSql = "INSERT INTO stamping (
-                    reference_no, material_no, components_name, process_quantity,
+                    reference_no, material_no, components_name, process_quantity,pending_quantity,
                     stage, total_quantity, time_in, time_out, status,
                     person_incharge, created_at, updated_at
                 ) VALUES (
-                    :reference_no, :material_no, :components_name, :process_quantity,
+                    :reference_no, :material_no, :components_name, :process_quantity,:pending_quantity,
                     :stage, :total_quantity, :time_in, :time_out, :status,
                     :person_incharge, :created_at, :updated_at
                 )";

@@ -22,16 +22,13 @@
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-        <!-- <th style="width: 5%; text-align: center;">Material No</th>
-        <th style="width: 10%; text-align: center;">Material Description</th> -->
-              <th style="width: 10%; text-align: center;">Person Incharge</th>
-                  <th style="width: 5%; text-align: center;">Quantity</th>
-  
+        <th style="width: 5%; text-align: center;">Material No</th>
+        <th style="width: 10%; text-align: center;">Material Description</th>
         <th style="width: 5%; text-align: center;">Total Quantity</th>
-    
+        <th style="width: 5%; text-align: center;">Quantity</th>
+        <th style="width: 10%; text-align: center;">Person Incharge</th>
         <th style="width: 7%; text-align: center;">Time In</th>
         <th style="width: 7%; text-align: center;">Time Out</th>
-        <th style="width: 7%; text-align: center;">UnitperMin</th>
         
     </tr>
   </thead>
@@ -50,7 +47,7 @@ let mode = null;
 let selectedRowData = null;
 let fullData = null;
 
-fetch('api/stamping/getManpowerData.php')
+fetch('api/stamping/getWorklogs.php')
   .then(response => response.json())
   .then(data => {
     console.log(data);
@@ -77,32 +74,15 @@ fetch('api/stamping/getManpowerData.php')
       const status = item.status?.toLowerCase();
       const statusCellContent = status ? status.toUpperCase() : '<i>None</i>';
 
-      const hasTimeIn = item.time_in !== null && item.time_in !== '';
-      const hasTimeOut = item.time_out !== null && item.time_out !== '';
-
-  let mpu = '<i>--</i>';
-  if (hasTimeIn && hasTimeOut && item.quantity && item.quantity > 0) {
-    const start = new Date(item.time_in);
-    const end = new Date(item.time_out);
-    const diffMs = end - start;
-    const diffMinutes = diffMs / (1000 * 60); // ms → minutes
-    const rawMpu = diffMinutes / item.quantity;
-    mpu = rawMpu.toFixed(2); // keep 2 decimal places
-  }
-
-
  row.innerHTML = `
-  <!--<td style="text-align: center;">(${item.stage})${item.material_no || ''}</td>
-  <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>-->
-
-  <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
-  <td style="text-align: center;">${item.quantity || '<i>Null</i>'}</td>
+  <td style="text-align: center;">(${item.stage})${item.material_no || ''}</td>
+  <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
   <td style="text-align: center;">${item.total_quantity || '<i>Null</i>'}</td>
-
- 
+  <td style="text-align: center;">${item.quantity || '<i>Null</i>'}</td>
+  <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
   <td style="text-align: center;">${item.time_in || '<i>Null</i>'}</td>
   <td style="text-align: center;">${item.time_out || '<i>Null</i>'}</td>
-  <td style="text-align: center;">${mpu}</td>
+
 `;
 
 

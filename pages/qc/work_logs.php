@@ -72,7 +72,7 @@ fetch('api/qc/getQCData.php')
       row.innerHTML = `
         <td style="text-align: center;">${item.material_no || ''}<br/>(REWORK)</td>
         <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || ''}</td>
-        <td style="text-align: center;">${item.qc_pending_quantity}/${item.quantity}</td>
+        <td style="text-align: center;">${item.good}/${item.quantity}</td>
         <td style="text-align: center;">${item.qc_timein || ''}</td>
         <td style="text-align: center;">${item.qc_timeout || ''}</td>
         <td style="text-align: center;">${item.qc_person_incharge || ''}</td>
