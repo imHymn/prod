@@ -84,8 +84,8 @@ fetch('api/assembly/getAssemblyData.php')
 
       let timeWorkedMin = 0;
       let timePerUnitMin = 0;
-      const finishedQty = parseInt(item.assembly_pending_quantity) || 0;
-      const totalQty = parseInt(item.assembly_quantity) || 0;
+      const finishedQty = parseInt(item.rework) + parseInt(item.replace) ;
+      const totalQty = parseInt(item.quantity) || 0;
 
       if (timeIn && timeOut && timeOut > timeIn && finishedQty > 0) {
         timeWorkedMin = (timeOut - timeIn) / (1000 * 60);

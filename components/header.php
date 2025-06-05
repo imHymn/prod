@@ -218,7 +218,9 @@ if($role == 'administrator' || ($production=='fg_warehouse' && $role=='superviso
     <li class="nav-item">
           <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
         </li>
-     
+     <li class="nav-item">
+          <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
+        </li>
     </ul>
   </div>
 </li>

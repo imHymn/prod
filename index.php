@@ -39,6 +39,7 @@ $pageMap = [
         'stamping_todolist'   => 'todo_list.php',
         'components_inventory' => 'components_inventory.php',
         'stamping_monitoring_data' => 'monitoring_data.php',
+        'stamping_work_logs' => 'work_logs.php',
     ],
     'warehouse' => [
         'materials_inventory' => 'materials_inventory.php',

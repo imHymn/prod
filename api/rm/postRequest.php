@@ -73,8 +73,8 @@ $existingCount = $countResult ? (int)$countResult['count'] : 0;
 
  $result3 = true;
     $sqlInsert = "INSERT INTO `stamping` 
-        (`material_no`, `components_name`, `process_quantity`, `stage`, `total_quantity`, `status`, `reference_no`,created_at)
-        VALUES (:material_no, :components_name, :process_quantity, :stage, :total_quantity, :status, :reference_no,:created_at)";
+        (`material_no`, `components_name`, `process_quantity`, `stage`, `total_quantity`,pending_quantity, `status`, `reference_no`,created_at)
+        VALUES (:material_no, :components_name, :process_quantity, :stage, :total_quantity,:pending_quantity, :status, :reference_no,:created_at)";
 
     for ($i = 1; $i <= (int)$process_quantity; $i++) {
         $referenceNo = $dateToday . '-' . str_pad($existingCount + $i, 4, '0', STR_PAD_LEFT);
@@ -84,6 +84,7 @@ $existingCount = $countResult ? (int)$countResult['count'] : 0;
             ':components_name' => $component_name,
             ':process_quantity' => $process_quantity, // always insert 1 per stage
             ':stage' => $i,
+            ':pending_quantity' => $quantity,
             ':total_quantity' => $quantity,
             ':status' => 'pending',
             ':reference_no' => $referenceNo,
@@ -114,9 +115,9 @@ $existingCount = $countResult ? (int)$countResult['count'] : 0;
 
 } catch (PDOException $e) {
     // Rollback if exception caught
-    if ($db->inTransaction()) {
+
         $db->rollBack();
-    }
+    
     echo json_encode(['status' => 'error', 'message' => "DB Error: " . $e->getMessage()]);
 } catch (Exception $e) {
     if ($db->inTransaction()) {

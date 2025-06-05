@@ -2,9 +2,9 @@
 session_start();
 
 
-if(isset($_SESSION['url_request'])){
-  echo  $_SESSION['url_request'];
-}
+// if(isset($_SESSION['url_request'])){
+//   echo  $_SESSION['url_request'];
+// }
 
 
 if (isset($_SESSION['user_id'])) {

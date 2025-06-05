@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 04, 2025 at 07:52 AM
+-- Generation Time: Jun 05, 2025 at 01:31 AM
 -- Server version: 8.0.42-0ubuntu0.22.04.1
 -- PHP Version: 8.1.31
 
@@ -41446,7 +41446,7 @@ INSERT INTO `components_inventory` (`id`, `material_no`, `components_name`, `usa
 (4, '80035725', 'HEADLAMP LH (BODY)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
 (5, '80035725', 'HEADLAMP EXTENSION (BIG)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
 (6, '80035725', 'HEADLAMP EXTENSION (SMALL)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
-(7, '80035725', 'HEADLAMP ACCY #1', 2, 4, 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(7, '80035725', 'HEADLAMP ACCY #1', 2, 4, 500, 0, 900, 720, 540, 360, 180, 'rm', 'pending'),
 (8, '80035725', 'HEADLAMP ACCY #2', 2, 4, 500, 0, 900, 720, 540, 360, 180, 'rm', 'pending'),
 (9, '80035725', 'HEADLAMP ACCY #3', 2, 4, 500, 0, 900, 720, 540, 360, 180, 'rm', 'pending'),
 (10, '80035725', 'CLIP 25', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
@@ -42211,6 +42211,13 @@ CREATE TABLE `pending_rmwarehouse` (
   `section` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `pending_rmwarehouse`
+--
+
+INSERT INTO `pending_rmwarehouse` (`id`, `material_no`, `material_description`, `process_quantity`, `quantity`, `status`, `section`) VALUES
+(1, '80035725', 'HEADLAMP ACCY #1', 4, 600, 'pending', 'rm');
+
 -- --------------------------------------------------------
 
 --
@@ -42395,6 +42402,7 @@ CREATE TABLE `stamping` (
   `process_quantity` int DEFAULT NULL,
   `stage` int DEFAULT NULL,
   `quantity` int DEFAULT NULL,
+  `pending_quantity` int DEFAULT NULL,
   `total_quantity` int DEFAULT NULL,
   `time_in` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `time_out` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -42696,7 +42704,7 @@ ALTER TABLE `material_inventory`
 -- AUTO_INCREMENT for table `pending_rmwarehouse`
 --
 ALTER TABLE `pending_rmwarehouse`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `process_section`

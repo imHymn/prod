@@ -35,8 +35,6 @@
               <tr>
                 <th class="col-md-2">User ID</th>
                 <th class="col-md-2">Section</th>
-                <th class="col-md-2">Department</th>
-                <th class="col-md-3">Email</th>
               </tr>
             </thead>
             <tbody id="data-body"></tbody>
@@ -143,19 +141,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let allUsers = [];
 
-  function renderTable(users) {
-    tbody.innerHTML = '';
-    users.forEach(user => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${user.user_id}</td>
-        <td>${user.section.toUpperCase() || '-'}</td>
-        <td>${user.department.toUpperCase() || '-'}</td>
-        <td>${user.email || '-'}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+function renderTable(users) {
+  tbody.innerHTML = '';
+  users.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${user.user_id || '-'}</td>
+      <td>${user.section ? user.section.toUpperCase() : '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
 
   function loadAccounts() {
     fetch('api/accounts/getAccounts.php')

@@ -82,12 +82,13 @@ data.forEach(item => {
     statusColor = "yellow";
     showRequestButton = true;
   } else if (inventory >= normal) {
-    statusLabel = "Good";
+    statusLabel = "Normal";
     statusColor = "green";
     isGood = true;
   } else {
-    statusLabel = "Ok";
-    statusColor = "#28a745";
+  statusLabel = "Reorder ";
+    statusColor = "yellow";
+    showRequestButton = true;
   }
 
   // To keep text readable on colored background, white text except for yellow where black is better
