@@ -1,24 +1,39 @@
 <div>
-    <input type="text" class="btn" value="1">
-    <input type="text" class="btn" value="1">
-    <input type="text" class="btn" value="1">
     <button class="submit">Click</button>
+    <table class='tables' hidden border="1">
+        <tr>
+            <td>First Name</td>
+            <td>Last Name</td>
+        </tr>
+    </table>
 </div>
+
 <script>
+let firstName = "RON";
+let lastName = "DEL MUNDO";
+let data = [firstName, lastName];  // use correct variable names
 
 const submit = document.querySelector('.submit');
 
-submit.addEventListener('click',(e)=>{
-e.preventDefault();
+submit.addEventListener('click', (e) => {
+    e.preventDefault();
 
-const input = document.querySelectorAll('[class*="btn"]');
-let dataVal = 0;
-for(let el of input){
-    dataVal += Number(el.value);
-}
-console.log(dataVal);
+    const tables = document.querySelector('.tables');
 
-})
+    // Show the table
+    tables.hidden = false;
 
+    // Create a new row
+    const newRow = document.createElement('tr');
 
+    // Loop over the data array and create cells
+    data.forEach(value => {
+        const newCell = document.createElement('td');
+        newCell.textContent = value;
+        newRow.appendChild(newCell);
+    });
+
+    // Append the new row to the table
+    tables.appendChild(newRow);
+});
 </script>

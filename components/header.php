@@ -101,9 +101,6 @@ $production = strtolower($production);
         <a href="?page_active=pulled_out" class="nav-link" data-page="pulled_out">Pulled-Out</a>
       </li>
         </li>
-        <li class="nav-item">
-        <a href="?page_active=restocked" class="nav-link" data-page="restocked">Restocked</a>
-      </li>
     </ul>
   </div>
 </li>
@@ -242,6 +239,9 @@ if($role == 'administrator' || ($production=='fg_warehouse' && $role=='superviso
     <ul class="nav sub-menu">
       <li class="nav-item">
         <a href="?page_active=pending_orders" class="nav-link" data-page="pending_orders">Pending Orders</a>
+      </li>
+      <li class="nav-item">
+        <a href="?page_active=issuance_history" class="nav-link" data-page="issuance_history">Issuance History</a>
       </li>
     </ul>
   </div>
