@@ -12,9 +12,7 @@ require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
 $db = new DatabaseClass();
 
 try {
-    $sql = "SELECT * FROM assembly_list_new 
-            WHERE status = 'done'
-              ";
+    $sql = "SELECT * FROM assembly_list_new   ";
     
     $customers = $db->Select($sql);
     echo json_encode($customers);

@@ -17,6 +17,7 @@ $db = new DatabaseClass();
 
 // 🔄 Read JSON input
 $input = json_decode(file_get_contents('php://input'), true);
+date_default_timezone_set('Asia/Manila');
 
 // Safely extract values
 $id = $input['id'] ?? null;

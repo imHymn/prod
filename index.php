@@ -23,7 +23,7 @@ $pageMap = [
     'delivery' => [
         'submit_form' => 'submit_form.php',
         'pulled_out'  => 'pulled_out.php',
-        'restocked'  => 'restocked.php',
+    
     ],
     'qc' => [
         'qc_todolist' => 'todo_list.php',
@@ -32,14 +32,21 @@ $pageMap = [
         'qc_manpower_efficiency'    => 'manpower_efficiency.php',
     ],
     'rm' => [
-        'pending_orders' => 'pending_orders.php',
-  
+        'for_issue' => 'for_issue.php',
+        'issued_history' => 'issued_history.php',
     ],
     'stamping' => [
         'stamping_todolist'   => 'todo_list.php',
         'components_inventory' => 'components_inventory.php',
         'stamping_monitoring_data' => 'monitoring_data.php',
         'stamping_work_logs' => 'work_logs.php',
+        'stamping_oem_small' => 'section/oem_small.php',
+        'stamping_muffler_comps' => 'section/muffler_comps.php',
+        'stamping_big_hyd' => 'section/big_hyd.php',
+        'stamping_big_mech' => 'section/big_mech.php',
+
+
+ 
     ],
     'warehouse' => [
         'materials_inventory' => 'materials_inventory.php',

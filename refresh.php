@@ -32,7 +32,7 @@ try {
         'delivery_forms',
         'fg_warehouse',
         'stock_warehouse',
-        'pending_rmwarehouse',
+        'rm_warehouse',
         'stamping',
         'delivery_form_new',
         'assembly_list_new',

@@ -13,6 +13,29 @@
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">To-do List</h6>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="filter-column" class="form-select">
+      <option value="" disabled selected>Select Column to Filter</option>
+      <option value="material_no">Material No</option>
+      <option value="model_name">Model</option>
+      <option value="total_quantity">Total Qty</option>
+      <option value="shift">Shift</option>
+      <option value="lot_no">Lot</option>
+      <option value="person_incharge">Person Incharge</option>
+      <option value="date_needed">Date needed</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input
+      type="text"
+      id="filter-input"
+      class="form-control"
+      placeholder="Type to filter..."
+      disabled
+    />
+  </div>
+</div>
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
@@ -24,8 +47,8 @@
       <th style="width: 8%; text-align: center;">Total Qty</th>
       <th style="width: 8%; text-align: center; margin-right:-30px;">Shift</th>
       <th style="width: 8%; text-align: center;">Lot</th>
-      <th style="width: 8%; text-align: center;">Status</th>
-      <th style="width: 25%; text-align: center;">Person Incharge</th>
+      <!-- <th style="width: 8%; text-align: center;">Status</th> -->
+      <th style="width: 20%; text-align: center;">Person Incharge</th>
            <th style="width: 15%; text-align: center;">Date needed</th>
       <th style="width: 15%; text-align: center;">Time In | Time out</th>
     </tr>
@@ -178,15 +201,13 @@ filteredDeliveryData.forEach(item => {
   row.innerHTML = `
     <td style="text-align: center;">${item.material_no}</td>
     <td style="text-align: center;">${item.model_name}</td>
-   <td style="text-align: center;">
+   <!--<td style="text-align: center;">
   ${item.total_quantity}${assemblyRecord?.pending_quantity != null ? `(${assemblyRecord.pending_quantity})` : ''}
-</td>
-
+</td>-->
+  <td style="text-align: center;">${item.total_quantity} ${item.assembly_pending != null ? `(${item.assembly_pending})` : ''}</td>
     <td style="text-align: center;">${item.shift}</td>
     <td style="text-align: center;">${item.lot_no}</td>
-    <td style="text-align: center; color: ${item.status.toLowerCase() === 'pending' ? '#ffc107' : 'inherit'};">
-      ${item.status.toUpperCase()}
-    </td>
+    <!--<td style="text-align: center; color: ${item.status.toLowerCase() === 'pending' ? '#ffc107' : 'inherit'};">${item.status.toUpperCase()}</td>-->
     <td style="text-align: center;">${personInCharge}</td>
     <td style="text-align: center;">${item.date_needed}</td>
     <td style="text-align: center;">${timeStatus}</td>
@@ -198,6 +219,45 @@ filteredDeliveryData.forEach(item => {
         });
     });
 });
+const filterColumnSelect = document.getElementById('filter-column');
+const filterInput = document.getElementById('filter-input');
+const tbody = document.getElementById('data-body');
+
+filterColumnSelect.addEventListener('change', () => {
+  filterInput.value = '';
+  filterInput.disabled = !filterColumnSelect.value;
+  filterInput.focus();
+  filterTable(); // clear filter on change
+});
+
+filterInput.addEventListener('input', filterTable);
+
+function filterTable() {
+  const filterValue = filterInput.value.toLowerCase();
+  const column = filterColumnSelect.value;
+  if (!column) return;
+
+  // Map your column keys to the <td> index in your table rows
+  // You must keep these indexes in sync with your <th> order:
+  // Material No (0), Model (1), Total Qty (2), Shift (3), Lot (4), Person Incharge (5), Date needed (6), Time In|Out (7)
+  const columnIndexes = {
+    material_no: 0,
+    model_name: 1,
+    total_quantity: 2,
+    shift: 3,
+    lot_no: 4,
+    person_incharge: 5,
+    date_needed: 6,
+  };
+
+  const index = columnIndexes[column];
+  if (index === undefined) return;
+
+  [...tbody.rows].forEach(row => {
+    const cellText = row.cells[index].textContent.toLowerCase();
+    row.style.display = cellText.includes(filterValue) ? '' : 'none';
+  });
+}
 
 document.addEventListener('click', function (event) {
   if (event.target.classList.contains('time-in-btn') || event.target.classList.contains('time-out-btn')) {

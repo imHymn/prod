@@ -66,7 +66,7 @@ if (!empty($_SESSION['production'])) {
   $role = strtolower($role);
 $production = strtolower($production);
 
-  if($role == 'administrator') {
+  if($role == 'administrator' || $role == 'admin') {
   echo'
      <li class="nav-item">
   <a class="nav-link" href="?page_active=accounts">
@@ -194,35 +194,55 @@ if($role == 'administrator' || ($production=='fg_warehouse' && $role=='superviso
 
 
 
- if($role == 'administrator' || ($production=='stamping' && $role=='supervisor')) {
+if($role == 'administrator' || ($production == 'stamping' && $role == 'supervisor')) {
   echo '
-    <li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="layout"></i>
-
-
-    <span class="link-title">Stamping </span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="stamping">
-    <ul class="nav sub-menu">
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
+      <i class="link-icon" data-feather="layout"></i>
+      <span class="link-title">Stamping</span>
+      <i class="link-arrow" data-feather="chevron-down"></i>
+    </a>
+    <div class="collapse" id="stamping">
+      <ul class="nav sub-menu">
+        <!-- TO-DO LIST (With nested submenu) -->
         <li class="nav-item">
-          <a href="?page_active=stamping_todolist" class="nav-link" data-page="stamping_todolist">To-do List</a>
+          <a class="nav-link" data-toggle="collapse" href="#todoSubMenu" role="button" aria-expanded="false" aria-controls="todoSubMenu">
+            <span class="link-title">To-do List</span>
+            <i class="link-arrow" data-feather="chevron-down"></i>
+          </a>
+          <div class="collapse" id="todoSubMenu">
+            <ul class="nav sub-menu">
+              <li class="nav-item">
+                <a href="?page_active=stamping_oem_small" class="nav-link" data-page="stamping_oem_small">OEM SMALL</a>
+              </li>
+              <li class="nav-item">
+                <a href="?page_active=stamping_muffler_comps" class="nav-link" data-page="stamping_muffler_comps">MUFFLER COMPS</a>
+              </li>
+              <li class="nav-item">
+                <a href="?page_active=stamping_big_hyd" class="nav-link" data-page="stamping_big_hyd">BIG-HYD</a>
+              </li>
+               <li class="nav-item">
+                <a href="?page_active=stamping_big_mech" class="nav-link" data-page="stamping_big_mech">BIG-MECH</a>
+              </li>
+            </ul>
+          </div>
         </li>
-      <li class="nav-item">
-        <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
-      </li>
-    <li class="nav-item">
+
+        <!-- Other Stamping Items -->
+        <li class="nav-item">
+          <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
+        </li>
+        <li class="nav-item">
           <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
         </li>
-     <li class="nav-item">
+        <li class="nav-item">
           <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
         </li>
-    </ul>
-  </div>
-</li>
-    ';
-  }
+      </ul>
+    </div>
+  </li>';
+}
+
 
 
  if($role == 'administrator' || ($production=='rm_warehouse' && $role=='supervisor')) {
@@ -238,10 +258,10 @@ if($role == 'administrator' || ($production=='fg_warehouse' && $role=='superviso
   <div class="collapse" id="rmw">
     <ul class="nav sub-menu">
       <li class="nav-item">
-        <a href="?page_active=pending_orders" class="nav-link" data-page="pending_orders">Pending Orders</a>
+        <a href="?page_active=for_issue" class="nav-link" data-page="for_issue">For Issue</a>
       </li>
       <li class="nav-item">
-        <a href="?page_active=issuance_history" class="nav-link" data-page="issuance_history">Issuance History</a>
+        <a href="?page_active=issued_history" class="nav-link" data-page="issued_history">Issuance History</a>
       </li>
     </ul>
   </div>

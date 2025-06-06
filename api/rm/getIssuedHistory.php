@@ -12,14 +12,22 @@ require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
 $db = new DatabaseClass();
 
 try {
-    $sql = "SELECT * FROM rework_qc
-            WHERE qc_timeout IS NOT NULL";
+    $sql = "SELECT * FROM rm_warehouse";
 
-    
-    $customers = $db->Select($sql);
-    echo json_encode($customers);
+    $results = $db->Select($sql);
+
+    echo json_encode([
+        'status' => 'success',
+        'data' => $results
+    ]);
 } catch (PDOException $e) {
-    echo "DB Error: " . $e->getMessage();
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'DB Error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Error: ' . $e->getMessage()
+    ]);
 }

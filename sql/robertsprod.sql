@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 05, 2025 at 01:31 AM
+-- Generation Time: Jun 05, 2025 at 05:49 AM
 -- Server version: 8.0.42-0ubuntu0.22.04.1
 -- PHP Version: 8.1.31
 
@@ -90,13 +90,6 @@ CREATE TABLE `assembly_list_new` (
   `date_needed` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `created_at` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `assembly_list_new`
---
-
-INSERT INTO `assembly_list_new` (`id`, `itemID`, `reference_no`, `model`, `material_no`, `material_description`, `shift`, `lot_no`, `done_quantity`, `pending_quantity`, `total_quantity`, `section`, `status`, `person_incharge`, `time_in`, `time_out`, `date_needed`, `created_at`) VALUES
-(1, '1', '20250604-0001', 'L300', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '1st Shift', 1, 30, 0, 30, 'rework', 'pending', 'Ron Iverson S. Del Mundo', '2025-06-04 07:09:07', '2025-06-04 07:09:20', '2025-06-04', '2025-06-04 07:09:07');
 
 -- --------------------------------------------------------
 
@@ -41440,9 +41433,9 @@ CREATE TABLE `components_inventory` (
 --
 
 INSERT INTO `components_inventory` (`id`, `material_no`, `components_name`, `usage_type`, `process_quantity`, `actual_inventory`, `rm_stocks`, `maximum_inventory`, `normal`, `reorder`, `minimum`, `critical`, `section`, `status`) VALUES
-(1, '80024330', 'CROSS MEMBER RR PANEL', 1, 4, 464, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
-(2, '80024330', 'ASTEER', 1, 4, 464, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
-(3, '80024330', 'BRACKET JACK', 1, 4, 464, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(1, '80024330', 'CROSS MEMBER RR PANEL', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(2, '80024330', 'ASTEER', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(3, '80024330', 'BRACKET JACK', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
 (4, '80035725', 'HEADLAMP LH (BODY)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
 (5, '80035725', 'HEADLAMP EXTENSION (BIG)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
 (6, '80035725', 'HEADLAMP EXTENSION (SMALL)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
@@ -41595,32 +41588,32 @@ CREATE TABLE `delivery_form_new` (
 --
 
 INSERT INTO `delivery_form_new` (`id`, `reference_no`, `material_no`, `material_description`, `model_name`, `quantity`, `supplement_order`, `total_quantity`, `assembly_pending`, `lot_no`, `date_needed`, `shift`, `status`, `section`, `created_at`, `updated_at`) VALUES
-(1, '20250604-0001', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'done', 'rework', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(2, '20250604-0002', '80035725', '09-MIT-MB507047L1 HOUSING HEADLAMP LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(3, '20250604-0003', '80035726', '09-MIT-5215A320Y1 HOUSING HEADLAMP RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(4, '20250604-0004', '80120170', '09-MIT-MT1-MB280917L-REINF, LWR (LHD)', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(5, '20250604-0005', '80026605', '09-MIT-MT1-MB328814XL-RAIL,ROOF FRT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(6, '20250604-0006', '80114943', '09-MIT-5251F318 FLOOR ASSY, REAR LOWER', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(7, '20250604-0007', '80114942', '09-MIT-6400J617ZZ BUMPER, FRONT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(8, '20250604-0008', '80114930', '09-MIT-5220AB12 PANEL,FENDER SHIELD RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(9, '20250604-0009', '80114929', '09-MIT-5220AB11 PANEL,FENDER SHIELD LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(10, '20250604-0010', '80009932', '09-MIT-SS2-MB136218-REINF.FR.FLR UNDR RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(11, '20250604-0011', '80128616', '09-MIT-SS2-MB136217-REINF.FR.FLR UNDR LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(12, '20250604-0012', '80114927', '09-MIT-SS1-MB507013-BRKT BODY MTG NO1 LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(13, '20250604-0013', '80114928', '09-MIT-SS1-MB507014-BRKT BODY MTG NO1 RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(14, '20250604-0014', '80026602', '09-MIT-MT1-MB136363L-RAIL,ROOF SDE FRT L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(15, '20250604-0015', '80026603', '09-MIT-MT1-MB136362L-RAIL,ROOF SDE FRT R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(16, '20250604-0016', '80027183', '09-MIT-MT2-MB136443L-REIN.F/DR HNG LWR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(17, '20250604-0017', '80027186', '09-MIT-MT2-MB136444L-REIN.F/DR HNG LWR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(18, '20250604-0018', '80027184', '09-MIT-MT2-MB136445L-REIN.F/DR HNG LWR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(19, '20250604-0019', '80027187', '09-MIT-MT2-MB136446L-REIN.F/DR HNG LWR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(20, '20250604-0020', '80027185', '09-MIT-MT2-MB136447L-REIN.F/DR HNG UPR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(21, '20250604-0021', '80027188', '09-MIT-MT2-MB136448L-REIN.F/DR HNG UPR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(22, '20250604-0022', '80009938', '09-MIT-SS3-MB136313-SIDE PANEL,FRT LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(23, '20250604-0023', '80009939', '09-MIT-SS3-MB136314-SIDE PANEL,FRT RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(24, '20250604-0024', '80009960', '09-MIT-SS2-MB507000-PAN, FRONT FLOOR', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(25, '20250604-0025', '80009965', '09-MIT-SS2-MB586253-CROSS MEMBER, FRONT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53'),
-(26, '20250604-0026', '80114945', 'COVER ECU', 'L300', 30, NULL, 30, NULL, 1, '2025-06-04', '1st Shift', 'pending', 'DELIVERY', '2025-06-04 07:08:53', '2025-06-04 07:08:53');
+(1, '20250605-0001', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(2, '20250605-0002', '80035725', '09-MIT-MB507047L1 HOUSING HEADLAMP LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(3, '20250605-0003', '80035726', '09-MIT-5215A320Y1 HOUSING HEADLAMP RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(4, '20250605-0004', '80120170', '09-MIT-MT1-MB280917L-REINF, LWR (LHD)', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(5, '20250605-0005', '80026605', '09-MIT-MT1-MB328814XL-RAIL,ROOF FRT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(6, '20250605-0006', '80114943', '09-MIT-5251F318 FLOOR ASSY, REAR LOWER', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(7, '20250605-0007', '80114942', '09-MIT-6400J617ZZ BUMPER, FRONT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(8, '20250605-0008', '80114930', '09-MIT-5220AB12 PANEL,FENDER SHIELD RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(9, '20250605-0009', '80114929', '09-MIT-5220AB11 PANEL,FENDER SHIELD LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(10, '20250605-0010', '80009932', '09-MIT-SS2-MB136218-REINF.FR.FLR UNDR RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(11, '20250605-0011', '80128616', '09-MIT-SS2-MB136217-REINF.FR.FLR UNDR LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(12, '20250605-0012', '80114927', '09-MIT-SS1-MB507013-BRKT BODY MTG NO1 LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(13, '20250605-0013', '80114928', '09-MIT-SS1-MB507014-BRKT BODY MTG NO1 RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(14, '20250605-0014', '80026602', '09-MIT-MT1-MB136363L-RAIL,ROOF SDE FRT L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(15, '20250605-0015', '80026603', '09-MIT-MT1-MB136362L-RAIL,ROOF SDE FRT R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(16, '20250605-0016', '80027183', '09-MIT-MT2-MB136443L-REIN.F/DR HNG LWR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(17, '20250605-0017', '80027186', '09-MIT-MT2-MB136444L-REIN.F/DR HNG LWR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(18, '20250605-0018', '80027184', '09-MIT-MT2-MB136445L-REIN.F/DR HNG LWR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(19, '20250605-0019', '80027187', '09-MIT-MT2-MB136446L-REIN.F/DR HNG LWR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(20, '20250605-0020', '80027185', '09-MIT-MT2-MB136447L-REIN.F/DR HNG UPR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(21, '20250605-0021', '80027188', '09-MIT-MT2-MB136448L-REIN.F/DR HNG UPR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(22, '20250605-0022', '80009938', '09-MIT-SS3-MB136313-SIDE PANEL,FRT LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(23, '20250605-0023', '80009939', '09-MIT-SS3-MB136314-SIDE PANEL,FRT RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(24, '20250605-0024', '80009960', '09-MIT-SS2-MB507000-PAN, FRONT FLOOR', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(25, '20250605-0025', '80009965', '09-MIT-SS2-MB586253-CROSS MEMBER, FRONT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
+(26, '20250605-0026', '80114945', 'COVER ECU', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16');
 
 -- --------------------------------------------------------
 
@@ -42139,13 +42132,6 @@ CREATE TABLE `fg_warehouse` (
   `pulled_at` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `fg_warehouse`
---
-
-INSERT INTO `fg_warehouse` (`id`, `reference_no`, `material_no`, `material_description`, `model`, `person_incharge`, `quantity`, `total_quantity`, `lot_no`, `shift`, `date_needed`, `section`, `status`, `created_at`, `pulled_at`) VALUES
-(1, '20250604-0001', 80024330, '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', 'L300', NULL, 15, 30, 1, '1st Shift', '2025-06-04', 'warehouse', 'pending', '2025-06-04 07:10:25', NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -42211,13 +42197,6 @@ CREATE TABLE `pending_rmwarehouse` (
   `section` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `pending_rmwarehouse`
---
-
-INSERT INTO `pending_rmwarehouse` (`id`, `material_no`, `material_description`, `process_quantity`, `quantity`, `status`, `section`) VALUES
-(1, '80035725', 'HEADLAMP ACCY #1', 4, 600, 'pending', 'rm');
-
 -- --------------------------------------------------------
 
 --
@@ -42277,15 +42256,6 @@ CREATE TABLE `qc_list` (
   `created_at` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `qc_list`
---
-
-INSERT INTO `qc_list` (`id`, `itemID`, `model`, `material_no`, `material_description`, `reference_no`, `shift`, `lot_no`, `done_quantity`, `pending_quantity`, `total_quantity`, `good`, `no_good`, `rework`, `replace`, `section`, `status`, `person_incharge`, `time_in`, `time_out`, `date_needed`, `created_at`) VALUES
-(1, NULL, 'L300', 80024330, '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '20250604-0001', '1st Shift', 1, 10, 20, 30, 5, 5, 3, 2, 'rework', 'done', 'Ron Iverson S. Del Mundo', '2025-06-04 07:09:34', '2025-06-04 07:09:48', '2025-06-04', '2025-06-04 07:09:20'),
-(2, 1, 'L300', 80024330, '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '20250604-0001', '1st Shift', 1, 10, 10, 30, 5, 5, 3, 2, 'rework', 'done', 'Ron Iverson S. Del Mundo', '2025-06-04 07:10:02', '2025-06-04 07:10:12', '2025-06-04', '2025-06-04 07:09:48'),
-(3, 2, 'L300', 80024330, '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '20250604-0001', '1st Shift', 1, 10, 0, 30, 5, 5, 3, 2, 'rework', 'done', 'Ron Iverson S. Del Mundo', '2025-06-04 07:10:16', '2025-06-04 07:10:25', '2025-06-04', '2025-06-04 07:10:12');
-
 -- --------------------------------------------------------
 
 --
@@ -42315,15 +42285,6 @@ CREATE TABLE `rework_assembly` (
   `created_at` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `rework_assembly`
---
-
-INSERT INTO `rework_assembly` (`id`, `itemID`, `reference_no`, `model`, `material_no`, `material_description`, `shift`, `lot_no`, `replace`, `rework`, `quantity`, `assembly_quantity`, `assembly_pending_quantity`, `assembly_person_incharge`, `assembly_timein`, `assembly_timeout`, `status`, `section`, `date_needed`, `created_at`) VALUES
-(1, 3, '20250604-0001', 'L300', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '1st Shift', 1, 2, 3, 15, 15, 10, 'Ron Iverson S. Del Mundo', '2025-06-04 07:39:52', '2025-06-04 07:40:00', 'done', 'assembly', '2025-06-04', '2025-06-04 07:10:25'),
-(2, 1, '20250604-0001', 'L300', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '1st Shift', 1, 2, 3, 15, 10, 5, 'Ron Iverson S. Del Mundo', '2025-06-04 07:40:04', '2025-06-04 07:40:11', 'done', 'assembly', '2025-06-04', '2025-06-04 07:40:00'),
-(3, 2, '20250604-0001', 'L300', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '1st Shift', 1, 2, 3, 15, 5, 0, 'Ron Iverson S. Del Mundo', '2025-06-04 07:43:52', '2025-06-04 07:49:29', 'done', 'assembly', '2025-06-04', '2025-06-04 07:40:11');
-
 -- --------------------------------------------------------
 
 --
@@ -42352,13 +42313,6 @@ CREATE TABLE `rework_qc` (
   `date_needed` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `created_at` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `rework_qc`
---
-
-INSERT INTO `rework_qc` (`id`, `itemID`, `reference_no`, `model`, `material_no`, `material_description`, `shift`, `lot_no`, `good`, `no_good`, `quantity`, `qc_quantity`, `qc_pending_quantity`, `qc_person_incharge`, `qc_timein`, `qc_timeout`, `status`, `section`, `date_needed`, `created_at`) VALUES
-(1, NULL, '20250604-0001', 'L300', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', '1st Shift', 1, NULL, NULL, 15, 15, NULL, NULL, NULL, NULL, 'pending', 'qc', '2025-06-04', '2025-06-04 07:49:29');
 
 -- --------------------------------------------------------
 
@@ -42644,7 +42598,7 @@ ALTER TABLE `assembly_list`
 -- AUTO_INCREMENT for table `assembly_list_new`
 --
 ALTER TABLE `assembly_list_new`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `attendance_bio`
@@ -42692,7 +42646,7 @@ ALTER TABLE `employee_info`
 -- AUTO_INCREMENT for table `fg_warehouse`
 --
 ALTER TABLE `fg_warehouse`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `material_inventory`
@@ -42704,7 +42658,7 @@ ALTER TABLE `material_inventory`
 -- AUTO_INCREMENT for table `pending_rmwarehouse`
 --
 ALTER TABLE `pending_rmwarehouse`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `process_section`
@@ -42716,19 +42670,19 @@ ALTER TABLE `process_section`
 -- AUTO_INCREMENT for table `qc_list`
 --
 ALTER TABLE `qc_list`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `rework_assembly`
 --
 ALTER TABLE `rework_assembly`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `rework_qc`
 --
 ALTER TABLE `rework_qc`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `section_area`

@@ -21,6 +21,24 @@ $name = $_SESSION['name'] ?? null;
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">Pulled out History</h6>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="column-select" class="form-select">
+      <option value="" disabled selected>Select Column</option>
+      <option value="material_no">Material No</option>
+      <option value="material_description">Material Description</option>
+      <option value="model">Model</option>
+      <option value="total_quantity">Total Quantity</option>
+      <option value="shift">Shift</option>
+      <option value="lot_no">Lot No</option>
+      <option value="date_needed">Date Needed</option>
+      <option value="pulled_at">Pulled At</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input type="text" id="search-input" class="form-control" placeholder="Type to filter..." />
+  </div>
+</div>
 
   
 
@@ -51,12 +69,27 @@ $name = $_SESSION['name'] ?? null;
 <script src="assets/js/sweetalert2@11.js"></script>
 <script>
 let allData = [];  // store fetched data globally
+document.getElementById('search-input').addEventListener('input', () => {
+  const column = document.getElementById('column-select').value;
+  const query = document.getElementById('search-input').value.toLowerCase();
 
+  if (!column) return; // Do nothing if no column is selected
+
+  const filtered = allData.filter(item => {
+    const value = (item[column] ?? '').toString().toLowerCase();
+    return value.includes(query);
+  });
+
+  renderTable(filtered);
+});
 function renderTable(data) {
   const tbody = document.getElementById('data-body');
   tbody.innerHTML = '';
 
-  data.forEach(item => {
+  // Sort data by latest pulled_at
+  const sortedData = [...data].sort((a, b) => new Date(b.pulled_at) - new Date(a.pulled_at));
+
+  sortedData.forEach(item => {
     const row = document.createElement('tr');
 
     row.innerHTML = `
@@ -72,8 +105,6 @@ function renderTable(data) {
 
     tbody.appendChild(row);
   });
-
-
 }
 
 function loadTable() {

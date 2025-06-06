@@ -6,6 +6,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json');
 // Include Composer autoloader
 require_once __DIR__ . '/../../vendor/autoload.php';
+date_default_timezone_set('Asia/Manila');
 
 // Load environment variables
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../env');

@@ -15,7 +15,11 @@ $db = new DatabaseClass();
 
 try {
     // SQL query to fetch customer names
-    $sql = "SELECT * FROM `pending_rmwarehouse` WHERE status='pending' AND section ='rm'";
+    $sql = "SELECT *
+            FROM components_inventory
+            WHERE actual_inventory < normal
+           ;
+            ";
     // Use the Select method to fetch data
     $users = $db->Select($sql);
     // Return the results as a JSON response

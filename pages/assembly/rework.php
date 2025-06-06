@@ -22,6 +22,28 @@ $production = $_SESSION['production'];
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">Reworked Material</h6>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="filter-column" class="form-select">
+      <option value="" disabled selected>Select Column to Filter</option>
+      <option value="material_no">Material No</option>
+      <option value="model">Model</option>
+      <option value="shift">Shift</option>
+      <option value="lot_no">Lot</option>
+      <option value="quantity">Total Qty</option>
+      <option value="assembly_person_incharge">Person Incharge</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input
+      type="text"
+      id="filter-input"
+      class="form-control"
+      placeholder="Type to filter..."
+      disabled
+    />
+  </div>
+</div>
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
 <thead>
@@ -103,72 +125,110 @@ $production = $_SESSION['production'];
     let fullDataSet = []; // Add this at the top
 
 document.addEventListener('DOMContentLoaded', function () {
+  let fullDataSet = [];
+  const tbody = document.getElementById('data-body');
+  const filterColumnSelect = document.getElementById('filter-column');
+  const filterInput = document.getElementById('filter-input');
+
+  // Fetch and render data
   fetch('api/assembly/getRework.php')
     .then(response => response.json())
     .then(data => {
-        fullDataSet = data;
-      const tbody = document.getElementById('data-body');
-      tbody.innerHTML = '';
-
-      // Sort items: prioritize those needing TIME OUT
-      data.sort((a, b) => {
-        const weight = item => {
-          if (item.assembly_timein && !item.assembly_timeout) return 2; // Needs TIME OUT
-          if (!item.assembly_timein) return 1; // Needs TIME IN
-          return 0; // Done
-        };
-        return weight(b) - weight(a); // Higher weight first
-      });
-
-      data.forEach(item => {
-        let actionHtml = '';
-
-        if (!item.assembly_timein) {
-          actionHtml = `
-            <button 
-              class="btn btn-sm btn-success time-in-btn" 
-              data-materialid="${item.material_no}"
-              data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
-              data-mode="timeIn"
-              data-id="${item.id}"
-            >
-              TIME IN
-            </button>`;
-        } else if (!item.assembly_timeout) {
-          actionHtml = `
-            <button 
-              class="btn btn-sm btn-warning time-out-btn" 
-              data-materialid="${item.material_no}"
-              data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
-              data-mode="timeOut"
-              data-id="${item.id}"
-            >
-              TIME OUT
-            </button>`;
-        } else {
-          actionHtml = `<span class="text-muted">Done</span>`;
-        }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="text-align: center;">${item.material_no}</td>
-          <td style="text-align: center;">${item.model}</td>
-          <td style="text-align: center;">${item.shift}</td>
-          <td style="text-align: center;">${item.lot_no}</td>
-          <td style="text-align: center;">
-            ${item.quantity}${item.assembly_quantity ? ` (${item.assembly_quantity})` : ''}
-          </td>
-
-          <td style="text-align: center;">${item.assembly_person_incharge || '-'}</td>
-          <td style="text-align: center;">${actionHtml}</td>
-        `;
-
-        tbody.appendChild(tr);
-      });
+      fullDataSet = data;
+      renderTable(fullDataSet);
     })
     .catch(error => {
       console.error('Fetch error:', error);
     });
+
+  // Render table function
+  function renderTable(data) {
+    tbody.innerHTML = '';
+
+    // Sort items: prioritize TIME OUT needed
+    data.sort((a, b) => {
+      const weight = item => {
+        if (item.assembly_timein && !item.assembly_timeout) return 2;
+        if (!item.assembly_timein) return 1;
+        return 0;
+      };
+      return weight(b) - weight(a);
+    });
+
+    data.forEach(item => {
+      let actionHtml = '';
+
+      if (!item.assembly_timein) {
+        actionHtml = `
+          <button 
+            class="btn btn-sm btn-success time-in-btn" 
+            data-materialid="${item.material_no}"
+            data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+            data-mode="timeIn"
+            data-id="${item.id}"
+          >
+            TIME IN
+          </button>`;
+      } else if (!item.assembly_timeout) {
+        actionHtml = `
+          <button 
+            class="btn btn-sm btn-warning time-out-btn" 
+            data-materialid="${item.material_no}"
+            data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+            data-mode="timeOut"
+            data-id="${item.id}"
+          >
+            TIME OUT
+          </button>`;
+      } else {
+        actionHtml = `<span class="text-muted">Done</span>`;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align: center;">${item.material_no}</td>
+        <td style="text-align: center;">${item.model}</td>
+        <td style="text-align: center;">${item.shift}</td>
+        <td style="text-align: center;">${item.lot_no}</td>
+        <td style="text-align: center;">
+          ${item.quantity}${item.assembly_quantity ? ` (${item.assembly_quantity})` : ''}
+        </td>
+        <td style="text-align: center;">${item.assembly_person_incharge || '-'}</td>
+        <td style="text-align: center;">${actionHtml}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Enable/disable input depending on column select
+  filterColumnSelect.addEventListener('change', () => {
+    filterInput.value = '';
+    filterInput.disabled = !filterColumnSelect.value;
+    filterInput.focus();
+    filterTable();
+  });
+
+  filterInput.addEventListener('input', filterTable);
+
+  // Filtering function
+  function filterTable() {
+    const filterValue = filterInput.value.toLowerCase();
+    const column = filterColumnSelect.value;
+    if (!column) {
+      renderTable(fullDataSet);
+      return;
+    }
+
+    const filteredData = fullDataSet.filter(item => {
+      // Defensive: handle missing keys
+      const val = item[column];
+      if (val === null || val === undefined) return false;
+
+      return String(val).toLowerCase().includes(filterValue);
+    });
+
+    renderTable(filteredData);
+  }
 });
 
 document.addEventListener('click', function (event) {
