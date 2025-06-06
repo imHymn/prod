@@ -3,7 +3,6 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
 // Include Composer autoloader
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -15,6 +14,7 @@ $dotenv->load();
 require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
 $db = new DatabaseClass();
 
+date_default_timezone_set('Asia/Manila');
 
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -58,9 +58,12 @@ $date_needed = $input['date_needed'] ?? null;
             $latestRecord = $db->SelectOne($sqlGetLatestPending, $paramsGetLatestPending);
 
             // Step 2: Use the value if found, else fallback to $total_qty
-            $pending_quantity = isset($latestRecord['pending_quantity']) && $latestRecord['pending_quantity'] !== null
-                ? (int)$latestRecord['pending_quantity']
-                : (int)$total_qty;
+       if ($latestRecord && isset($latestRecord['pending_quantity']) && $latestRecord['pending_quantity'] !== null) {
+    $pending_quantity = (int)$latestRecord['pending_quantity'];
+} else {
+    $pending_quantity = (int)$total_qty;
+}
+
 
             // Step 3: Proceed to insert
             $sqlInsert = "INSERT INTO assembly_list_new

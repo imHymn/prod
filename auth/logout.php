@@ -1,9 +1,7 @@
 <?php
 session_start();
 
-// Destroy the session and redirect to the login page
-session_unset();
-session_destroy();
+unset($_SESSION['id']);
 
 header("Location: /mes/auth/login.php");
 exit();

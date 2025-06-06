@@ -22,7 +22,30 @@ $production = $_SESSION['production'];
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">Reworked Material</h6>
-
+ <div class="row mb-3">
+    <div class="col-md-3">
+      <select id="filter-column" class="form-select">
+        <option value="" disabled selected>Select Column to Filter</option>
+        <option value="model">Model</option>
+        <option value="material_no">Material No</option>
+        <option value="lot_no">Lot No</option>
+        <option value="shift">Shift</option>
+        <option value="quantity">Quantity</option>
+        <option value="qc_person_incharge">Person Incharge</option>
+        <option value="qc_timein">Time In</option>
+        <option value="qc_timeout">Time Out</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <input
+        type="text"
+        id="filter-input"
+        class="form-control"
+        placeholder="Type to filter..."
+        disabled
+      />
+    </div>
+  </div>
 <table class="table table" style="table-layout: fixed; width: 100%;">
 <thead>
   <tr>
@@ -101,72 +124,120 @@ $production = $_SESSION['production'];
     let selectedRowData = null;
     let inspectionModal = null;
 document.addEventListener('DOMContentLoaded', function () {
+  let fullData = [];
+
+function renderTable(data) {
+  const tbody = document.getElementById('data-body');
+  tbody.innerHTML = '';
+
+  // Sort items: prioritize those needing TIME OUT
+  data.sort((a, b) => {
+    const weight = item => {
+      if (item.qc_timein && !item.qc_timeout) return 2; // Needs TIME OUT
+      if (!item.qc_timein) return 1; // Needs TIME IN
+      return 0; // Done
+    };
+    return weight(b) - weight(a); // Higher weight first
+  });
+
+  data.forEach(item => {
+    let actionHtml = '';
+
+    if (!item.qc_timein) {
+      actionHtml = `
+        <button 
+          class="btn btn-sm btn-success time-in-btn" 
+          data-materialid="${item.material_no}"
+          data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+          data-mode="timeIn"
+          data-id="${item.id}"
+        >
+          TIME IN
+        </button>`;
+    } else if (!item.qc_timeout) {
+      actionHtml = `
+        <button 
+          class="btn btn-sm btn-warning time-out-btn" 
+          data-materialid="${item.material_no}"
+          data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+          data-mode="timeOut"
+          data-id="${item.id}"
+        >
+          TIME OUT
+        </button>`;
+    } else {
+      actionHtml = `<span class="text-muted">Done</span>`;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align: center;">${item.material_no || '-'}</td>
+      <td style="text-align: center;">${item.model || '-'}</td>
+      <td style="text-align: center;">${item.shift || '-'}</td>
+      <td style="text-align: center;">${item.lot_no || '-'}</td>
+      <td style="text-align: center;">${item.quantity || '-'}${item.qc_quantity ? ` (${item.qc_quantity})` : ''}</td>
+      <td style="text-align: center;">${item.qc_person_incharge || '-'}</td>
+      <td style="text-align: center;">${actionHtml}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function loadTable() {
   fetch('api/qc/getRework.php')
     .then(response => response.json())
     .then(data => {
-        console.log(data);
-      const tbody = document.getElementById('data-body');
-      tbody.innerHTML = '';
-
-      // Sort items: prioritize those needing TIME OUT
-      data.sort((a, b) => {
-        const weight = item => {
-          if (item.qc_timein && !item.qc_timeout) return 2; // Needs TIME OUT
-          if (!item.qc_timein) return 1; // Needs TIME IN
-          return 0; // Done
-        };
-        return weight(b) - weight(a); // Higher weight first
-      });
-
-      data.forEach(item => {
-        let actionHtml = '';
-
-        if (!item.qc_timein) {
-          actionHtml = `
-            <button 
-              class="btn btn-sm btn-success time-in-btn" 
-              data-materialid="${item.material_no}"
-              data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
-              data-mode="timeIn"
-              data-id="${item.id}"
-            >
-              TIME IN
-            </button>`;
-        } else if (!item.qc_timeout) {
-          actionHtml = `
-            <button 
-              class="btn btn-sm btn-warning time-out-btn" 
-              data-materialid="${item.material_no}"
-              data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
-              data-mode="timeOut"
-              data-id="${item.id}"
-            >
-              TIME OUT
-            </button>`;
-        } else {
-          actionHtml = `<span class="text-muted">Done</span>`;
-        }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="text-align: center;">${item.material_no}</td>
-          <td style="text-align: center;">${item.model}</td>
-          <td style="text-align: center;">${item.shift}</td>
-          <td style="text-align: center;">${item.lot_no}</td>
-         <td style="text-align: center;">
-  ${item.quantity}${item.qc_quantity? ` (${item.qc_quantity})` : ''}
-</td>
-
-          <td style="text-align: center;">${item.qc_person_incharge || '-'}</td>
-          <td style="text-align: center;">${actionHtml}</td>
-        `;
-
-        tbody.appendChild(tr);
-      });
+      fullData = data;
+      renderTable(fullData);
     })
     .catch(error => {
       console.error('Fetch error:', error);
     });
+}
+
+loadTable();
+
+// Filter UI logic
+const filterColumn = document.getElementById('filter-column');
+const filterInput = document.getElementById('filter-input');
+
+filterColumn.addEventListener('change', () => {
+  if (filterColumn.value) {
+    filterInput.disabled = false;
+    filterInput.value = '';
+    renderTable(fullData);
+  } else {
+    filterInput.disabled = true;
+    filterInput.value = '';
+    renderTable(fullData);
+  }
+});
+
+filterInput.addEventListener('input', () => {
+  const searchTerm = filterInput.value.trim().toLowerCase();
+  const column = filterColumn.value;
+
+  if (!column || !searchTerm) {
+    renderTable(fullData);
+    return;
+  }
+
+  const filteredData = fullData.filter(item => {
+    let fieldValue = item[column];
+
+    if (fieldValue === undefined || fieldValue === null) return false;
+
+    // Convert to string for uniform comparison
+    if (typeof fieldValue !== 'string') {
+      fieldValue = String(fieldValue);
+    }
+
+    return fieldValue.toLowerCase().includes(searchTerm);
+  });
+
+  renderTable(filteredData);
+});
 });
 
 document.addEventListener('click', function (event) {

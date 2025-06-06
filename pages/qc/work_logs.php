@@ -11,6 +11,22 @@
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">Work Logs</h6>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="filter-column" class="form-select">
+      <option value="" disabled selected>Select Column</option>
+      <option value="material_no">Material No</option>
+      <option value="material_description">Material Description</option>
+      <option value="quantity">Quantity</option>
+      <option value="time_in">Time In</option>
+      <option value="time_out">Time Out</option>
+      <option value="person_incharge">Person Incharge</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
+  </div>
+</div>
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
 <thead>
@@ -37,50 +53,98 @@
 
 <script>
 const tbody = document.getElementById('data-body');
-tbody.innerHTML = ''; // Clear only once before all fetches
+const filterColumn = document.getElementById('filter-column');
+const filterInput = document.getElementById('filter-input');
 
-// Fetch and render Assembly Work Logs (Main QC Data)
-fetch('api/qc/getQCData.php')
-  .then(response => response.json())
-  .then(data => {
-    console.log('QC Data:', data);
+let allData = []; // will hold combined QC + Rework data
 
-    data.forEach(item => {
-      const row = document.createElement('tr');
-
-      row.innerHTML = `
-        <td style="text-align: center;">${item.material_no || ''}</td>
-        <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || ''}</td>
-        <td style="text-align: center;">${item.done_quantity}/${item.total_quantity}</td>
-        <td style="text-align: center;">${item.time_in || ''}</td>
-        <td style="text-align: center;">${item.time_out || ''}</td>
-        <td style="text-align: center;">${item.person_incharge || ''}</td>
-      `;
-      tbody.appendChild(row);
-    });
-
-    // After QC data, fetch and append Rework data
-    return fetch('api/qc/getReworkData.php');
-  })
-  .then(response => response.json())
-  .then(reworkData => {
-    console.log('Rework Data:', reworkData);
-
-    reworkData.forEach(item => {
-      const row = document.createElement('tr');
-   
-      row.innerHTML = `
-        <td style="text-align: center;">${item.material_no || ''}<br/>(REWORK)</td>
-        <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || ''}</td>
-        <td style="text-align: center;">${item.good}/${item.quantity}</td>
-        <td style="text-align: center;">${item.qc_timein || ''}</td>
-        <td style="text-align: center;">${item.qc_timeout || ''}</td>
-        <td style="text-align: center;">${item.qc_person_incharge || ''}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  })
-  .catch(error => {
-    console.error('Error loading data:', error);
+function renderTable(data) {
+  tbody.innerHTML = '';
+  data.forEach(item => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="text-align: center;">${item.material_no || ''}</td>
+      <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || ''}</td>
+      <td style="text-align: center;">${item.quantity}</td>
+      <td style="text-align: center;">${item.time_in || ''}</td>
+      <td style="text-align: center;">${item.time_out || ''}</td>
+      <td style="text-align: center;">${item.person_incharge || ''}</td>
+    `;
+    tbody.appendChild(row);
   });
+}
+
+function loadData() {
+  tbody.innerHTML = '';
+  allData = [];
+
+  fetch('api/qc/getQCData.php')
+    .then(res => res.json())
+    .then(qcData => {
+      // Normalize QC data
+      qcData.forEach(item => {
+        if (item.time_out === null) return;
+        allData.push({
+          material_no: item.material_no,
+          material_description: item.material_description,
+          quantity: `${item.done_quantity || 0}/${item.total_quantity || 0}`,
+          time_in: item.time_in,
+          time_out: item.time_out,
+          person_incharge: item.person_incharge
+        });
+      });
+
+      return fetch('api/qc/getReworkData.php');
+    })
+    .then(res => res.json())
+    .then(reworkData => {
+      // Normalize Rework data and append
+      reworkData.forEach(item => {
+        if (item.qc_timeout === null) return;
+        allData.push({
+          material_no: (item.material_no || '') + ' (REWORK)',
+          material_description: item.material_description,
+          quantity: `${item.good || 0}/${item.quantity || 0}`,
+          time_in: item.qc_timein,
+          time_out: item.qc_timeout,
+          person_incharge: item.qc_person_incharge
+        });
+      });
+
+      renderTable(allData);
+    })
+    .catch(console.error);
+}
+
+// Enable/disable filter input based on selected column
+filterColumn.addEventListener('change', () => {
+  if (filterColumn.value) {
+    filterInput.disabled = false;
+    filterInput.value = '';
+    renderTable(allData); // reset to full data
+  } else {
+    filterInput.disabled = true;
+    filterInput.value = '';
+    renderTable(allData);
+  }
+});
+
+// Filter on input change
+filterInput.addEventListener('input', () => {
+  const col = filterColumn.value;
+  const val = filterInput.value.toLowerCase();
+
+  if (!col) return;
+
+  const filtered = allData.filter(item => {
+    const cell = (item[col] || '').toString().toLowerCase();
+    return cell.includes(val);
+  });
+
+  renderTable(filtered);
+});
+
+// Initial load
+loadData();
+
 </script>

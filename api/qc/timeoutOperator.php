@@ -14,6 +14,7 @@ $dotenv->load();
 // Include database class
 require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
 $db = new DatabaseClass();
+date_default_timezone_set('Asia/Manila');
 
 // 🔄 Read JSON input
 $input = json_decode(file_get_contents('php://input'), true);

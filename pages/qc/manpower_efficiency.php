@@ -11,16 +11,36 @@
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">Manpower Efficiency</h6>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="filter-column" class="form-select">
+      <option value="" disabled selected>Select Column</option>
+      <option value="person">Person Incharge</option>
+      <option value="totalFinished">Quantity Finished</option>
+      <option value="date">Date</option>
+      <option value="timeIn">Time In</option>
+      <option value="timeOut">Time Out</option>
+      <option value="spent">Spent</option>
+      <option value="standby">Standby</option>
+      <option value="span">Total Span</option>
+      <option value="timePerUnit">Time per Unit</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
+  </div>
+</div>
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
 <thead>
   <tr>
-    <!-- <th style="width: 20%; text-align: center;">Material No</th>
-    <th style="width: 20%; text-align: center;">Material Description</th> -->
     <th style="width: 20%; text-align: center;">Person Incharge</th>
-    <th style="width: 8%; text-align: center;">Total Qty</th>
-    <th style="width: 15%; text-align: center;">Time In</th>
-    <th style="width: 15%; text-align: center;">Time Out</th>
+    <th style="width: 10%; text-align: center;">Quantity</th>
+    <th style="width: 10%; text-align: center;">Date</th>
+    <th style="width: 10%; text-align: center;">Time In</th>
+    <th style="width: 10%; text-align: center;">Time Out</th>
+    <th style="width: 25%; text-align: center;">Spent/Standby/Total Span</th>
+    
     <th style="width: 15%; text-align: center;">Time per Unit (min)</th>
 
   </tr>
@@ -36,89 +56,157 @@
   </div>
 </div>
 <script>
-const tbody = document.getElementById('data-body');
-tbody.innerHTML = ''; // clear existing table rows
+  function formatHoursMinutes(decimalHours) {
+  const hours = Math.floor(decimalHours);
+  const minutes = Math.round((decimalHours - hours) * 60);
+  return `${hours} hrs${minutes > 0 ? ' ' + minutes + ' mins' : ''}`;
+}
 
-// First fetch QC data and render
-fetch('api/qc/getQCData.php')
-  .then(response => response.json())
-  .then(qcData => {
-    // Build map of max total_quantity per reference_no
-    const maxQtyMap = {};
-    qcData.forEach(item => {
-      const ref = item.reference_no;
-      const qty = parseInt(item.total_quantity) || 0;
-      if (!maxQtyMap[ref] || qty > maxQtyMap[ref]) {
-        maxQtyMap[ref] = qty;
+let mergedEntries = [];  // Will store processed entries for filtering
+
+function renderTable(data) {
+  const tbody = document.getElementById('data-body');
+  tbody.innerHTML = '';
+
+  data.forEach(entry => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="text-align: center;">${entry.person}</td>
+      <td style="text-align: center;">${entry.totalFinished}/${entry.totalQty}</td>
+      <td style="text-align: center;">${entry.date}</td>
+      <td style="text-align: center;">${entry.timeIn}</td>
+      <td style="text-align: center;">${entry.timeOut}</td>
+      <td style="text-align: center;">
+        ${entry.spent} / ${entry.standby} / ${entry.span}
+      </td>
+      <td style="text-align: center;">${entry.timePerUnit}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function loadAndProcessData() {
+  Promise.all([
+    fetch('api/qc/getQCData.php').then(res => res.json()),
+    fetch('api/qc/getManpowerRework.php').then(res => res.json())
+  ])
+  .then(([qcData, reworkData]) => {
+    const mergedData = {};
+    const qcMaxQtyMap = {};
+    const reworkMaxQtyMap = {};
+
+    function addEntry(person, date, reference, timeIn, timeOut, finishedQty, totalQty, source) {
+      const key = `${person}_${date}_${reference}`;
+      if (!mergedData[key]) {
+        mergedData[key] = {
+          person,
+          date,
+          reference,
+          totalFinished: 0,
+          timeIns: [],
+          timeOuts: [],
+          totalWorkMinutes: 0
+        };
       }
-    });
+      const group = mergedData[key];
 
-    // Render QC data rows
-    qcData.forEach(item => {
-      if (item.time_out === null) return;
-
-      const ref = item.reference_no;
-      const maxTotalQty = maxQtyMap[ref] || 0;
-      const finishedQty = parseInt(item.done_quantity) || 0;
-
-      let timeIn = item.time_in ? new Date(item.time_in) : null;
-      let timeOut = item.time_out ? new Date(item.time_out) : null;
-      let timeWorkedMin = 0;
-      let timePerUnitMin = 0;
+      if (source === 'qc') {
+        if (!qcMaxQtyMap[key] || totalQty > qcMaxQtyMap[key]) qcMaxQtyMap[key] = totalQty;
+      } else if (source === 'rework') {
+        if (!reworkMaxQtyMap[key] || totalQty > reworkMaxQtyMap[key]) reworkMaxQtyMap[key] = totalQty;
+      }
 
       if (timeIn && timeOut && timeOut > timeIn && finishedQty > 0) {
-        timeWorkedMin = (timeOut - timeIn) / (1000 * 60);
-        timePerUnitMin = timeWorkedMin / finishedQty;
+        const workedMin = (timeOut - timeIn) / (1000 * 60);
+        group.totalWorkMinutes += workedMin;
+        group.timeIns.push(timeIn);
+        group.timeOuts.push(timeOut);
+        group.totalFinished += finishedQty;
       }
+    }
 
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <!--<td style="text-align: center;">${item.material_no || '<i>NONE</i>'}</td>
-        <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || '<i>NONE</i>'}</td>-->
-        <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
-        <td style="text-align: center;">${finishedQty}/${maxTotalQty}</td>
-        <td style="text-align: center;">${item.time_in || ''}</td>
-        <td style="text-align: center;">${item.time_out || ''}</td>
-        <td style="text-align: center;">${timePerUnitMin ? timePerUnitMin.toFixed(2) : '-'}</td>
-      `;
-      tbody.appendChild(row);
+    // Process QC data
+    qcData.forEach(item => {
+      if (!item.time_in || !item.time_out || !item.person_incharge || !item.reference_no || !item.date_needed) return;
+      const finishedQty = parseInt(item.done_quantity) || 0;
+      const totalQty = parseInt(item.total_quantity) || 0;
+      const timeIn = new Date(item.time_in);
+      const timeOut = new Date(item.time_out);
+      addEntry(item.person_incharge, item.date_needed, item.reference_no, timeIn, timeOut, finishedQty, totalQty, 'qc');
     });
 
-    // After QC data, fetch and render Rework data
-    return fetch('api/qc/getManpowerRework.php');
-  })
-  .then(response => response.json())
-  .then(reworkData => {
-    // Render rework data rows
-    console.log(reworkData);
+    // Process Rework data
     reworkData.forEach(item => {
-       // Parse time in/out
-      let timeIn = item.qc_timein ? new Date(item.qc_timein) : null;
-      let timeOut = item.qc_timeout ? new Date(item.qc_timeout) : null;
-
-      let timeWorkedMin = 0;
-      let timePerUnitMin = 0;
-      const quantity = parseInt(item.quantity) || 0;
-
-      if (timeIn && timeOut && timeOut > timeIn && quantity > 0) {
-        timeWorkedMin = (timeOut - timeIn) / (1000 * 60);
-        timePerUnitMin = timeWorkedMin / quantity;
-      }
-      const row = document.createElement('tr');
-
-      row.innerHTML = `
-        <!--<td style="text-align: center;">${item.material_no || '<i>NONE</i>'}<br/>(REWORK)</td>
-        <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || '<i>NONE</i>'}</td>-->
-        <td style="text-align: center;">${item.qc_person_incharge || '<i>NONE</i>'}<br/>(REWORK)</td>
-        <td style="text-align: center;">${item.qc_pending_quantity || '-'}/${item.quantity || '-'}</td>
-        <td style="text-align: center;">${item.qc_timein || ''}</td>
-        <td style="text-align: center;">${item.qc_timeout || ''}</td>
-        <td style="text-align: center;">${timePerUnitMin ? timePerUnitMin.toFixed(2) : '-'}</td>
-      `;
-      tbody.appendChild(row);
+      if (!item.qc_timein || !item.qc_timeout || !item.qc_person_incharge || !item.reference_no || !item.date_needed) return;
+      const finishedQty = parseInt(item.good) || 0;
+      const totalQty = parseInt(item.quantity) || 0;
+      const timeIn = new Date(item.qc_timein);
+      const timeOut = new Date(item.qc_timeout);
+      addEntry(item.qc_person_incharge, item.date_needed, item.reference_no, timeIn, timeOut, finishedQty, totalQty, 'rework');
     });
+
+    // Prepare array with formatted data and extra fields for filtering
+    mergedEntries = Object.values(mergedData).map(entry => {
+      const firstIn = new Date(Math.min(...entry.timeIns.map(t => t.getTime())));
+      const lastOut = new Date(Math.max(...entry.timeOuts.map(t => t.getTime())));
+      const spanMinutes = (lastOut - firstIn) / (1000 * 60);
+      const standbyMinutes = spanMinutes - entry.totalWorkMinutes;
+      const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
+      const spanHours = spanMinutes / 60;
+      const standbyHours = standbyMinutes / 60;
+      const timePerUnitHours = timePerUnit / 60;
+      const key = `${entry.person}_${entry.date}_${entry.reference}`;
+      const totalQty = (qcMaxQtyMap[key] || 0) + (reworkMaxQtyMap[key] || 0);
+
+      return {
+        person: entry.person,
+        date: entry.date,
+        reference: entry.reference,
+        totalFinished: entry.totalFinished,
+        totalQty,
+        timeIn: firstIn.toTimeString().slice(0,5),
+        timeOut: lastOut.toTimeString().slice(0,5),
+        spent: formatHoursMinutes(entry.totalWorkMinutes / 60),
+        standby: formatHoursMinutes(standbyHours),
+        span: formatHoursMinutes(spanHours),
+        timePerUnit: timePerUnit > 0 ? formatHoursMinutes(timePerUnitHours) : '-'
+      };
+    });
+
+    renderTable(mergedEntries);
   })
-  .catch(error => {
-    console.error('Error loading data:', error);
+  .catch(console.error);
+}
+
+// Filtering logic
+document.getElementById('filter-column').addEventListener('change', function() {
+  const input = document.getElementById('filter-input');
+  if (this.value) {
+    input.disabled = false;
+    input.value = '';
+    renderTable(mergedEntries); // reset table on column change
+  } else {
+    input.disabled = true;
+    input.value = '';
+    renderTable(mergedEntries); // show all if no column selected
+  }
+});
+
+document.getElementById('filter-input').addEventListener('input', function() {
+  const col = document.getElementById('filter-column').value;
+  const val = this.value.toLowerCase();
+
+  if (!col) return;
+
+  const filtered = mergedEntries.filter(entry => {
+    const cellValue = (entry[col] || '').toString().toLowerCase();
+    return cellValue.includes(val);
   });
+
+  renderTable(filtered);
+});
+
+// Initial load
+loadAndProcessData();
+
 </script>

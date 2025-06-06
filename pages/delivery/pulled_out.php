@@ -14,6 +14,26 @@
         <div class="card-body">
           <h6 class="card-title">List of Pulled Out</h6>
 
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="column-select" class="form-select">
+      <option value="" disabled selected>Select Column</option>
+
+      <option value="material_no">Material No</option>
+      <option value="model_name">Model</option>
+      <option value="quantity">Qty</option>
+      <option value="supplement_order">Supplement</option>
+      <option value="total_quantity">Total Qty</option>
+      <option value="shift">Shift</option>
+      <option value="lot_no">Lot</option>
+      <option value="date_needed">Date Needed</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input type="text" id="search-input" class="form-control" placeholder="Type to filter..." />
+  </div>
+</div>
+
 
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
@@ -72,7 +92,15 @@ let originalData = [];
 function renderTable(data) {
   const tbody = document.getElementById('data-body');
   tbody.innerHTML = '';
-  data.forEach(item => {
+
+  // Sort by date_needed descending (latest first)
+  const sortedData = [...data].sort((a, b) => {
+    const dateA = new Date(a.date_needed);
+    const dateB = new Date(b.date_needed);
+    return dateB - dateA; // Newest first
+  });
+
+  sortedData.forEach(item => {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td style="text-align: center;">${item.material_no}</td>
@@ -82,31 +110,32 @@ function renderTable(data) {
       <td style="text-align: center;">${item.total_quantity}</td>
       <td style="text-align: center;">${item.shift}</td>
       <td style="text-align: center;">${item.lot_no}</td>
-
-
-<td style="text-align: center;">${item.date_needed || '<i>NONE</i>'}</td>
-
+      <td style="text-align: center;">${item.date_needed || '<i>NONE</i>'}</td>
     `;
     tbody.appendChild(row);
   });
 }
 
-function applyHierarchicalFilters() {
-  const model = document.getElementById('filter-model').value;
-  const date = document.getElementById('filter-date').value;
-  const shift = document.getElementById('filter-shift').value;
-  const status = document.getElementById('filter-status').value;
 
-  let filtered = originalData;
+document.getElementById('column-select').addEventListener('change', dynamicSearch);
+document.getElementById('search-input').addEventListener('input', dynamicSearch);
 
-  if (model) filtered = filtered.filter(d => d.model_name === model);
-  if (date) filtered = filtered.filter(d => d.date_needed === date);
-  if (shift) filtered = filtered.filter(d => d.shift === shift);
-  if (status) filtered = filtered.filter(d => d.section.toUpperCase() === status);
+function dynamicSearch() {
+  const column = document.getElementById('column-select').value;
+  const searchText = document.getElementById('search-input').value.trim().toLowerCase();
+
+  if (!column || !searchText) {
+    renderTable(originalData); // Show full data
+    return;
+  }
+
+  const filtered = originalData.filter(item => {
+    const value = (item[column] ?? '').toString().toLowerCase();
+    return value.includes(searchText);
+  });
 
   renderTable(filtered);
 }
-
 
 
 // Initial load
@@ -120,5 +149,14 @@ document.addEventListener('DOMContentLoaded', function () {
       renderTable(data);
     })
     .catch(error => console.error('Error fetching data:', error));
+
+
+
+function resetSearch() {
+  document.getElementById('column-select').value = '';
+  document.getElementById('search-input').value = '';
+  renderTable(originalData);
+}
+
 });
 </script>

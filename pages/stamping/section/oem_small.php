@@ -18,27 +18,46 @@
      <div class="d-flex justify-content-between align-items-center mb-3">
   <h6 class="card-title mb-0">To-do List</h6>
 </div>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="filter-column" class="form-select">
+      <option value="" disabled selected>Select Column to Filter</option>
+      <option value="material_no">Material No</option>
+      <option value="components_name">Material Description</option>
+      <option value="stage_name">Process</option>
+      <option value="total_quantity">Total Quantity</option>
+      <option value="person_incharge">Person Incharge</option>
+      <option value="time_in">Time In</option>
+      <option value="time_out">Time Out</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input
+      type="text"
+      id="filter-input"
+      class="form-control"
+      placeholder="Type to filter..."
+      disabled
+    />
+  </div>
+</div>
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-      <th style="width: 5%; text-align: center;">Process</th>
+     
         <th style="width: 5%; text-align: center;">Material No</th>
         <th style="width: 10%; text-align: center;">Material Description</th>
+         <th style="width: 5%; text-align: center;">Process</th>
         <th style="width: 5%; text-align: center;">Total Quantity</th>
-        <th style="width: 5%; text-align: center;">Quantity</th>
         <th style="width: 10%; text-align: center;">Person Incharge</th>
-        <th style="width: 7%; text-align: center;">Time In</th>
-        <th style="width: 7%; text-align: center;">Time Out</th>
-        <th style="width: 7%; text-align: center;">Status</th>
+        <th style="width: 7%; text-align: center;">Time</th>
         <th style="width: 7%; text-align: center;">Action</th>
+         <th style="width: 5%; text-align: center;">View</th>
     </tr>
   </thead>
   <tbody id="data-body"></tbody>
 </table>
-
-
-      
       </div>
     </div>
   </div>
@@ -48,7 +67,6 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="qrModalLabel">Scan QR Code</h5>
-      
       </div>
       <div class="modal-body">
         <div id="qr-reader" style="width: 100%"></div>
@@ -81,77 +99,123 @@
 </div>
 
 <script>
-   let mode = null;
-  let selectedRowData = null;
-  let fullData = null;
-fetch('api/stamping/getTodoList.php')
+  let mode = null;
+let selectedRowData = null;
+let fullData = null;
+
+const filterColumnSelect = document.getElementById('filter-column');
+const filterInput = document.getElementById('filter-input');
+const dataBody = document.getElementById('data-body');
+
+fetch('api/stamping/getOEM_small.php')
   .then(response => response.json())
   .then(data => {
     console.log(data);
     fullData = data;
+    renderTable(fullData);
+  })
+  .catch(console.error);
 
-    // Step 1: Group by reference_no
-    const grouped = {};
-    data.forEach(item => {
-      if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
-      grouped[item.reference_no].push(item);
-    });
+function renderTable(data) {
+  // Step 1: Group by reference_no
+  const grouped = {};
+  data.forEach(item => {
+    if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
+    grouped[item.reference_no].push(item);
+  });
 
-    // Step 2: Flatten grouped entries and sort by stage within each group
-    const sorted = Object.values(grouped)
-      .flatMap(group => group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0)))
-);
+  // Step 2: Flatten grouped entries and sort by stage within each group
+  const sorted = Object.values(grouped)
+    .flatMap(group => group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0))));
 
-    console.log(sorted); // sorted list
+  dataBody.innerHTML = ''; // Clear existing rows if any
 
-    const dataBody = document.getElementById('data-body');
-    dataBody.innerHTML = ''; // Clear existing rows if any
+  sorted.forEach(item => {
+    if(item.status === 'done'){return;}
+    const row = document.createElement('tr');
+    const status = item.status?.toLowerCase();
+    const statusCellContent = status ? status.toUpperCase() : '<i>None</i>';
 
-    sorted.forEach(item => {
-      if(item.status ==='done'){return;}
-      const row = document.createElement('tr');
-      const status = item.status?.toLowerCase();
-      const statusCellContent = status ? status.toUpperCase() : '<i>None</i>';
+    const hasTimeIn = item.time_in !== null && item.time_in !== '';
+    const hasTimeOut = item.time_out !== null && item.time_out !== '';
 
-      const hasTimeIn = item.time_in !== null && item.time_in !== '';
-      const hasTimeOut = item.time_out !== null && item.time_out !== '';
+    const itemDataAttr = encodeURIComponent(JSON.stringify(item));
 
-      const itemDataAttr = encodeURIComponent(JSON.stringify(item));
+    let actionButton = '';
+    if (hasTimeIn && hasTimeOut) {
+      actionButton = `<span class="btn btn-sm btn-primary">Done</span>`;
+    } else {
+      actionButton = hasTimeIn
+        ? `<button type="button" 
+                  class="btn btn-sm btn-success time-action-btn" 
+                  data-item="${itemDataAttr}"
+                  data-mode="time-out">
+              Time Out
+            </button>`
+        : `<button type="button" 
+                  class="btn btn-sm btn-primary time-action-btn" 
+                  data-item="${itemDataAttr}"
+                  data-mode="time-in">
+              Time In
+            </button>`;
+    }
 
-      let actionButton = '';
-      if (hasTimeIn && hasTimeOut) {
-        actionButton = `<span class="btn btn-sm btn-primary">Done</span>`;
-      } else {
-        actionButton = hasTimeIn
-          ? `<button type="button" 
-                    class="btn btn-sm btn-success time-action-btn" 
-                    data-item="${itemDataAttr}"
-                    data-mode="time-out">
-                Time Out
-              </button>`
-          : `<button type="button" 
-                    class="btn btn-sm btn-primary time-action-btn" 
-                    data-item="${itemDataAttr}"
-                    data-mode="time-in">
-                Time In
-              </button>`;
-      }
+    row.innerHTML = `
+      <td style="text-align: center;">${item.material_no || ''}</td>
+      <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
+      <td style="text-align: center;">${item.stage_name || ''}</td>
+      <td style="text-align: center;">${item.total_quantity || '<i>Null</i>'}</td>
+      <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
+      <td style="text-align: center;">
+        ${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}
+      </td>
+      <td style="text-align: center;">
+        ${actionButton}
+      </td>
+      <td style="text-align: center;">
+        <button onclick="viewStageStatus('${item.material_no}', '${item.components_name}')" style="font-size: 16px;" class="btn btn-sm" title="View Stages">
+          🔍
+        </button>
+      </td>
+    `;
 
-      row.innerHTML = `
-       <td style="text-align: center;">${item.stage_name || ''}</td>
-        <td style="text-align: center;">${item.material_no || ''}</td>
-        <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.total_quantity || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.quantity || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.time_in || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.time_out || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${statusCellContent}</td>
-        <td style="text-align: center;">${actionButton}</td>
-      `;
+    dataBody.appendChild(row);
+  });
+}
 
-      dataBody.appendChild(row);
-    });
+// Enable/disable filter input based on dropdown
+filterColumnSelect.addEventListener('change', () => {
+  filterInput.value = '';
+  filterInput.disabled = !filterColumnSelect.value;
+  filterInput.focus();
+  applyFilter();
+});
+
+filterInput.addEventListener('input', applyFilter);
+
+function applyFilter() {
+  const column = filterColumnSelect.value;
+  const filterValue = filterInput.value.trim().toLowerCase();
+
+  if (!column) {
+    renderTable(fullData);
+    return;
+  }
+
+  const filtered = fullData.filter(item => {
+    let val = item[column];
+    if (val === null || val === undefined) return false;
+
+    // For time filter, handle combined fields
+    if (column === 'time_in' || column === 'time_out') {
+      return String(val).toLowerCase().includes(filterValue);
+    }
+
+    return String(val).toLowerCase().includes(filterValue);
+  });
+
+  renderTable(filtered);
+}
 
 
 document.getElementById('data-body').addEventListener('click', (event) => {
@@ -311,7 +375,77 @@ console.log(fullData);
 });
 
 
+
+function viewStageStatus(materialNo, componentName) {
+  fetch('api/stamping/fetchStageStatus.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ material_no: materialNo, components_name: componentName })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      const stages = data.stages || [];
+      const len = stages.length;
+
+      let content = '<i>No stages found</i>';
+
+      if (len > 0) {
+        // Two-row grid for odd ≥ 5 or even ≥ 6
+        if ((len >= 5 && len % 2 === 1) || (len >= 6 && len % 2 === 0)) {
+          const midpoint = Math.ceil(len / 2);
+          const firstRow = stages.slice(0, midpoint);
+          const secondRow = stages.slice(midpoint);
+
+          content = `
+            <div style="display: flex; flex-direction: column; gap: 16px; padding: 10px;">
+              <div style="display: flex; gap: 12px; justify-content: center;">
+                ${firstRow.map(stage => renderStageBox(stage)).join('')}
+              </div>
+              <div style="display: flex; gap: 12px; justify-content: center;">
+                ${secondRow.map(stage => renderStageBox(stage)).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          // Default horizontal scroll
+          content = `
+            <div style="display: flex; gap: 16px; overflow-x: auto; padding: 10px;">
+              ${stages.map(stage => renderStageBox(stage)).join('')}
+            </div>
+          `;
+        }
+      }
+
+      Swal.fire({
+        title: 'Stage Status',
+        html: content,
+        icon: 'info',
+        width: '60%'
+      });
+    } else {
+      Swal.fire('Error', data.message || 'Could not fetch stage data.', 'error');
+    }
+  })
+  .catch(err => {
+    console.error('Fetch error:', err);
+    Swal.fire('Error', 'Something went wrong.', 'error');
   });
+
+    function renderStageBox(stage) {
+    console.log(stage)
+    return `
+      <div style="border: 1px solid #ccc; padding: 10px; min-width: 200px; border-radius: 8px; box-shadow: 1px 1px 5px rgba(0,0,0,0.1);">
+        <b>Section:</b> ${stage.section}<br>
+        <b>Stage Name:</b> ${stage.stage_name}<br>
+        <b>Status:</b> <span style="color: ${stage.status === 'done' ? 'green' : 'orange'}">${stage.status}</span><br>
+        <br>(${stage.stage})
+      </div>
+    `;
+  }
+}
+
+
 let isProcessingScan = false;
 
 function openQRModal(mode) {

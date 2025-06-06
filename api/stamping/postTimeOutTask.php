@@ -91,6 +91,9 @@ try {
                         'stage' => $row['stage'],
                         'total_quantity' => $row['total_quantity'],
                         'pending_quantity' => $row['pending_quantity'],
+                        'stage_name' => $row['stage_name'],
+                        'section' => $row['section'],
+                        
                         'time_in' => null,
                         'time_out' => null,
                         'status' => 'pending',
@@ -102,11 +105,11 @@ try {
 
                 $insertSql = "INSERT INTO stamping (
                     reference_no, material_no, components_name, process_quantity,pending_quantity,
-                    stage, total_quantity, time_in, time_out, status,
+                    stage,stage_name,section, total_quantity, time_in, time_out, status,
                     person_incharge, created_at, updated_at
                 ) VALUES (
                     :reference_no, :material_no, :components_name, :process_quantity,:pending_quantity,
-                    :stage, :total_quantity, :time_in, :time_out, :status,
+                    :stage,:stage_name,:section, :total_quantity, :time_in, :time_out, :status,
                     :person_incharge, :created_at, :updated_at
                 )";
 
@@ -162,6 +165,21 @@ for ($stage = 1; $stage <= $processQuantity; $stage++) {
                 ];
 
                 $db->Update($insertInventorySql, $insertInventoryParams);
+
+                $updateRM = "
+                    UPDATE rm_warehouse 
+                    SET status=:status
+                    WHERE material_no = :material_no AND component_name = :components_name
+                ";
+
+                $updateRMParams = [
+                    ':material_no' => $materialNo,
+                    ':components_name' => $componentsName,
+                    ':status'=>'done',
+            
+                ];
+
+                $db->Update($updateRM, $updateRMParams);
             }
 
 

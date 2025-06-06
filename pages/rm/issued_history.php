@@ -1,0 +1,112 @@
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/sweetalert2@11.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<div class="page-content">
+  <nav class="page-breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">Pages</a></li>
+      <li class="breadcrumb-item" aria-current="page">Stamping Manpower Section</li>
+    </ol>
+  </nav>
+  <div class="row">
+    <div class="col-md-12 grid-margin stretch-card">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="card-title mb-0">To-do List</h6>
+          </div>
+          <div class="row mb-3">
+              <div class="col-md-3">
+                <select id="filter-column" class="form-select">
+                  <option value="" disabled selected>Select Column to Filter</option>
+                  <option value="material_no">Material No</option>
+                  <option value="component_name">Material Description</option>
+                  <option value="quantity">Quantity</option>
+                  <option value="created_at">Time & Date</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
+              </div>
+            </div>
+          <table class="table table" style="table-layout: fixed; width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 5%; text-align: center;">Material No</th>
+                <th style="width: 10%; text-align: center;">Material Description</th>
+                <th style="width: 5%; text-align: center;">Quantity</th>
+                <th style="width: 10%; text-align: center;">Time & Date</th>
+              </tr>
+            </thead>
+            <tbody id="data-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let fullData = [];
+
+const dataBody = document.getElementById('data-body');
+const filterColumn = document.getElementById('filter-column');
+const filterInput = document.getElementById('filter-input');
+
+function renderTable(data) {
+  dataBody.innerHTML = '';
+
+  if (!data || data.length === 0) {
+    dataBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No records found</td></tr>`;
+    return;
+  }
+
+  data.forEach(item => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="text-align: center;">${item.material_no || ''}</td>
+      <td style="text-align: center;">${item.component_name || ''}</td>
+      <td style="text-align: center;">${item.quantity || 0}</td>
+      <td style="text-align: center;">${item.created_at || ''}</td>
+    `;
+    dataBody.appendChild(row);
+  });
+}
+
+fetch('api/rm/getIssuedHistory.php')
+  .then(response => response.json())
+  .then(data => {
+    console.log(data.data);
+    fullData = data.data || [];
+    renderTable(fullData);
+  })
+  .catch(error => {
+    console.error('Error fetching data:', error);
+  });
+
+// Enable input when a column is selected
+filterColumn.addEventListener('change', () => {
+  filterInput.value = '';
+  filterInput.disabled = !filterColumn.value;
+  renderTable(fullData);
+});
+
+// Filter logic
+filterInput.addEventListener('input', () => {
+  const column = filterColumn.value;
+  const keyword = filterInput.value.toLowerCase().trim();
+
+  if (!column || keyword === '') {
+    renderTable(fullData);
+    return;
+  }
+
+  const filtered = fullData.filter(item => {
+    const field = item[column];
+    return field?.toString().toLowerCase().includes(keyword);
+  });
+
+  renderTable(filtered);
+});
+</script>

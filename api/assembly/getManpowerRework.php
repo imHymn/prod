@@ -13,7 +13,8 @@ $db = new DatabaseClass();
 
 try {
     $sql = "SELECT * FROM rework_assembly
-            WHERE status='done'
+            WHERE assembly_timeout IS NOT NULL
+
               AND created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
 
     

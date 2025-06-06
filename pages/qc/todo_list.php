@@ -21,6 +21,30 @@ $name = $_SESSION['name'] ?? null;
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">To-do List</h6>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="filter-column" class="form-select">
+      <option value="" disabled selected>Select Column to Filter</option>
+      <option value="model">Model</option>
+      <option value="material_no">Material No</option>
+      <option value="lot_no">Lot No</option>
+      <option value="shift">Shift</option>
+      <option value="total_quantity">Quantity</option>
+      <option value="person_incharge">Person Incharge</option>
+      <option value="time_in">Time In</option>
+      <option value="time_out">Time Out</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input
+      type="text"
+      id="filter-input"
+      class="form-control"
+      placeholder="Type to filter..."
+      disabled
+    />
+  </div>
+</div>
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
 <thead>
@@ -118,99 +142,198 @@ $name = $_SESSION['name'] ?? null;
 <script>
 let inspectionModalInstance = null; // Global instance
 
-  let fullDataSet = [];
+let fullDataSet = [];
 let selectedRowData = null;
 let mode = null;
 
 fetch('api/qc/getTodoList.php')
   .then(response => response.json())
   .then(data => {
-        fullDataSet = data;
-  console.log(data);
-  const tbody = document.getElementById('data-body');
-  tbody.innerHTML = '';
+    fullDataSet = data;
+    console.log(data);
+    const tbody = document.getElementById('data-body');
+    tbody.innerHTML = '';
 
-  const isTimeOut = item =>
-    item.person_incharge?.trim() !== '' &&
-    item.time_in &&
-    item.done_quantity == null;
+    const isTimeOut = item =>
+      item.person_incharge?.trim() !== '' &&
+      item.time_in &&
+      item.done_quantity == null;
 
-  const isContinue = item =>
-    item.status?.toLowerCase() === 'continue';
+    const isContinue = item =>
+      item.status?.toLowerCase() === 'continue';
 
-  const weight = item => {
-    if (isContinue(item)) return 2;
-    if (isTimeOut(item)) return 1;
-    return 0;
-  };
+    const weight = item => {
+      if (isContinue(item)) return 2;
+      if (isTimeOut(item)) return 1;
+      return 0;
+    };
 
-  // First: sort by reference_no (group), then by custom weight
-  data.sort((a, b) => {
-    if (a.reference_no === b.reference_no) {
-      return weight(b) - weight(a); // sort within group by weight
-    }
-    return a.reference_no.localeCompare(b.reference_no); // group by reference_no
-  });
+    // First: sort by reference_no (group), then by custom weight
+    data.sort((a, b) => {
+      if (a.reference_no === b.reference_no) {
+        return weight(b) - weight(a); // sort within group by weight
+      }
+      return a.reference_no.localeCompare(b.reference_no); // group by reference_no
+    });
 
-  data.forEach(item => {
-  if (item.time_in && item.time_out) return; 
-    let actionHtml = '';
+    // Initial render of full data set
+    data.forEach(item => {
+      if (item.time_in && item.time_out) return;
+      let actionHtml = '';
 
-    if (item.person_incharge && item.person_incharge.trim() !== '') {
-      if (item.done_quantity !== null) {
-        actionHtml = `<span class="btn btn-sm bg-success">Done</span>`;
-      } else if (item.time_in) {
-        actionHtml = `<button 
-                        class="btn btn-sm btn-warning time-out-btn" 
-                        data-materialid="${item.material_no}" 
-                        data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
-                        data-mode="timeOut"
-                        data-itemid="${item.itemID}"
-                        data-id="${item.id || ''}"
-                      >
-                        TIME OUT
-                      </button>`;
+      if (item.person_incharge && item.person_incharge.trim() !== '') {
+        if (item.done_quantity !== null) {
+          actionHtml = `<span class="btn btn-sm bg-success">Done</span>`;
+        } else if (item.time_in) {
+          actionHtml = `<button 
+                          class="btn btn-sm btn-warning time-out-btn" 
+                          data-materialid="${item.material_no}" 
+                          data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
+                          data-mode="timeOut"
+                          data-itemid="${item.itemID}"
+                          data-id="${item.id || ''}"
+                        >
+                          TIME OUT
+                        </button>`;
+        } else {
+          actionHtml = `<button 
+                          class="btn btn-sm btn-primary time-in-btn" 
+                          data-materialid="${item.material_no}" 
+                          data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
+                          data-mode="timeIn"
+                          data-itemid="${item.itemID}"
+                          data-id="${item.id || ''}"
+                        >
+                          TIME IN
+                        </button>`;
+        }
       } else {
         actionHtml = `<button 
                         class="btn btn-sm btn-primary time-in-btn" 
                         data-materialid="${item.material_no}" 
                         data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
                         data-mode="timeIn"
-                        data-itemid="${item.itemID}"
-                        data-id="${item.id || ''}"
                       >
                         TIME IN
                       </button>`;
       }
-    } else {
-      actionHtml = `<button 
-                      class="btn btn-sm btn-primary time-in-btn" 
-                      data-materialid="${item.material_no}" 
-                      data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
-                      data-mode="timeIn"
-                    >
-                      TIME IN
-                    </button>`;
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="text-align: center;">${item.model || ''}</td>
+        <td style="text-align: center;">${item.material_no || ''}</td>
+        <!-- <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || ''}</td>-->
+        <td style="text-align: center;">${item.lot_no || ''}</td>
+        <td style="text-align: center;">${item.shift || ''}</td>
+        <td style="text-align: center;">
+          ${item.total_quantity || ''}
+          ${item.pending_quantity != null ? ` (${item.pending_quantity})` : ''}
+        </td>
+        <td style="text-align: center;">${item.status?.toUpperCase() || ''}</td>
+        <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
+        <td style="text-align: center;">${actionHtml}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    // --------- Begin Filter Functionality ---------
+
+    const filterColumnSelect = document.getElementById('filter-column');
+    const filterInput = document.getElementById('filter-input');
+
+    // Enable/disable input based on selected filter column
+    filterColumnSelect.addEventListener('change', () => {
+      filterInput.disabled = !filterColumnSelect.value;
+      filterInput.value = '';
+      renderFilteredTable(fullDataSet);
+    });
+
+    filterInput.addEventListener('input', () => {
+      renderFilteredTable(fullDataSet);
+    });
+
+    function renderFilteredTable(dataSet) {
+      tbody.innerHTML = '';
+
+      const column = filterColumnSelect.value;
+      const filterText = filterInput.value.toLowerCase();
+
+      const filteredData = column
+        ? dataSet.filter(item => {
+            let value = item[column];
+
+            // Map your filter column keys to actual item properties if needed
+            if (column === 'quantity') value = item.total_quantity;
+            else if (column === 'qc_person_incharge') value = item.person_incharge;
+            else if (column === 'qc_timein') value = item.time_in;
+            else if (column === 'qc_timeout') value = item.time_out;
+
+            if (value === null || value === undefined) return false;
+            if (typeof value === 'number') value = value.toString();
+            return value.toString().toLowerCase().includes(filterText);
+          })
+        : dataSet;
+
+      filteredData.forEach(item => {
+        if (item.time_in && item.time_out) return;
+        let actionHtml = '';
+
+        if (item.person_incharge && item.person_incharge.trim() !== '') {
+          if (item.done_quantity !== null) {
+            actionHtml = `<span class="btn btn-sm bg-success">Done</span>`;
+          } else if (item.time_in) {
+            actionHtml = `<button 
+                            class="btn btn-sm btn-warning time-out-btn" 
+                            data-materialid="${item.material_no}" 
+                            data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
+                            data-mode="timeOut"
+                            data-itemid="${item.itemID}"
+                            data-id="${item.id || ''}"
+                          >
+                            TIME OUT
+                          </button>`;
+          } else {
+            actionHtml = `<button 
+                            class="btn btn-sm btn-primary time-in-btn" 
+                            data-materialid="${item.material_no}" 
+                            data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
+                            data-mode="timeIn"
+                            data-itemid="${item.itemID}"
+                            data-id="${item.id || ''}"
+                          >
+                            TIME IN
+                          </button>`;
+          }
+        } else {
+          actionHtml = `<button 
+                          class="btn btn-sm btn-primary time-in-btn" 
+                          data-materialid="${item.material_no}" 
+                          data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}' 
+                          data-mode="timeIn"
+                        >
+                          TIME IN
+                        </button>`;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="text-align: center;">${item.model || ''}</td>
+          <td style="text-align: center;">${item.material_no || ''}</td>
+          <td style="text-align: center;">${item.lot_no || ''}</td>
+          <td style="text-align: center;">${item.shift || ''}</td>
+          <td style="text-align: center;">
+            ${item.total_quantity || ''}
+            ${item.pending_quantity != null ? ` (${item.pending_quantity})` : ''}
+          </td>
+          <td style="text-align: center;">${item.status?.toUpperCase() || ''}</td>
+          <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
+          <td style="text-align: center;">${actionHtml}</td>
+        `;
+        tbody.appendChild(row);
+      });
     }
 
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td style="text-align: center;">${item.model || ''}</td>
-      <td style="text-align: center;">${item.material_no || ''}</td>
-      <!-- <td style="text-align: center; overflow: hidden; text-overflow: ellipsis;">${item.material_description || ''}</td>-->
-      <td style="text-align: center;">${item.lot_no || ''}</td>
-      <td style="text-align: center;">${item.shift || ''}</td>
-      <td style="text-align: center;">
-  ${item.total_quantity || ''}
-  ${item.pending_quantity != null ? ` (${item.pending_quantity})` : ''}
-</td>
 
-      <td style="text-align: center;">${item.status?.toUpperCase() || ''}</td>
-      <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
-      <td style="text-align: center;">${actionHtml}</td>
-    `;
-    tbody.appendChild(row);
-  });
 
 
     document.addEventListener('click', function (event) {
@@ -330,7 +453,7 @@ function submitInspection() {
   const sameReferenceItems = fullDataSet.filter(item => item.reference_no === selectedRowData.reference_no);
   const sumDoneQuantity = sameReferenceItems.reduce((sum, item) => sum + (item.done_quantity || 0), 0);
   const maxTotalQuantity = Math.max(...sameReferenceItems.map(item => item.total_quantity || 0));
-
+console.log(sameReferenceItems, sumDoneQuantity,inputQty, maxTotalQuantity)
   if (sumDoneQuantity + inputQty > maxTotalQuantity) {
     Swal.fire({
       icon: 'error',
