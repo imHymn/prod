@@ -69,7 +69,11 @@ data.forEach(item => {
   let statusColor = '';
   let isGood = false;
 
-  if (inventory <= critical && inventory < minimum) {
+  if (inventory >= maximum) {
+    statusLabel = "Maximum";
+    statusColor = "green";
+    showRequestButton = true;
+  }else if (inventory <= critical && inventory < minimum) {
     statusLabel = "Critical";
     statusColor = "red";
     showRequestButton = true;
