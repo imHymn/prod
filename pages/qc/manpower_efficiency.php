@@ -84,8 +84,11 @@ function renderTable(data) {
     tbody.appendChild(row);
   });
 }
-
 function loadAndProcessData() {
+  function extractDateOnly(datetimeStr) {
+    return datetimeStr ? datetimeStr.slice(0, 10) : '';
+  }
+
   Promise.all([
     fetch('api/qc/getQCData.php').then(res => res.json()),
     fetch('api/qc/getManpowerRework.php').then(res => res.json())
@@ -127,22 +130,24 @@ function loadAndProcessData() {
 
     // Process QC data
     qcData.forEach(item => {
-      if (!item.time_in || !item.time_out || !item.person_incharge || !item.reference_no || !item.date_needed) return;
+      if (!item.time_in || !item.time_out || !item.person_incharge || !item.reference_no || !item.created_at) return;
       const finishedQty = parseInt(item.done_quantity) || 0;
       const totalQty = parseInt(item.total_quantity) || 0;
       const timeIn = new Date(item.time_in);
       const timeOut = new Date(item.time_out);
-      addEntry(item.person_incharge, item.date_needed, item.reference_no, timeIn, timeOut, finishedQty, totalQty, 'qc');
+      const createdDate = extractDateOnly(item.created_at);
+      addEntry(item.person_incharge, createdDate, item.reference_no, timeIn, timeOut, finishedQty, totalQty, 'qc');
     });
 
     // Process Rework data
     reworkData.forEach(item => {
-      if (!item.qc_timein || !item.qc_timeout || !item.qc_person_incharge || !item.reference_no || !item.date_needed) return;
+      if (!item.qc_timein || !item.qc_timeout || !item.qc_person_incharge || !item.reference_no || !item.created_at) return;
       const finishedQty = parseInt(item.good) || 0;
       const totalQty = parseInt(item.quantity) || 0;
       const timeIn = new Date(item.qc_timein);
       const timeOut = new Date(item.qc_timeout);
-      addEntry(item.qc_person_incharge, item.date_needed, item.reference_no, timeIn, timeOut, finishedQty, totalQty, 'rework');
+      const createdDate = extractDateOnly(item.created_at);
+      addEntry(item.qc_person_incharge, createdDate, item.reference_no, timeIn, timeOut, finishedQty, totalQty, 'rework');
     });
 
     // Prepare array with formatted data and extra fields for filtering
@@ -177,6 +182,7 @@ function loadAndProcessData() {
   })
   .catch(console.error);
 }
+
 
 // Filtering logic
 document.getElementById('filter-column').addEventListener('change', function() {

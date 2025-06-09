@@ -42,16 +42,15 @@
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-        <!-- <th style="width: 5%; text-align: center;">Material No</th>
-        <th style="width: 10%; text-align: center;">Material Description</th> -->
-              <th style="width: 10%; text-align: center;">Person Incharge</th>
-                  <th style="width: 5%; text-align: center;">Quantity</th>
-  
-        <th style="width: 5%; text-align: center;">Total Quantity</th>
-    
-        <th style="width: 7%; text-align: center;">Time In</th>
-        <th style="width: 7%; text-align: center;">Time Out</th>
-        <th style="width: 7%; text-align: center;">UnitperMin</th>
+      <th style="width: 7%; text-align: center;">Material No</th>
+      
+        <th style="width: 10%; text-align: center;">Person Incharge</th>
+        <th style="width: 7%; text-align: center;">Date</th>
+        <th style="width: 7%; text-align: center;">Total Quantity</th>
+        <th style="width: 6%; text-align: center;">Time In</th>
+        <th style="width: 6%; text-align: center;">Time Out</th>
+        <th style="width: 15%; text-align: center;">Spent/Standby/Total Span</th>
+        <th style="width: 10%; text-align: center;">UnitperMin</th>
         
     </tr>
   </thead>
@@ -71,6 +70,11 @@ let fullData = [];
 const dataBody = document.getElementById('data-body');
 const filterColumn = document.getElementById('filter-column');
 const filterInput = document.getElementById('filter-input');
+function formatHoursMinutes(decimalHours) {
+  const hours = Math.floor(decimalHours);
+  const minutes = Math.round((decimalHours - hours) * 60);
+  return `${hours} hrs${minutes > 0 ? ' ' + minutes + ' mins' : ''}`;
+}
 
 fetch('api/stamping/getManpowerData.php')
   .then(response => response.json())
@@ -89,37 +93,93 @@ fetch('api/stamping/getManpowerData.php')
 
     renderTable(sorted);
   });
-
 function renderTable(data) {
-  dataBody.innerHTML = '';
+  console.log(data);
+  const merged = {};
 
-  data.forEach(item => {
+data.forEach(item => {
+  if (!item.person_incharge || !item.created_at) return;
+
+  const createdDate = item.created_at.split(' ')[0];
+  const key = `${item.person_incharge}_${createdDate}`; // <<< key changed
+
+  if (!merged[key]) {
+    merged[key] = {
+      person: item.person_incharge,
+      date: createdDate,
+      material_no: item.material_no,
+      totalFinished: 0,
+      totalQuantity: 0,
+      pendingQuantity: 0,
+      timeIns: [],
+      timeOuts: [],
+      totalWorkMinutes: 0,
+      references: new Set(), // optional
+    };
+  }
+
+  const group = merged[key];
+
+  const finishedQty = parseInt(item.process_quantity) || 0;
+  group.totalFinished += finishedQty;
+
+  const totalQty = parseInt(item.total_quantity) || 0;
+  if (totalQty > group.totalQuantity) group.totalQuantity = totalQty;
+
+  const pendingQty = parseInt(item.pending_quantity) || 0;
+  group.pendingQuantity += pendingQty;
+
+  const timeIn = item.time_in ? new Date(item.time_in) : null;
+  const timeOut = item.time_out ? new Date(item.time_out) : null;
+
+  if (timeIn && timeOut && timeOut > timeIn && finishedQty > 0) {
+    const workedMinutes = (timeOut - timeIn) / (1000 * 60);
+    group.totalWorkMinutes += workedMinutes;
+    group.timeIns.push(timeIn);
+    group.timeOuts.push(timeOut);
+  }
+
+  group.references.add(item.reference_no); // optional
+});
+
+
+  dataBody.innerHTML = ''; // Clear table
+
+  Object.values(merged).forEach(group => {
+    if (group.timeIns.length === 0 || group.timeOuts.length === 0) return;
+
+    const firstIn = new Date(Math.min(...group.timeIns.map(d => d.getTime())));
+    const lastOut = new Date(Math.max(...group.timeOuts.map(d => d.getTime())));
+    const spanMinutes = (lastOut - firstIn) / (1000 * 60);
+    const standbyMinutes = spanMinutes - group.totalWorkMinutes;
+    const timePerUnit = group.totalFinished > 0 ? (group.totalWorkMinutes / group.totalFinished) : 0;
+
+    const qtyDisplay = `${group.totalQuantity || '<i>Null</i>'}`;
+    const timeInStr = firstIn.toTimeString().slice(0, 5);
+    const timeOutStr = lastOut.toTimeString().slice(0, 5);
+    const spentStr = formatHoursMinutes(group.totalWorkMinutes / 60);
+    const standbyStr = formatHoursMinutes(standbyMinutes / 60);
+    const spanStr = formatHoursMinutes(spanMinutes / 60);
+    const timePerUnitStr = timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-';
+
+
     const row = document.createElement('tr');
-    const hasTimeIn = item.time_in !== null && item.time_in !== '';
-    const hasTimeOut = item.time_out !== null && item.time_out !== '';
-
-    let mpu = '<i>--</i>';
-    if (hasTimeIn && hasTimeOut && item.quantity && item.quantity > 0) {
-      const start = new Date(item.time_in);
-      const end = new Date(item.time_out);
-      const diffMs = end - start;
-      const diffMinutes = diffMs / (1000 * 60);
-      const rawMpu = diffMinutes / item.quantity;
-      mpu = rawMpu.toFixed(2);
-    }
-
     row.innerHTML = `
-      <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${item.quantity || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${item.total_quantity || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${item.time_in || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${item.time_out || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${mpu}</td>
+      <td style="text-align: center;">${group.material_no}</td>
+      <td style="text-align: center;">${group.person}</td>
+      <td style="text-align: center;">${group.date}</td>
+      <td style="text-align: center;">${qtyDisplay}</td>
+      <td style="text-align: center;">${timeInStr} </td>
+      <td style="text-align: center;">${timeOutStr}</td>
+      <td style="text-align: center;">${spentStr} / ${standbyStr} / ${spanStr}</td>
+      <td style="text-align: center;">${timePerUnitStr}</td>
+
     `;
 
     dataBody.appendChild(row);
   });
 }
+
 
 // Enable input if column is selected
 filterColumn.addEventListener('change', () => {

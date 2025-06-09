@@ -11,6 +11,10 @@ if (!empty($_SESSION['role'])) {
 if (!empty($_SESSION['production'])) {
   $production = $_SESSION['production'];
 }
+
+if (!empty($_SESSION['production_location'])) {
+  $production_location = $_SESSION['production_location'];
+}
 ?>
 
 
@@ -66,23 +70,43 @@ if (!empty($_SESSION['production'])) {
   $role = strtolower($role);
 $production = strtolower($production);
 
-  if($role == 'administrator' || $role == 'admin') {
+//   if($role == 'administrator' || $role == 'user manager') {
+//   echo'
+//      <li class="nav-item">
+//   <a class="nav-link" href="?page_active=accounts">
+//     <i class="link-icon" data-feather="calendar"></i>
+//     <span class="link-title">Accounts</span>
+//   </a>
+// </li>
+//   <li class="nav-item">
+//   <a class="nav-link" href="?page_active=production">
+//     <i class="link-icon" data-feather="calendar"></i>
+//     <span class="link-title">Production</span>
+//   </a>
+// </li>
+//     ';
+//   } 
+  if($role == 'administrator' || $role == 'user manager') {
   echo'
-     <li class="nav-item">
-  <a class="nav-link" href="?page_active=accounts">
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#admin" role="button" aria-expanded="false" aria-controls="tables">
     <i class="link-icon" data-feather="calendar"></i>
     <span class="link-title">Accounts</span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
   </a>
+  <div class="collapse" id="admin">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=accounts" class="nav-link" data-page="accounts">Account Management</a>
+      </li>
+        
+        </li>
+    </ul>
+  </div>
 </li>
-    <!--<li class="nav-item">
-  <a class="nav-link" href="?page_active=production">
-    <i class="link-icon" data-feather="calendar"></i>
-    <span class="link-title">Production</span>
-  </a>
-</li>-->
+    
     ';
   } 
-
 
   if($role == 'administrator' || ($production=='delivery' && $role=='supervisor')) {
   echo'
@@ -193,55 +217,83 @@ if($role == 'administrator' || ($production=='fg_warehouse' && $role=='superviso
   
 
 
+if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervisor' || $role == 'line leader'))) {
+    // Define mapping of production locations to pages
+    $locationPages = [
+        'OEM-SMALL'      => ['stamping_oem_small' => 'OEM SMALL'],
+        'MUFFLER-COMPS'  => ['stamping_muffler_comps' => 'MUFFLER COMPS'],
+        'BIG-HYD'        => ['stamping_big_hyd' => 'BIG-HYD'],
+        'BIG-MECH'       => ['stamping_big_mech' => 'BIG-MECH'],
+    ];
 
-if($role == 'administrator' || ($production == 'stamping' && $role == 'supervisor')) {
-  echo '
-  <li class="nav-item">
-    <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
-      <i class="link-icon" data-feather="layout"></i>
-      <span class="link-title">Stamping</span>
-      <i class="link-arrow" data-feather="chevron-down"></i>
-    </a>
-    <div class="collapse" id="stamping">
-      <ul class="nav sub-menu">
-        <!-- TO-DO LIST (With nested submenu) -->
+    $todoSubMenuItems = '';
+
+    // Admins and stamping supervisors get full menu
+    if ($role == 'administrator' || $role == 'supervisor') {
+        foreach ($locationPages as $pages) {
+            foreach ($pages as $page => $label) {
+                $todoSubMenuItems .= '
+                  <li class="nav-item">
+                    <a href="?page_active=' . $page . '" class="nav-link" data-page="' . $page . '">' . $label . '</a>
+                  </li>';
+            }
+        }
+    }
+    // Line leaders get only their location-specific page
+    elseif ($role == 'line leader' && isset($locationPages[$production_location])) {
+        foreach ($locationPages[$production_location] as $page => $label) {
+            $todoSubMenuItems .= '
+              <li class="nav-item">
+                <a href="?page_active=' . $page . '" class="nav-link" data-page="' . $page . '">' . $label . '</a>
+              </li>';
+        }
+    }
+
+    // Output menu if there's anything to show
+    if (!empty($todoSubMenuItems)) {
+        echo '
         <li class="nav-item">
-          <a class="nav-link" data-toggle="collapse" href="#todoSubMenu" role="button" aria-expanded="false" aria-controls="todoSubMenu">
-            <span class="link-title">To-do List</span>
+          <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
+            <i class="link-icon" data-feather="layout"></i>
+            <span class="link-title">Stamping</span>
             <i class="link-arrow" data-feather="chevron-down"></i>
           </a>
-          <div class="collapse" id="todoSubMenu">
+          <div class="collapse" id="stamping">
             <ul class="nav sub-menu">
               <li class="nav-item">
-                <a href="?page_active=stamping_oem_small" class="nav-link" data-page="stamping_oem_small">OEM SMALL</a>
+                <a class="nav-link" data-toggle="collapse" href="#todoSubMenu" role="button" aria-expanded="false" aria-controls="todoSubMenu">
+                  <span class="link-title">To-do List</span>
+                  <i class="link-arrow" data-feather="chevron-down"></i>
+                </a>
+                <div class="collapse" id="todoSubMenu">
+                  <ul class="nav sub-menu">
+                    ' . $todoSubMenuItems . '
+                  </ul>
+                </div>
+              </li>';
+
+        // Extra links only for admin/supervisor
+        if ($role == 'administrator' || $role == 'supervisor') {
+            echo '
+              <li class="nav-item">
+                <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
               </li>
               <li class="nav-item">
-                <a href="?page_active=stamping_muffler_comps" class="nav-link" data-page="stamping_muffler_comps">MUFFLER COMPS</a>
+                <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
               </li>
               <li class="nav-item">
-                <a href="?page_active=stamping_big_hyd" class="nav-link" data-page="stamping_big_hyd">BIG-HYD</a>
-              </li>
-               <li class="nav-item">
-                <a href="?page_active=stamping_big_mech" class="nav-link" data-page="stamping_big_mech">BIG-MECH</a>
-              </li>
+                <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
+              </li>';
+        }
+
+        echo '
             </ul>
           </div>
-        </li>
-
-        <!-- Other Stamping Items -->
-        <li class="nav-item">
-          <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
-        </li>
-        <li class="nav-item">
-          <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
-        </li>
-        <li class="nav-item">
-          <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
-        </li>
-      </ul>
-    </div>
-  </li>';
+        </li>';
+    }
 }
+
+
 
 
 
@@ -375,14 +427,16 @@ if($role == 'administrator' || ($production == 'stamping' && $role == 'superviso
 									</div>
 									<div class="info text-center">
                     <p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['user_id']); ?></p>
-<p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['role']); ?></p>
-<?php if (!empty($_SESSION['production'])): ?>
-  <p class="name font-weight-bold mb-0">(<?php echo strtoupper($_SESSION['production']); ?>)</p>
-<?php endif; ?>
+                    <p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['role']); ?></p>
+
+                    <?php if (!empty($_SESSION['production'])): ?>
+                      <p class="name font-weight-bold mb-0">(<?php echo strtoupper($_SESSION['production']); ?>)</p>
+                      <p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['production_location']); ?></p>
+                    <?php endif; ?>
 
 
-  <p class="email text-muted mb-3"></p>
-</div>
+                      <p class="email text-muted mb-3"></p>
+                    </div>
 
 								</div>
 								<div class="dropdown-body">
@@ -395,7 +449,7 @@ if($role == 'administrator' || ($production == 'stamping' && $role == 'superviso
                   </li>
 
 										<li class="nav-item">
-											<a href="/mes/auth/logout.php" class="nav-link">
+											<a href="/mes/api/accounts/logout.php" class="nav-link">
 												<i data-feather="log-out"></i>
 												<span>Log Out</span>
 											</a>

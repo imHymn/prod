@@ -18,7 +18,7 @@ header('Content-Type: application/json');
 
 try {
     // Fetch users with role supervisor or administrator
-    $sql = "SELECT * FROM users WHERE role IN ('supervisor', 'administrator')";
+    $sql = "SELECT * FROM users_new";
     $users = $db->Select($sql);
     echo json_encode($users);
 } catch (PDOException $e) {

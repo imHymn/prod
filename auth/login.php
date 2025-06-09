@@ -7,11 +7,11 @@ session_start();
 // }
 
 
-if (isset($_SESSION['user_id'])) {
-    $id = $_SESSION['user_id'];
-    header("Location: /mes/index.php");
-    exit();
-}
+// if (isset($_SESSION['user_id'])) {
+//     $id = $_SESSION['user_id'];
+//     header("Location: /mes/index.php");
+//     exit();
+// }
 
 
 if (isset($_SESSION['error_message'])) {
@@ -30,8 +30,6 @@ if (isset($_SESSION['error_message'])) {
     <title>Roberts Prod</title>
 
      
-    <!-- <link href="../assets/lib/lib/font-awesome/css/font-awesome.css" rel="stylesheet">
-    <link href="../assets/lib/lib/Ionicons/css/ionicons.css" rel="stylesheet"> -->
     <link rel="stylesheet" href="../assets/css/slim.css">
 
   </head>
@@ -39,7 +37,7 @@ if (isset($_SESSION['error_message'])) {
   <body >
 
     <div class="signin-wrapper">
-        <form method="POST" action="./../api/auth/login.php">
+        <form method="POST" action="/mes/api/accounts/login.php">
             <div class="signin-box">
                 <!-- <img src="assets/images/roberts2.png" alt="roberts" width="260px;" style="padding-bottom: 10px;"> -->
                 <h2 class="slim-logo"><a href="index.php">Roberts Production System<span>.</span></a></h2>
@@ -83,44 +81,6 @@ if (isset($_SESSION['error_message'])) {
     </div>
   </div>
 </div>
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-  
-
-function getCookie(name) {
-  const cookies = document.cookie.split(';');
-  for(let i = 0; i < cookies.length; i++) {
-    let c = cookies[i].trim();
-    if(c.indexOf(name + '=') === 0) {
-      return c.substring(name.length + 1);
-    }
-  }
-  return null;
-}
-
-// Helper function to delete a cookie by name
-function deleteCookie(name) {
-  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-}
-
-window.addEventListener('pageshow', function(event) {
-  let tempValue = getCookie("LogStatus");
-  console.log(tempValue);
-  
-  if(tempValue != null) {
-    window.location.href = 'http://10.0.6.5/mes/';
-    deleteCookie('LogStatus');
-  }
-});
-
-  
-  });
-</script>
-
-<script>
-
-
-</script>
   
   </body>
 </html>

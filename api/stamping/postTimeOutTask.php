@@ -13,7 +13,7 @@ $dotenv->load();
 
 require_once __DIR__ . '/../../Classes/Database/DatabaseClass.php';
 $db = new DatabaseClass();
-
+date_default_timezone_set('Asia/Manila');
 try {
     // Get raw POST data (JSON)
     $inputJSON = file_get_contents('php://input');
@@ -114,39 +114,39 @@ try {
                 )";
 
                 $insertedCount = $db->DuplicateAndModify($selectSql, $selectParams, $modifyCallback, $insertSql);
-            }
-            // Get the current row to extract reference_no, material_no, etc.
-            $referenceNo = $currentRow['reference_no'];
+            }else{
+    $referenceNo = $currentRow['reference_no'];
             $materialNo = $currentRow['material_no'];
             $componentsName = $currentRow['components_name'];
             $totalQuantity = (int) $currentRow['total_quantity'];
             $processQuantity = (int) $currentRow['process_quantity'];
+                $batch = (int) $currentRow['batch'];
 
             // Check if all stages (1 to process_quantity) have total quantity matching total_quantity
-            // Check if all stages (1 to process_quantity) have total quantity matching total_quantity
-$allStagesDone = true;
+            $allStagesDone = true;
 
-for ($stage = 1; $stage <= $processQuantity; $stage++) {
-    $stageQuantitySql = "
-        SELECT SUM(quantity) as total_stage_quantity
-        FROM stamping
-        WHERE material_no = :material_no 
-        AND components_name = :components_name 
-        AND stage = :stage
-    ";
-    $stageQuantityParams = [
-        ':material_no' => $materialNo,
-        ':components_name' => $componentsName,
-        ':stage' => $stage
-    ];
-    $stageResult = $db->SelectOne($stageQuantitySql, $stageQuantityParams);
-    $stageQuantity = (int) ($stageResult['total_stage_quantity'] ?? 0);
+            for ($stage = 1; $stage <= $processQuantity; $stage++) {
+                $stageQuantitySql = "
+                    SELECT SUM(quantity) as total_stage_quantity
+                    FROM stamping
+                    WHERE material_no = :material_no 
+                    AND components_name = :components_name 
+                    AND stage = :stage AND batch=:batch
+                ";
+                $stageQuantityParams = [
+                    ':material_no' => $materialNo,
+                    ':components_name' => $componentsName,
+                    ':stage' => $stage,
+                    ':batch'=>$batch
+                ];
+                $stageResult = $db->SelectOne($stageQuantitySql, $stageQuantityParams);
+                $stageQuantity = (int) ($stageResult['total_stage_quantity'] ?? 0);
 
-    if ($stageQuantity < $totalQuantity) {
-        $allStagesDone = false;
-        break;
-    }
-}
+                if ($stageQuantity < $totalQuantity) {
+                    $allStagesDone = false;
+                    break;
+                }
+            }
 
 
             // If all stages are completed with correct quantity, insert into components_inventory
@@ -160,7 +160,7 @@ for ($stage = 1; $stage <= $processQuantity; $stage++) {
                 $insertInventoryParams = [
                     ':material_no' => $materialNo,
                     ':components_name' => $componentsName,
-                    ':quantity' => $totalQuantity,
+                    ':quantity' => $stageQuantity,
                     ':rm_stocks'=>0
                 ];
 
@@ -182,12 +182,19 @@ for ($stage = 1; $stage <= $processQuantity; $stage++) {
                 $db->Update($updateRM, $updateRMParams);
             }
 
+            }
+            // Get the current row to extract reference_no, material_no, etc.
+        
 
     if ($result) {
     echo json_encode([
     'status' => 'success',
     'message' => 'Record updated successfully',
-    'inputQuantity' => $inputQuantity // include it in the response if needed
+    'totalDone' => $totalDone,
+    'maxTotal' =>$maxTotal,
+    'totalQuantity' =>$totalQuantity,
+    'stageQuantity'=>$stageQuantity
+
 ]);
 
     } else {

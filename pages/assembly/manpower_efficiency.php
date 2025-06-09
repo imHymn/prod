@@ -53,7 +53,7 @@
   </div>
 </div>
 <script>
- function formatHoursMinutes(decimalHours) {
+function formatHoursMinutes(decimalHours) {
   const hours = Math.floor(decimalHours);
   const minutes = Math.round((decimalHours - hours) * 60);
   return `${hours} hrs${minutes > 0 ? ' ' + minutes + ' mins' : ''}`;
@@ -64,6 +64,10 @@ const filterInput = document.getElementById('filter-input');
 const tbody = document.getElementById('data-body');
 
 let mergedDataArray = []; // Array of objects for filtering and rendering
+
+function extractDateOnly(datetimeStr) {
+  return datetimeStr ? datetimeStr.slice(0, 10) : '';
+}
 
 function renderTable(data) {
   tbody.innerHTML = '';
@@ -180,17 +184,23 @@ Promise.all([
   }
 
   assemblyData.forEach(item => {
-    if (!item.time_out || !item.time_in || !item.person_incharge || !item.reference_no) return;
+    if (!item.time_out || !item.time_in || !item.person_incharge || !item.reference_no || !item.created_at) return;
+
+    const day = extractDateOnly(item.created_at);
     const finishedQty = parseInt(item.done_quantity) || 0;
     const totalQty = parseInt(item.total_quantity) || 0;
-    addEntry(item.person_incharge, item.date_needed, item.reference_no, item.time_in, item.time_out, finishedQty, totalQty, 'assembly');
+
+    addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, finishedQty, totalQty, 'assembly');
   });
 
   reworkData.forEach(item => {
-    if (!item.assembly_timeout || !item.assembly_timein || !item.assembly_person_incharge || !item.reference_no) return;
+    if (!item.assembly_timeout || !item.assembly_timein || !item.assembly_person_incharge || !item.reference_no || !item.created_at) return;
+
+    const day = extractDateOnly(item.created_at);
     const finishedQty = (parseInt(item.rework) || 0) + (parseInt(item.replace) || 0);
     const totalQty = parseInt(item.quantity) || 0;
-    addEntry(item.assembly_person_incharge, item.date_needed, item.reference_no, item.assembly_timein, item.assembly_timeout, finishedQty, totalQty, 'rework');
+
+    addEntry(item.assembly_person_incharge, day, item.reference_no, item.assembly_timein, item.assembly_timeout, finishedQty, totalQty, 'rework');
   });
 
   mergedDataArray = Object.values(mergedData);
@@ -217,5 +227,5 @@ filterColumn.addEventListener('change', () => {
 filterInput.addEventListener('input', () => {
   filterAndRender();
 });
-
 </script>
+

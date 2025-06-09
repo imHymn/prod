@@ -41,6 +41,7 @@
     <tr>
         <th style="width: 5%; text-align: center;">Material No</th>
         <th style="width: 10%; text-align: center;">Material Description</th>
+        <th style="width: 5%; text-align: center;">Process</th>
         <th style="width: 5%; text-align: center;">Total Quantity</th>
         <th style="width: 5%; text-align: center;">Quantity</th>
         <th style="width: 10%; text-align: center;">Person Incharge</th>
@@ -90,8 +91,9 @@ function renderTable(data) {
   data.forEach(item => {
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td style="text-align: center;">(${item.stage})${item.material_no || ''}</td>
+      <td style="text-align: center;">${item.material_no || ''}</td>
       <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
+      <td style="text-align: center;">${item.stage_name || '<i>Null</i>'}</td>
       <td style="text-align: center;">${item.total_quantity || '<i>Null</i>'}</td>
       <td style="text-align: center;">${item.quantity || '<i>Null</i>'}</td>
       <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>

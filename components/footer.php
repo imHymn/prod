@@ -1,19 +1,4 @@
-<?php
-// Start the session to access the session variables
-session_start();
 
-if (isset($_SESSION['user_id'])) {
-    $user_id = $_SESSION['user_id']; // Get the user_id from the session
-    
-   
-    echo '<script>
-			var user_id = "'.$user_id.'";
-			const date = new Date();
-			date.setTime(date.getTime() + (24 * 60 * 60 * 1000)); // Add 1 day in milliseconds
-			document.cookie = `sessionId=${user_id}; expires=${date.toUTCString()}; path=/; domain=10.0.6.5; SameSite=Strict`;
-          </script>';
-}
-?>
 <footer class="footer d-flex flex-column flex-md-row align-items-center justify-content-between py-4 px-3">
 	<!-- Footer Text Section -->
 	<p class="text-muted text-center text-md-left mb-0">

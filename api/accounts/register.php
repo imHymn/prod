@@ -24,7 +24,7 @@ $db = new DatabaseClass();
     // Basic validation
     if (empty($user_id) || empty($email) || empty($password)) {
         $_SESSION['error_message'] = "All fields are required.";
-        header("Location: ../auth/register.php");
+        header("Location: ../accounts/register.php");
         exit();
     }
 
@@ -36,7 +36,7 @@ $db = new DatabaseClass();
 
         if ($stmt->rowCount() > 0) {
             $_SESSION['error_message'] = "user_id or email already in use.";
-            header("Location: ../auth/register.php");
+            header("Location: ../accounts/register.php");
             exit();
         }
 
@@ -52,16 +52,16 @@ $db = new DatabaseClass();
 
         if ($stmt->execute()) {
             $_SESSION['register_success'] = "Registration successful! You can now log in.";
-            header("Location: /mes/auth/login.php"); // Redirect to login page
+            header("Location: /mes/accounts/login.php"); // Redirect to login page
             exit();
         } else {
             $_SESSION['register_error'] = "Something went wrong. Please try again.";
-            header("Location: ../auth/register.php");
+            header("Location: ../accounts/register.php");
             exit();
         }
     } catch (PDOException $e) {
         $_SESSION['reguster_error'] = "Error: " . $e->getMessage();
-        header("Location: ../auth/register.php");
+        header("Location: ../accounts/register.php");
         exit();
     }
 

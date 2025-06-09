@@ -14,6 +14,7 @@ try {
     $input = json_decode(file_get_contents('php://input'), true);
     $material_no = $input['material_no'] ?? null;
     $components_name = $input['components_name'] ?? null;
+    $batch = $input['batch'] ?? null;
 
     if (!$material_no || !$components_name) {
         throw new Exception("Missing required parameters.");
@@ -23,12 +24,13 @@ try {
     $sql = "SELECT stage_name,section,stage, status 
             FROM stamping 
             WHERE material_no = :material_no 
-              AND components_name = :components_name 
+              AND components_name = :components_name AND batch=:batch
             ORDER BY stage ASC";
 
     $params = [
         ':material_no' => $material_no,
-        ':components_name' => $components_name
+        ':components_name' => $components_name,
+        ':batch'=>$batch
     ];
 
     $stages = $db->Select($sql, $params);

@@ -23,7 +23,7 @@ try {
         throw new Exception("Invalid JSON input");
     }
 
-
+date_default_timezone_set('Asia/Manila');
     $id = $input['id'] ?? null;
     $material_no = $input['material_no'] ?? null;
     $material_description = $input['material_description'] ?? null;

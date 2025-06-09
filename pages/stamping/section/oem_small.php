@@ -164,7 +164,13 @@ function renderTable(data) {
       <td style="text-align: center;">${item.material_no || ''}</td>
       <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
       <td style="text-align: center;">${item.stage_name || ''}</td>
-      <td style="text-align: center;">${item.total_quantity || '<i>Null</i>'}</td>
+         <td style="text-align: center;">
+  ${
+    (item.total_quantity != null && item.total_quantity !== '' ? item.total_quantity : '<i>Null</i>') + 
+    (item.pending_quantity != null && item.pending_quantity !== '' ? ` (${item.pending_quantity})` : '')
+  }
+</td>
+
       <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
       <td style="text-align: center;">
         ${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}
@@ -173,7 +179,7 @@ function renderTable(data) {
         ${actionButton}
       </td>
       <td style="text-align: center;">
-        <button onclick="viewStageStatus('${item.material_no}', '${item.components_name}')" style="font-size: 16px;" class="btn btn-sm" title="View Stages">
+        <button onclick="viewStageStatus('${item.material_no}', '${item.components_name}', '${item.batch}')" style="font-size: 16px;" class="btn btn-sm" title="View Stages">
           🔍
         </button>
       </td>
@@ -182,6 +188,11 @@ function renderTable(data) {
     dataBody.appendChild(row);
   });
 }
+
+
+
+
+
 
 // Enable/disable filter input based on dropdown
 filterColumnSelect.addEventListener('change', () => {
@@ -280,32 +291,6 @@ console.log(fullData);
   console.log('Ready for QR Time-In with:', selectedRowData);
   openQRModal(mode);
 
-
-    // const stage = parseInt(selectedRowData.stage || 0);
-    // const material_no = selectedRowData.material_no;
-
-    // if (stage > 1) {
-    //   const prevStage = stage - 1;
-
-    //   const previousStageItem = fullData.find(item =>
-    //     item.material_no === material_no &&
-    //     parseInt(item.stage) === prevStage &&
-    //     item.status?.toLowerCase() === 'ongoing'
-    //   );
-
-    //   if (!previousStageItem) {
-    //     Swal.fire({
-    //       icon: 'warning',
-    //       title: `Cannot Time-In for Stage ${stage}`,
-    //       text: `Stage ${prevStage} must be marked as "ongoing" before proceeding.`,
-    //     });
-    //     return;
-    //   }
-    // }
-
-    // console.log('Ready for QR Time-In with:', selectedRowData);
-    // openQRModal(mode);
-
   } else if (mode === 'time-out') {
   const quantityModal = new bootstrap.Modal(document.getElementById('quantityModal'));
   document.getElementById('timeoutQuantity').value = selectedRowData.total_quantity || 1;
@@ -376,11 +361,11 @@ console.log(fullData);
 
 
 
-function viewStageStatus(materialNo, componentName) {
+function viewStageStatus(materialNo, componentName,batch) {
   fetch('api/stamping/fetchStageStatus.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ material_no: materialNo, components_name: componentName })
+    body: JSON.stringify({ material_no: materialNo, components_name: componentName,batch })
   })
   .then(response => response.json())
   .then(data => {
