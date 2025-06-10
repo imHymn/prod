@@ -1,13 +1,12 @@
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/qrcodeScanner.php'; ?>
 
-<?php
-session_start();
-$role = $_SESSION['role'];
-$production = $_SESSION['production'];
-?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+
+<script src="assets/js/html5.qrcode.js" type="text/javascript"></script>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -21,7 +20,12 @@ $production = $_SESSION['production'];
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h6 class="card-title">Reworked Material</h6>
+    
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+       <h6 class="card-title">Reworked Material</h6>
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+</div>
+
  <div class="row mb-3">
     <div class="col-md-3">
       <select id="filter-column" class="form-select">
@@ -46,21 +50,22 @@ $production = $_SESSION['production'];
       />
     </div>
   </div>
-<table class="table table" style="table-layout: fixed; width: 100%;">
-<thead>
-  <tr>
-    <th style="width: 15%; text-align: center;">Material No</th>
-    <th style="width: 5%; text-align: center;">Model</th>
-    <th style="width: 8%; text-align: center;">Shift</th>
-    <th style="width: 8%; text-align: center;">Lot</th>
-    <th style="width: 8%; text-align: center;">Total Qty</th>
-    <th style="width: 15%; text-align: center;">Person Incharge</th>
-    <th style="width: 15%; text-align: center;">Time In | Time out</th>
-  </tr>
-</thead>
+<table class="table" style="table-layout: fixed; width: 100%;">
+  <thead>
+    <tr>
+      <th style="width: 15%; text-align: center;">Material No <span class="sort-icon"></span></th>
+      <th style="width: 5%; text-align: center;">Model <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Shift <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Lot <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Total Qty <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Time In | Time out <span class="sort-icon"></span></th>
+    </tr>
+  </thead>
 
-<tbody id="data-body" style="word-wrap: break-word; white-space: normal;"></tbody>
+  <tbody id="data-body" style="word-wrap: break-word; white-space: normal;"></tbody>
 </table>
+<div id="pagination" class="mt-3 d-flex justify-content-center"></div>
 
       
       </div>
@@ -120,124 +125,122 @@ $production = $_SESSION['production'];
 <!-- SweetAlert2 CDN -->
 <script src="assets/js/sweetalert2@11.js"></script>
 <script>
-     let url='';
-    let selectedRowData = null;
-    let inspectionModal = null;
+  let url = '';
+let selectedRowData = null;
+let inspectionModal = null;
+
 document.addEventListener('DOMContentLoaded', function () {
   let fullData = [];
 
-function renderTable(data) {
-  const tbody = document.getElementById('data-body');
-  tbody.innerHTML = '';
+  const paginator = createPaginator({
+    data: [],
+    rowsPerPage: 10,
+    paginationContainerId: 'pagination',
+    defaultSortFn: (a, b) => {
+      const weight = item => {
+        if (item.qc_timein && !item.qc_timeout) return 2;
+        if (!item.qc_timein) return 1;
+        return 0;
+      };
+      return weight(b) - weight(a);
+    },
+    renderPageCallback: (pageData, currentPage) => {
+      const tbody = document.getElementById('data-body');
+      tbody.innerHTML = '';
 
-  // Sort items: prioritize those needing TIME OUT
-  data.sort((a, b) => {
-    const weight = item => {
-      if (item.qc_timein && !item.qc_timeout) return 2; // Needs TIME OUT
-      if (!item.qc_timein) return 1; // Needs TIME IN
-      return 0; // Done
-    };
-    return weight(b) - weight(a); // Higher weight first
+      pageData.forEach(item => {
+        let actionHtml = '';
+
+        if (!item.qc_timein) {
+          actionHtml = `
+            <button 
+              class="btn btn-sm btn-success time-in-btn" 
+              data-materialid="${item.material_no}"
+              data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+              data-mode="timeIn"
+              data-id="${item.id}"
+            >
+              TIME IN
+            </button>`;
+        } else if (!item.qc_timeout) {
+          actionHtml = `
+            <button 
+              class="btn btn-sm btn-warning time-out-btn" 
+              data-materialid="${item.material_no}"
+              data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
+              data-mode="timeOut"
+              data-id="${item.id}"
+            >
+              TIME OUT
+            </button>`;
+        } else {
+          actionHtml = `<span class="text-muted">Done</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: center;">${item.material_no || '-'}</td>
+          <td style="text-align: center;">${item.model || '-'}</td>
+          <td style="text-align: center;">${item.shift || '-'}</td>
+          <td style="text-align: center;">${item.lot_no || '-'}</td>
+          <td style="text-align: center;">${item.quantity || '-'}${item.qc_quantity ? ` (${item.qc_quantity})` : ''}</td>
+          <td style="text-align: center;">${item.qc_person_incharge || '-'}</td>
+          <td style="text-align: center;">${actionHtml}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      const now = new Date();
+      document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
+    }
   });
 
-  data.forEach(item => {
-    let actionHtml = '';
+  function loadTable() {
+    fetch('api/controllers/qc/getRework.php')
+      .then(response => response.json())
+      .then(data => {
+        fullData = data;
+        paginator.setData(fullData);
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+      });
+  }
 
-    if (!item.qc_timein) {
-      actionHtml = `
-        <button 
-          class="btn btn-sm btn-success time-in-btn" 
-          data-materialid="${item.material_no}"
-          data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
-          data-mode="timeIn"
-          data-id="${item.id}"
-        >
-          TIME IN
-        </button>`;
-    } else if (!item.qc_timeout) {
-      actionHtml = `
-        <button 
-          class="btn btn-sm btn-warning time-out-btn" 
-          data-materialid="${item.material_no}"
-          data-item='${JSON.stringify(item).replace(/'/g, "&apos;")}'
-          data-mode="timeOut"
-          data-id="${item.id}"
-        >
-          TIME OUT
-        </button>`;
-    } else {
-      actionHtml = `<span class="text-muted">Done</span>`;
+  // Filter logic
+  const filterColumn = document.getElementById('filter-column');
+  const filterInput = document.getElementById('filter-input');
+
+  filterColumn.addEventListener('change', () => {
+    filterInput.disabled = !filterColumn.value;
+    filterInput.value = '';
+    applyFilter();
+  });
+
+  filterInput.addEventListener('input', () => {
+    applyFilter();
+  });
+
+  function applyFilter() {
+    const column = filterColumn.value;
+    const searchTerm = filterInput.value.trim().toLowerCase();
+
+    if (!column || !searchTerm) {
+      paginator.setData(fullData);
+      return;
     }
 
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="text-align: center;">${item.material_no || '-'}</td>
-      <td style="text-align: center;">${item.model || '-'}</td>
-      <td style="text-align: center;">${item.shift || '-'}</td>
-      <td style="text-align: center;">${item.lot_no || '-'}</td>
-      <td style="text-align: center;">${item.quantity || '-'}${item.qc_quantity ? ` (${item.qc_quantity})` : ''}</td>
-      <td style="text-align: center;">${item.qc_person_incharge || '-'}</td>
-      <td style="text-align: center;">${actionHtml}</td>
-    `;
-
-    tbody.appendChild(tr);
-  });
-}
-
-function loadTable() {
-  fetch('api/qc/getRework.php')
-    .then(response => response.json())
-    .then(data => {
-      fullData = data;
-      renderTable(fullData);
-    })
-    .catch(error => {
-      console.error('Fetch error:', error);
+    const filtered = fullData.filter(item => {
+      let value = item[column];
+      if (value === undefined || value === null) return false;
+      return String(value).toLowerCase().includes(searchTerm);
     });
-}
 
-loadTable();
-
-// Filter UI logic
-const filterColumn = document.getElementById('filter-column');
-const filterInput = document.getElementById('filter-input');
-
-filterColumn.addEventListener('change', () => {
-  if (filterColumn.value) {
-    filterInput.disabled = false;
-    filterInput.value = '';
-    renderTable(fullData);
-  } else {
-    filterInput.disabled = true;
-    filterInput.value = '';
-    renderTable(fullData);
-  }
-});
-
-filterInput.addEventListener('input', () => {
-  const searchTerm = filterInput.value.trim().toLowerCase();
-  const column = filterColumn.value;
-
-  if (!column || !searchTerm) {
-    renderTable(fullData);
-    return;
+    paginator.setData(filtered);
   }
 
-  const filteredData = fullData.filter(item => {
-    let fieldValue = item[column];
-
-    if (fieldValue === undefined || fieldValue === null) return false;
-
-    // Convert to string for uniform comparison
-    if (typeof fieldValue !== 'string') {
-      fieldValue = String(fieldValue);
-    }
-
-    return fieldValue.toLowerCase().includes(searchTerm);
-  });
-
-  renderTable(filteredData);
-});
+  loadTable();
 });
 
 document.addEventListener('click', function (event) {
@@ -336,122 +339,58 @@ function submitInspection() {
     }
   });
 }
-
 function openQRModal(selectedRowData, mode) {
-    console.log(selectedRowData,mode);
-  const modalElement = document.getElementById('qrModal');
-  const modal = new bootstrap.Modal(modalElement);
-  modal.show();
+  console.log(selectedRowData, mode);
 
-  const resultContainer = document.getElementById('qr-result');
-  resultContainer.textContent = "Waiting for QR scan...";
+  scanQRCodeForUser({
+    onSuccess: ({ user_id, full_name }) => {
+      const data = {
+        id: selectedRowData.id,
+        full_name: full_name,
+        inputQty: selectedRowData.inputQty,
+        no_good: selectedRowData.no_good,
+        good: selectedRowData.good,
+        reference_no: selectedRowData.reference_no,
+        quantity: selectedRowData.quantity,
+        qc_pending_quantity: selectedRowData.qc_pending_quantity
+      };
 
-  const qrReader = new Html5Qrcode("qr-reader");
-  html5QrcodeScanner = qrReader;
+      let url = '/mes/api/controllers/qc/timein_reworkOperator.php';
+      if (mode === 'timeOut') {
+        url = '/mes/api/controllers/qc/timeout_reworkOperator.php';
+      }
 
-  qrReader.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 550 },
-    (decodedText, decodedResult) => {
-      resultContainer.textContent = `QR Code Scanned: ${decodedText}`;
-      qrReader.pause();
-
-      Swal.fire({
-        title: 'Confirm Scan',
-        text: `Is this the correct QR code?\n${decodedText}`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, confirm',
-        cancelButtonText: 'No, rescan'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Extract user_id and full_name from decodedText as before
-          const idMatch = decodedText.match(/ID:\s*([^\n]+)/);
-          const nameMatch = decodedText.match(/Name:\s*(.+)/);
-          
-          const user_id = idMatch ? idMatch[1].trim() : null;
-          const full_name = nameMatch ? nameMatch[1].trim() : null;
-          
-
-            const data = {
-                id: selectedRowData.id,
-                full_name: full_name,
-                inputQty:selectedRowData.inputQty,
-                no_good:selectedRowData.no_good,
-                good:selectedRowData.good,
-                reference_no:selectedRowData.reference_no,
-                quantity:selectedRowData.quantity,
-                qc_pending_quantity:selectedRowData.qc_pending_quantity
-            };
-
-            console.log(data,mode);
-             let url = '/mes/api/qc/timein_reworkOperator.php';
-            if (mode === 'timeOut') {
-            url = '/mes/api/qc/timeout_reworkOperator.php';
-
-            };
-
-          fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(response => {
-            console.log(response); // 🔍 You’ll now see the response
-            if (response.success) {
-                Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: 'Your operation was successful!',
-                confirmButtonColor: '#3085d6'
-                });
-            } else {
-                Swal.fire('Error', response.message, 'error');
-            }
-            })
-            .catch(err => {
-            console.error('Request failed', err);
-            Swal.fire('Error', 'Something went wrong.', 'error');
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+        .then(res => res.json())
+        .then(response => {
+          console.log(response);
+          if (response.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Your operation was successful!',
+              confirmButtonColor: '#3085d6'
             });
-
-          qrReader.stop().then(() => {
-            qrReader.clear();
-            modal.hide();
-          }).catch(err => {
-            console.error('Failed to stop scanner:', err);
-          });
-        } else {
-          qrReader.resume();
-          resultContainer.textContent = "Waiting for QR scan...";
-        }
-      });
-    },
-    (errorMessage) => {
-      // handle scan errors
-    }
-  ).catch(err => {
-    resultContainer.textContent = `Unable to start scanner: ${err}`;
-  });
-
-  modalElement.addEventListener('hidden.bs.modal', () => {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.stop().then(() => {
-        html5QrcodeScanner.clear();
-      }).catch(err => {
-        console.warn("QR scanner stop failed:", err);
-      });
-    }
-  }, { once: true });
-}
-
-function stopQRScanner() {
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.stop().then(() => {
-            html5QrcodeScanner.clear();
-        }).catch(err => {
-            console.warn("QR scanner stop failed:", err);
+          } else {
+            Swal.fire('Error', response.message || 'Operation failed.', 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Request failed', err);
+          Swal.fire('Error', 'Something went wrong.', 'error');
         });
+    },
+    onCancel: () => {
+      console.log('QR scan cancelled or modal closed.');
     }
+  });
 }
+
+
+
+  enableTableSorting(".table");
 </script>

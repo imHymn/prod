@@ -1,3 +1,5 @@
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
 <div class="page-content">
   <nav class="page-breadcrumb">
     <ol class="breadcrumb">
@@ -10,7 +12,12 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h6 class="card-title">Manpower Efficiency</h6>
+   
+
+             <div class="d-flex align-items-center justify-content-between mb-2">
+        <h6 class="card-title">Manpower Efficiency</h6>
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+</div>
 <div class="row mb-3">
   <div class="col-md-3">
     <select id="filter-column" class="form-select">
@@ -28,24 +35,24 @@
   </div>
 </div>
 
-<table class="table table" style="table-layout: fixed; width: 100%;">
-<thead>
-  <tr>
-    <th style="width: 20%; text-align: center;">Person Incharge</th>
-    <th style="width: 10%; text-align: center;">Quantity</th>
-    <th style="width: 10%; text-align: center;">Date</th>
-    <th style="width: 10%; text-align: center;">Time In</th>
-    <th style="width: 10%; text-align: center;">Time Out</th>
-    <th style="width: 25%; text-align: center;">Spent/Standby/Total Span</th>
-    
-    <th style="width: 15%; text-align: center;">Time per Unit (min)</th>
-
-  </tr>
-</thead>
-
-
+<table class="table" style="table-layout: fixed; width: 100%;">
+  <thead>
+    <tr>
+      <th style="width: 20%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Date <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Time In <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Time Out <span class="sort-icon"></span></th>
+      <th style="width: 25%; text-align: center;">Spent/Standby/Total Span <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Time per Unit (min) <span class="sort-icon"></span></th>
+    </tr>
+  </thead>
   <tbody id="data-body"></tbody>
 </table>
+
+<nav>
+  <ul id="pagination" class="pagination justify-content-center"></ul>
+</nav>
 
       
       </div>
@@ -63,15 +70,18 @@ const filterColumn = document.getElementById('filter-column');
 const filterInput = document.getElementById('filter-input');
 const tbody = document.getElementById('data-body');
 
-let mergedDataArray = []; // Array of objects for filtering and rendering
+let mergedDataArray = [];
+let filteredData = [];
+let paginator;
 
 function extractDateOnly(datetimeStr) {
   return datetimeStr ? datetimeStr.slice(0, 10) : '';
 }
 
-function renderTable(data) {
+function renderPageCallback(pageData) {
   tbody.innerHTML = '';
-  data.forEach(entry => {
+
+  pageData.forEach(entry => {
     const firstIn = new Date(Math.min(...entry.timeIns.map(t => t.getTime())));
     const lastOut = new Date(Math.max(...entry.timeOuts.map(t => t.getTime())));
 
@@ -101,6 +111,8 @@ function renderTable(data) {
     `;
     tbody.appendChild(row);
   });
+
+  document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
 }
 
 function filterAndRender() {
@@ -108,34 +120,32 @@ function filterAndRender() {
   const val = filterInput.value.toLowerCase();
 
   if (!col || !val) {
-    renderTable(mergedDataArray);
-    return;
+    filteredData = mergedDataArray.slice();
+  } else {
+    filteredData = mergedDataArray.filter(entry => {
+      let field = '';
+      switch (col) {
+        case 'person': field = entry.person; break;
+        case 'totalFinished': field = `${entry.totalFinished}`; break;
+        case 'date': field = entry.date; break;
+        case 'timeIn': field = entry.timeIns.map(d => d.toTimeString().slice(0, 5)).join(', '); break;
+        case 'timeOut': field = entry.timeOuts.map(d => d.toTimeString().slice(0, 5)).join(', '); break;
+        case 'timePerUnit': {
+          const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
+          field = timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-';
+          break;
+        }
+      }
+      return field.toString().toLowerCase().includes(val);
+    });
   }
 
-  const filtered = mergedDataArray.filter(entry => {
-    let field = '';
-    switch (col) {
-      case 'person': field = entry.person; break;
-      case 'totalFinished': field = `${entry.totalFinished}`; break;
-      case 'date': field = entry.date; break;
-      case 'timeIn': field = entry.timeIns.length ? entry.timeIns.map(d => d.toTimeString().slice(0,5)).join(', ') : ''; break;
-      case 'timeOut': field = entry.timeOuts.length ? entry.timeOuts.map(d => d.toTimeString().slice(0,5)).join(', ') : ''; break;
-      case 'timePerUnit': {
-        const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
-        field = timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-';
-        break;
-      }
-      default: field = '';
-    }
-    return field.toString().toLowerCase().includes(val);
-  });
-
-  renderTable(filtered);
+  paginator.setData(filteredData);
 }
 
 Promise.all([
-  fetch('api/assembly/getAssemblyData.php').then(res => res.json()),
-  fetch('api/assembly/getManpowerRework.php').then(res => res.json())
+  fetch('api/controllers/assembly/getAssemblyData.php').then(res => res.json()),
+  fetch('api/controllers/assembly/getManpowerRework.php').then(res => res.json())
 ])
 .then(([assemblyData, reworkData]) => {
   const mergedData = {};
@@ -204,28 +214,31 @@ Promise.all([
   });
 
   mergedDataArray = Object.values(mergedData);
+  filteredData = mergedDataArray.slice();
 
-  renderTable(mergedDataArray);
+  paginator = createPaginator({
+    data: filteredData,
+    rowsPerPage: 10,
+    renderPageCallback,
+    paginationContainerId: 'pagination'
+  });
+
+  paginator.render();
 })
-.catch(error => {
-  console.error('Error loading data:', error);
-});
+.catch(console.error);
 
-// Enable/disable filter input based on column select
+// Filter controls
 filterColumn.addEventListener('change', () => {
-  if (filterColumn.value) {
-    filterInput.disabled = false;
-    filterInput.value = '';
-    renderTable(mergedDataArray);
-  } else {
-    filterInput.disabled = true;
-    filterInput.value = '';
-    renderTable(mergedDataArray);
-  }
+  filterInput.disabled = !filterColumn.value;
+  filterInput.value = '';
+  filterAndRender();
 });
 
 filterInput.addEventListener('input', () => {
   filterAndRender();
 });
+
+// Optional: initialize sorting
+enableTableSorting(".table");
 </script>
 

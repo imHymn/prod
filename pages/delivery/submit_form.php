@@ -62,9 +62,8 @@
 <div class="form-group col-md-2">
   <label for="shifting">Shift Schedule</label>
   <div class="input-group">
-
-        <select class="form-control" id="shifting" name="shifting" required>
-           <option disabled selected>Choose Shift:</option>
+      <select class="form-control" id="shifting" name="shifting" required>
+       <option disabled selected>Choose Shift:</option>
        <option value="1st Shift">1st Shift</option>
        <option value="2nd Shift">2nd Shift</option>
       </select>
@@ -102,19 +101,19 @@
 
 
 <script src="assets/js/sweetalert2@11.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/jquery.min.js"></script>
+<link rel="stylesheet" href="assets/css/choices.min.css" />
 
 <!-- Choices.js JS -->
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script src="assets/js/choices.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     let choicesInstance = null;  // Track the Choices instance for SKU
 
     // Use fetch to make the GET request to get customer data
-    fetch('api/delivery/getCustomers.php')
+    fetch('api/controllers/delivery/getCustomers.php')
         .then(response => response.json())  // Parse the JSON response
         .then(customers => {
             // Get the <select> element for customers and models
@@ -341,7 +340,7 @@ document.getElementById('delivery_submit_btn').addEventListener('click', functio
 
             console.log('Compiled values:', results);
 
-         fetch('api/delivery/postForms.php', {
+         fetch('api/controllers/delivery/postForms.php', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'

@@ -1,6 +1,15 @@
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+session_start();
+$role = $_SESSION['role'];
+$production = $_SESSION['production'];
+$production_location = $_SESSION['production_location'];
+?>
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/qrcodeScanner.php'; ?>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/sweetalert2@11.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="assets/js/html5.qrcode.js"></script>
 
 
 <div class="page-content">
@@ -15,30 +24,51 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-     <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex align-items-center justify-content-between mb-2">
   <h6 class="card-title mb-0">To-do List</h6>
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+</div>
+<div class="row mb-3">
+  <div class="col-md-3">
+    <select id="filter-column" class="form-select">
+      <option value="" disabled selected>Select Column to Filter</option>
+      <option value="material_no">Material No</option>
+      <option value="components_name">Material Description</option>
+      <option value="stage_name">Process</option>
+      <option value="total_quantity">Total Quantity</option>
+      <option value="person_incharge">Person Incharge</option>
+      <option value="time_in">Time In</option>
+      <option value="time_out">Time Out</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <input
+      type="text"
+      id="filter-input"
+      class="form-control"
+      placeholder="Type to filter..."
+      disabled
+    />
+  </div>
 </div>
 
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-      <th style="width: 5%; text-align: center;">Process</th>
+     
         <th style="width: 5%; text-align: center;">Material No</th>
         <th style="width: 10%; text-align: center;">Material Description</th>
+         <th style="width: 5%; text-align: center;">Process</th>
         <th style="width: 5%; text-align: center;">Total Quantity</th>
-        <th style="width: 5%; text-align: center;">Quantity</th>
         <th style="width: 10%; text-align: center;">Person Incharge</th>
-        <th style="width: 7%; text-align: center;">Time In</th>
-        <th style="width: 7%; text-align: center;">Time Out</th>
-        <th style="width: 7%; text-align: center;">Status</th>
+        <th style="width: 7%; text-align: center;">Time</th>
         <th style="width: 7%; text-align: center;">Action</th>
+         <th style="width: 5%; text-align: center;">View</th>
     </tr>
   </thead>
   <tbody id="data-body"></tbody>
 </table>
-
-
-      
+<div id="pagination" class="mt-3 d-flex justify-content-center"></div>
       </div>
     </div>
   </div>
@@ -48,7 +78,6 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="qrModalLabel">Scan QR Code</h5>
-      
       </div>
       <div class="modal-body">
         <div id="qr-reader" style="width: 100%"></div>
@@ -81,77 +110,145 @@
 </div>
 
 <script>
-   let mode = null;
+  let mode = null;
   let selectedRowData = null;
   let fullData = null;
-fetch('api/stamping/getTodoList.php')
+  let paginator = null;
+  let section = ''; 
+
+  const filterColumnSelect = document.getElementById('filter-column');
+  const filterInput = document.getElementById('filter-input');
+  const dataBody = document.getElementById('data-body');
+
+  const role = "<?= htmlspecialchars($role, ENT_QUOTES) ?>";
+  const production = "<?= htmlspecialchars($production, ENT_QUOTES) ?>";
+  const production_location = "<?= htmlspecialchars($production_location, ENT_QUOTES) ?>";
+
+  console.log(role, production, production_location);
+
+
+  if (role === "line leader" && production === "stamping") {
+    section = production_location; 
+  } else if (role ==="administrator"){
+    section="all";
+  }
+
+fetch(`api/stamping/getTodoList.php?section=${encodeURIComponent(section)}`)
   .then(response => response.json())
   .then(data => {
-    console.log(data);
-    fullData = data;
-
-    // Step 1: Group by reference_no
-    const grouped = {};
-    data.forEach(item => {
-      if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
-      grouped[item.reference_no].push(item);
+    fullData = preprocessData(data); // ⬅️ Clean it up before paginating
+    paginator = createPaginator({
+      data: fullData,
+      rowsPerPage: 10,
+      renderPageCallback: renderTable,
+      paginationContainerId: 'pagination'
     });
+    paginator.render(); // Initial render
+  })
+  .catch(console.error);
 
-    // Step 2: Flatten grouped entries and sort by stage within each group
-    const sorted = Object.values(grouped)
-      .flatMap(group => group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0)))
-);
+function preprocessData(data) {
+  const grouped = {};
 
-    console.log(sorted); // sorted list
+  data.forEach(item => {
+    if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
+    grouped[item.reference_no].push(item);
+  });
 
-    const dataBody = document.getElementById('data-body');
-    dataBody.innerHTML = ''; // Clear existing rows if any
+  const sorted = Object.values(grouped)
+    .flatMap(group =>
+      group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0)))
+    );
 
-    sorted.forEach(item => {
-      if(item.status ==='done'){return;}
-      const row = document.createElement('tr');
-      const status = item.status?.toLowerCase();
-      const statusCellContent = status ? status.toUpperCase() : '<i>None</i>';
+  return sorted.filter(item => item.status !== 'done');
+}
 
-      const hasTimeIn = item.time_in !== null && item.time_in !== '';
-      const hasTimeOut = item.time_out !== null && item.time_out !== '';
 
-      const itemDataAttr = encodeURIComponent(JSON.stringify(item));
+function renderTable(data, page = 1) {
+  // Group and sort before rendering
+  const grouped = {};
+  data.forEach(item => {
+    if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
+    grouped[item.reference_no].push(item);
+  });
 
-      let actionButton = '';
-      if (hasTimeIn && hasTimeOut) {
-        actionButton = `<span class="btn btn-sm btn-primary">Done</span>`;
-      } else {
-        actionButton = hasTimeIn
-          ? `<button type="button" 
-                    class="btn btn-sm btn-success time-action-btn" 
-                    data-item="${itemDataAttr}"
-                    data-mode="time-out">
-                Time Out
-              </button>`
-          : `<button type="button" 
-                    class="btn btn-sm btn-primary time-action-btn" 
-                    data-item="${itemDataAttr}"
-                    data-mode="time-in">
-                Time In
-              </button>`;
-      }
+  const sorted = Object.values(grouped)
+    .flatMap(group => group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0))));
 
-      row.innerHTML = `
-       <td style="text-align: center;">${item.stage_name || ''}</td>
-        <td style="text-align: center;">${item.material_no || ''}</td>
-        <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.total_quantity || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.quantity || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.time_in || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.time_out || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${statusCellContent}</td>
-        <td style="text-align: center;">${actionButton}</td>
-      `;
+  dataBody.innerHTML = ''; // Clear table
 
-      dataBody.appendChild(row);
-    });
+  sorted.forEach(item => {
+    if(item.status === 'done') return;
+
+    const row = document.createElement('tr');
+    const status = item.status?.toLowerCase();
+    const itemDataAttr = encodeURIComponent(JSON.stringify(item));
+
+    const hasTimeIn = item.time_in !== null && item.time_in !== '';
+    const hasTimeOut = item.time_out !== null && item.time_out !== '';
+
+    let actionButton = '';
+    if (hasTimeIn && hasTimeOut) {
+      actionButton = `<span class="btn btn-sm btn-primary">Done</span>`;
+    } else {
+      actionButton = hasTimeIn
+        ? `<button type="button" class="btn btn-sm btn-success time-action-btn" data-item="${itemDataAttr}" data-mode="time-out">Time Out</button>`
+        : `<button type="button" class="btn btn-sm btn-primary time-action-btn" data-item="${itemDataAttr}" data-mode="time-in">Time In</button>`;
+    }
+
+    row.innerHTML = `
+      <td style="text-align: center;">${item.material_no || ''}</td>
+      <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
+      <td style="text-align: center;">${item.stage_name || ''}</td>
+      <td style="text-align: center;">
+        ${(item.total_quantity != null && item.total_quantity !== '' ? item.total_quantity : '<i>Null</i>') + 
+        (item.pending_quantity != null && item.pending_quantity !== '' ? ` (${item.pending_quantity})` : '')}
+      </td>
+      <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
+      <td style="text-align: center;">${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}</td>
+      <td style="text-align: center;">${actionButton}</td>
+      <td style="text-align: center;">
+        <button onclick="viewStageStatus('${item.material_no}', '${item.components_name}', '${item.batch}')" class="btn btn-sm" title="View Stages">🔍</button>
+      </td>
+    `;
+    dataBody.appendChild(row);
+  });
+
+  document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
+}
+
+
+
+
+
+
+// Enable/disable filter input based on dropdown
+filterColumnSelect.addEventListener('change', () => {
+  filterInput.value = '';
+  filterInput.disabled = !filterColumnSelect.value;
+  filterInput.focus();
+  applyFilter();
+});
+
+filterInput.addEventListener('input', applyFilter);
+
+function applyFilter() {
+  const column = filterColumnSelect.value;
+  const filterValue = filterInput.value.trim().toLowerCase();
+
+  if (!column) {
+    paginator.setData(fullData);
+    return;
+  }
+
+  const filtered = fullData.filter(item => {
+    let val = item[column];
+    if (val === null || val === undefined) return false;
+    return String(val).toLowerCase().includes(filterValue);
+  });
+
+  paginator.setData(filtered);
+}
 
 
 document.getElementById('data-body').addEventListener('click', (event) => {
@@ -192,55 +289,33 @@ console.log(fullData);
   if (stage > 1) {
     const prevStage = stage - 1;
 
-    const previousStageItem = relatedItems.find(item =>
-      parseInt(item.stage) === prevStage &&
-      item.status?.toLowerCase() === 'ongoing'
-    );
+const previousStageItem = relatedItems.find(item =>
+  parseInt(item.stage) === prevStage &&
+  item.status?.toLowerCase() === 'ongoing'
+);
 
-    // Also check if previous stage is completed (sum quantity === maxTotalQuantity)
-    const prevStageItems = relatedItems.filter(item => parseInt(item.stage) === prevStage);
-    const sumPrevStageQuantity = prevStageItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+// Get all previous stage items
+const prevStageItems = relatedItems.filter(item => parseInt(item.stage) === prevStage);
 
-    const prevStageCompleted = sumPrevStageQuantity >= maxTotalQuantity;
+// Check if all are marked as 'done'
+const allPrevStageDone = prevStageItems.every(item => item.status?.toLowerCase() === 'done');
 
-    if (!previousStageItem && !prevStageCompleted) {
-      Swal.fire({
-        icon: 'warning',
-        title: `Cannot Time-In for Stage ${stage}`,
-        text: `Stage ${prevStage} must be marked as "ongoing" or completed before proceeding.`,
-      });
-      return;
-    }
+// Check if total quantity reached
+const sumPrevStageQuantity = prevStageItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+const prevStageCompleted = sumPrevStageQuantity >= maxTotalQuantity;
+
+// Updated check: allow if any of these is true
+if (!previousStageItem && !prevStageCompleted && !allPrevStageDone) {
+  Swal.fire({
+    icon: 'warning',
+    title: `Cannot Time-In for Stage ${stage}`,
+    text: `Stage ${prevStage} must be "ongoing", "done", or completed by quantity before proceeding.`,
+  });
+  return;
+}
   }
-
   console.log('Ready for QR Time-In with:', selectedRowData);
   openQRModal(mode);
-
-
-    // const stage = parseInt(selectedRowData.stage || 0);
-    // const material_no = selectedRowData.material_no;
-
-    // if (stage > 1) {
-    //   const prevStage = stage - 1;
-
-    //   const previousStageItem = fullData.find(item =>
-    //     item.material_no === material_no &&
-    //     parseInt(item.stage) === prevStage &&
-    //     item.status?.toLowerCase() === 'ongoing'
-    //   );
-
-    //   if (!previousStageItem) {
-    //     Swal.fire({
-    //       icon: 'warning',
-    //       title: `Cannot Time-In for Stage ${stage}`,
-    //       text: `Stage ${prevStage} must be marked as "ongoing" before proceeding.`,
-    //     });
-    //     return;
-    //   }
-    // }
-
-    // console.log('Ready for QR Time-In with:', selectedRowData);
-    // openQRModal(mode);
 
   } else if (mode === 'time-out') {
   const quantityModal = new bootstrap.Modal(document.getElementById('quantityModal'));
@@ -311,54 +386,88 @@ console.log(fullData);
 });
 
 
-  });
-let isProcessingScan = false;
 
-function openQRModal(mode) {
-  const modalElement = document.getElementById('qrModal');
-  const modal = new bootstrap.Modal(modalElement);
-  modal.show();
+function viewStageStatus(materialNo, componentName,batch) {
+  fetch('api/controllers/stamping/fetchStageStatus.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ material_no: materialNo, components_name: componentName,batch })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      const stages = data.stages || [];
+      const len = stages.length;
 
-  const resultContainer = document.getElementById('qr-result');
-  resultContainer.textContent = "Waiting for QR scan...";
-  isProcessingScan = false;
+      let content = '<i>No stages found</i>';
 
-  const qrReader = new Html5Qrcode("qr-reader");
-  html5QrcodeScanner = qrReader;
-  console.log(mode);
-  qrReader.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 550 },
-    (decodedText, decodedResult) => {
-      if (isProcessingScan) return;
-      isProcessingScan = true;
+      if (len > 0) {
+        // Two-row grid for odd ≥ 5 or even ≥ 6
+        if ((len >= 5 && len % 2 === 1) || (len >= 6 && len % 2 === 0)) {
+          const midpoint = Math.ceil(len / 2);
+          const firstRow = stages.slice(0, midpoint);
+          const secondRow = stages.slice(midpoint);
 
-      resultContainer.textContent = `QR Code Scanned: ${decodedText}`;
-      qrReader.pause();
+          content = `
+            <div style="display: flex; flex-direction: column; gap: 16px; padding: 10px;">
+              <div style="display: flex; gap: 12px; justify-content: center;">
+                ${firstRow.map(stage => renderStageBox(stage)).join('')}
+              </div>
+              <div style="display: flex; gap: 12px; justify-content: center;">
+                ${secondRow.map(stage => renderStageBox(stage)).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          // Default horizontal scroll
+          content = `
+            <div style="display: flex; gap: 16px; overflow-x: auto; padding: 10px;">
+              ${stages.map(stage => renderStageBox(stage)).join('')}
+            </div>
+          `;
+        }
+      }
 
       Swal.fire({
-        title: 'Confirm Scan',
-        text: `Is this the correct QR code?\n${decodedText}`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, confirm',
-        cancelButtonText: 'No, rescan'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const idMatch = decodedText.match(/ID:\s*([^\n]+)/);
-          const nameMatch = decodedText.match(/Name:\s*(.+)/);
+        title: 'Stage Status',
+        html: content,
+        icon: 'info',
+        width: '60%'
+      });
+    } else {
+      Swal.fire('Error', data.message || 'Could not fetch stage data.', 'error');
+    }
+  })
+  .catch(err => {
+    console.error('Fetch error:', err);
+    Swal.fire('Error', 'Something went wrong.', 'error');
+  });
 
-          const parsedId = idMatch ? idMatch[1].trim() : null;
-          const parsedName = nameMatch ? nameMatch[1].trim() : null;
+    function renderStageBox(stage) {
+    console.log(stage)
+    return `
+      <div style="border: 1px solid #ccc; padding: 10px; min-width: 200px; border-radius: 8px; box-shadow: 1px 1px 5px rgba(0,0,0,0.1);">
+        <b>Section:</b> ${stage.section}<br>
+        <b>Stage Name:</b> ${stage.stage_name}<br>
+        <b>Status:</b> <span style="color: ${stage.status === 'done' ? 'green' : 'orange'}">${stage.status}</span><br>
+        <br>(${stage.stage})
+      </div>
+    `;
+  }
+}
 
-          if (!selectedRowData) {
-            console.error("No selectedRowData available!");
-            isProcessingScan = false;
-            qrReader.resume();
-            return;
-          }
 
-       const {
+let isProcessingScan = false;
+function openQRModal(mode) {
+  if (!selectedRowData) {
+    console.error("No selectedRowData available!");
+    Swal.fire('Error', 'No data selected for processing.', 'error');
+    return;
+  }
+
+  scanQRCodeForUser({
+    onSuccess: ({ user_id, full_name }) => {
+      const {
         material_no,
         material_description,
         id,
@@ -370,91 +479,46 @@ function openQRModal(mode) {
         process_quantity
       } = selectedRowData;
 
+      const postData = {
+        id,
+        material_no,
+        material_description,
+        userId: user_id,
+        name: full_name,
+        quantity,
+        inputQuantity,
+        pending_quantity,
+        total_quantity
+      };
 
-          const postData = {
-            id,
-            material_no,
-            material_description,
-            pending_quantity,
-            name: parsedName,
-            quantity,
-            inputQuantity,
-            stage,
-            process_quantity,
-            total_quantity
-          };
+      const endpoint = mode === 'time-in'
+        ? 'api/controllers/stamping/postTimeInTask.php'
+        : 'api/controllers/stamping/postTimeOutTask.php';
 
-         console.log("Using mode:", postData);
-
-          const endpoint = mode === 'time-in'
-            ? 'api/stamping/postTimeInTask.php'
-            : 'api/stamping/postTimeOutTask.php';
-
-          fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id,
-              material_no,
-              material_description,
-              userId: parsedId,
-              name: parsedName,
-              quantity,
-              inputQuantity,
-              pending_quantity,
-              total_quantity
-            })
-          })
-          .then(res => res.json())
-          .then(response => {
-            console.log(response)
-            if (response.status === 'success') {
-                console.log('Calling Swal success...');
-              Swal.fire('Success', response.message || `${mode.replace('-', ' ')} recorded.`, 'success');
-              qrReader.stop().then(() => {
-                qrReader.clear();
-                modal.hide();
-              });
-            } else {
-              Swal.fire('Error', response.message || 'Something went wrong.', 'error');
-              isProcessingScan = false;
-              qrReader.resume();
-              resultContainer.textContent = "Waiting for QR scan...";
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            Swal.fire('Error', 'Network error occurred.', 'error');
-            isProcessingScan = false;
-            qrReader.resume();
-            resultContainer.textContent = "Waiting for QR scan...";
-          });
-
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData)
+      })
+      .then(res => res.json())
+      .then(response => {
+        if (response.status === 'success') {
+          Swal.fire('Success', response.message || `${mode.replace('-', ' ')} recorded.`, 'success');
         } else {
-          isProcessingScan = false;
-          qrReader.resume();
-          resultContainer.textContent = "Waiting for QR scan...";
+          Swal.fire('Error', response.message || 'Something went wrong.', 'error');
         }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire('Error', 'Network error occurred.', 'error');
       });
     },
-    (errorMessage) => {
-      // Optional: Handle scan errors
+    onCancel: () => {
+      console.log("QR scan canceled or modal closed.");
     }
-  ).catch(err => {
-    resultContainer.textContent = `Unable to start scanner: ${err}`;
   });
-
-  modalElement.addEventListener('hidden.bs.modal', () => {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.stop().then(() => {
-        html5QrcodeScanner.clear();
-      }).catch(err => {
-        console.warn("QR scanner stop failed:", err);
-      });
-    }
-    isProcessingScan = false;
-  }, { once: true });
 }
+
 
 function stopQRScanner() {
   if (html5QrcodeScanner) {

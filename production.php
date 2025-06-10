@@ -1,4 +1,4 @@
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="assets/js/html5.qrcode.js"></script>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -94,10 +94,10 @@
 </div>
 
 <script src="assets/js/sweetalert2@11.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/jquery.min.js"></script>
+<link rel="stylesheet" href="assets/css/choices.min.css" />
+<script src="assets/js/choices.min.js"></script>
 <script>
 
 </script>
@@ -198,7 +198,7 @@ function applyHierarchicalFilters() {
 
 // Initial load
 document.addEventListener('DOMContentLoaded', function () {
-  fetch('api/assembly/getDeliveryforms.php')
+  fetch('api/controllers/assembly/getDeliveryforms.php')
     .then(response => response.json())
     .then(data => {
     console.log(data)

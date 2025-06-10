@@ -26,24 +26,17 @@ if (!empty($_SESSION['production_location'])) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>Roberts</title>
-	<!-- core:css -->
-     	<link rel="stylesheet" href="assets/vendors/core/core.css">
+
+  <link rel="stylesheet" href="assets/vendors/core/core.css">
 	<link rel="stylesheet" href="assets/vendors/core/core.css">
-	<!-- endinject -->
-  <!-- plugin css for this page -->
   <link rel="stylesheet" href="assets/vendors/datatables.net-bs4/dataTables.bootstrap4.css">
   <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
   <link rel="stylesheet" href="assets/vendors/prismjs/themes/prism.css">
-	<!-- end plugin css for this page -->
-	<!-- inject:css -->
 	<link rel="stylesheet" href="assets/fonts/feather-font/css/iconfont.css">
 	<link rel="stylesheet" href="assets/vendors/flag-icon-css/css/flag-icon.min.css">
-	<!-- endinject -->
-  <!-- Layout styles -->  
 	<link rel="stylesheet" href="assets/css/demo_1/style.css">
-  <!-- End layout styles -->
   <link rel="shortcut icon" href="assets/images/roberts_icon.png" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/all.min.css">
 
 </head>
 <body>
@@ -70,22 +63,6 @@ if (!empty($_SESSION['production_location'])) {
   $role = strtolower($role);
 $production = strtolower($production);
 
-//   if($role == 'administrator' || $role == 'user manager') {
-//   echo'
-//      <li class="nav-item">
-//   <a class="nav-link" href="?page_active=accounts">
-//     <i class="link-icon" data-feather="calendar"></i>
-//     <span class="link-title">Accounts</span>
-//   </a>
-// </li>
-//   <li class="nav-item">
-//   <a class="nav-link" href="?page_active=production">
-//     <i class="link-icon" data-feather="calendar"></i>
-//     <span class="link-title">Production</span>
-//   </a>
-// </li>
-//     ';
-//   } 
   if($role == 'administrator' || $role == 'user manager') {
   echo'
     <li class="nav-item">
@@ -99,8 +76,6 @@ $production = strtolower($production);
       <li class="nav-item">
         <a href="?page_active=accounts" class="nav-link" data-page="accounts">Account Management</a>
       </li>
-        
-        </li>
     </ul>
   </div>
 </li>
@@ -216,82 +191,39 @@ if($role == 'administrator' || ($production=='fg_warehouse' && $role=='superviso
   }
   
 
-
 if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervisor' || $role == 'line leader'))) {
-    // Define mapping of production locations to pages
-    $locationPages = [
-        'OEM-SMALL'      => ['stamping_oem_small' => 'OEM SMALL'],
-        'MUFFLER-COMPS'  => ['stamping_muffler_comps' => 'MUFFLER COMPS'],
-        'BIG-HYD'        => ['stamping_big_hyd' => 'BIG-HYD'],
-        'BIG-MECH'       => ['stamping_big_mech' => 'BIG-MECH'],
-    ];
 
-    $todoSubMenuItems = '';
+    echo '
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
+        <i class="link-icon" data-feather="layout"></i>
+        <span class="link-title">Stamping</span>
+        <i class="link-arrow" data-feather="chevron-down"></i>
+      </a>
+      <div class="collapse" id="stamping">
+        <ul class="nav sub-menu">
 
-    // Admins and stamping supervisors get full menu
-    if ($role == 'administrator' || $role == 'supervisor') {
-        foreach ($locationPages as $pages) {
-            foreach ($pages as $page => $label) {
-                $todoSubMenuItems .= '
-                  <li class="nav-item">
-                    <a href="?page_active=' . $page . '" class="nav-link" data-page="' . $page . '">' . $label . '</a>
-                  </li>';
-            }
-        }
-    }
-    // Line leaders get only their location-specific page
-    elseif ($role == 'line leader' && isset($locationPages[$production_location])) {
-        foreach ($locationPages[$production_location] as $page => $label) {
-            $todoSubMenuItems .= '
-              <li class="nav-item">
-                <a href="?page_active=' . $page . '" class="nav-link" data-page="' . $page . '">' . $label . '</a>
-              </li>';
-        }
-    }
+  
+          <li class="nav-item">
+            <a href="?page_active=stamping_todolist" class="nav-link" data-page="stamping_todolist">To-do List</a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
+          </li>
+    
 
-    // Output menu if there's anything to show
-    if (!empty($todoSubMenuItems)) {
-        echo '
-        <li class="nav-item">
-          <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
-            <i class="link-icon" data-feather="layout"></i>
-            <span class="link-title">Stamping</span>
-            <i class="link-arrow" data-feather="chevron-down"></i>
-          </a>
-          <div class="collapse" id="stamping">
-            <ul class="nav sub-menu">
-              <li class="nav-item">
-                <a class="nav-link" data-toggle="collapse" href="#todoSubMenu" role="button" aria-expanded="false" aria-controls="todoSubMenu">
-                  <span class="link-title">To-do List</span>
-                  <i class="link-arrow" data-feather="chevron-down"></i>
-                </a>
-                <div class="collapse" id="todoSubMenu">
-                  <ul class="nav sub-menu">
-                    ' . $todoSubMenuItems . '
-                  </ul>
-                </div>
-              </li>';
 
-        // Extra links only for admin/supervisor
-        if ($role == 'administrator' || $role == 'supervisor') {
-            echo '
-              <li class="nav-item">
-                <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
-              </li>
-              <li class="nav-item">
-                <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
-              </li>
-              <li class="nav-item">
-                <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
-              </li>';
-        }
-
-        echo '
-            </ul>
-          </div>
-        </li>';
-    }
+        </ul>
+      </div>
+    </li>';
 }
+
 
 
 
@@ -328,28 +260,14 @@ if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervi
         </ul>
       </div>
     </nav>
-   
-		<!-- partial -->
-	
+
 		<div class="page-wrapper">
-				
-			<!-- partial:partials/_navbar.html -->
+		
 			<nav class="navbar" >
 				<a href="#" class="sidebar-toggler">
 					<i data-feather="menu"></i>
 				</a>
 				<div class="navbar-content" >
-
-	
-						
-<!-- 						
-                  <div style="margin: 0;margin-left: 0;">
-                    <img src="assets/images/roberts2.png" alt="" width="235px;">
-                  </div> -->
-                  
-								
-							
-               
 					
 				
 					<ul class="navbar-nav">
@@ -449,7 +367,7 @@ if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervi
                   </li>
 
 										<li class="nav-item">
-											<a href="/mes/api/accounts/logout.php" class="nav-link">
+											<a href="/mes/api/controllers/accounts/logout.php" class="nav-link">
 												<i data-feather="log-out"></i>
 												<span>Log Out</span>
 											</a>
@@ -462,27 +380,17 @@ if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervi
 				</div>
 			</nav>
       <script>
-  // Get the current page_active from the URL
   const urlParams = new URLSearchParams(window.location.search);
-  const pageActive = urlParams.get('page_active');  // e.g., 'test', 'dashbord', etc.
+  const pageActive = urlParams.get('page_active'); 
 
-  // If there's a page_active value in the URL, proceed
   if (pageActive) {
-    // Select all nav links that have the 'data-page' attribute
     const navLinks = document.querySelectorAll('.nav-link[data-page]');
-
-    // Loop through all the nav links
     navLinks.forEach(link => {
-      // If the data-page attribute matches the page_active value, mark it as active
       if (link.getAttribute('data-page') === pageActive) {
-        link.classList.add('active'); // Add 'active' class to the matching link
-        
-        // Expand the parent collapse section if it's not already expanded
+        link.classList.add('active'); 
         const parentCollapse = link.closest('.collapse');
         if (parentCollapse && !parentCollapse.classList.contains('show')) {
           parentCollapse.classList.add('show');
-          
-          // Set aria-expanded to true
           const parentLink = parentCollapse.previousElementSibling;
           if (parentLink) {
             parentLink.setAttribute('aria-expanded', 'true');

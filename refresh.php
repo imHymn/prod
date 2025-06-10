@@ -9,7 +9,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 
 // Load environment variables
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/env');
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 require_once __DIR__ . '/Classes/Database/DatabaseClass.php'; // Adjust the path to your class file
