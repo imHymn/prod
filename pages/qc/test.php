@@ -3,7 +3,7 @@ const tbody = document.getElementById('data-body');
 tbody.innerHTML = ''; // clear existing table rows
 
 // First fetch QC data and render
-fetch('api/qc/getQCData.php')
+fetch('api/controllers/qc/getQCData.php')
   .then(response => response.json())
   .then(qcData => {
     // Build map of max total_quantity per reference_no
@@ -48,7 +48,7 @@ fetch('api/qc/getQCData.php')
     });
 
     // After QC data, fetch and render Rework data
-    return fetch('api/qc/getManpowerRework.php');
+    return fetch('api/controllers/qc/getManpowerRework.php');
   })
   .then(response => response.json())
   .then(reworkData => {

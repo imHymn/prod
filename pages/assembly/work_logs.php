@@ -1,3 +1,6 @@
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
+
 <div class="page-content">
   <nav class="page-breadcrumb">
     <ol class="breadcrumb">
@@ -10,7 +13,11 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h6 class="card-title">Work Logs</h6>
+      
+            <div class="d-flex align-items-center justify-content-between mb-2">
+    <h6 class="card-title">Work Logs</h6>
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+</div>
 <div class="row mb-3">
   <div class="col-md-3">
     <select id="filter-column" class="form-select">
@@ -28,22 +35,21 @@
   </div>
 </div>
 
-<table class="table table" style="table-layout: fixed; width: 100%;">
-<thead>
-  <tr>
- 
-    <th style="width: 10%; text-align: center;">Material No</th>
-       <th style="width: 15%; text-align: center;">Material Description</th>
-    <th style="width: 8%; text-align: center;">Quantity</th>
-    
-    <th style="width: 10%; text-align: center;">Time In</th>
-    <th style="width: 10%; text-align: center;">Time Out</th>
-    <th style="width: 10%; text-align: center;">Person Incharge</th>
-  </tr>
-</thead>
-
+<table class="table" style="table-layout: fixed; width: 100%;">
+  <thead>
+    <tr>
+      <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Material Description <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Time In <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Time Out <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+    </tr>
+  </thead>
   <tbody id="data-body"></tbody>
 </table>
+
+<div id="pagination" class="mt-3 d-flex justify-content-center"></div>
 
       
       </div>
@@ -54,8 +60,10 @@
 const tbody = document.getElementById('data-body');
 const filterColumn = document.getElementById('filter-column');
 const filterInput = document.getElementById('filter-input');
+const paginationContainerId = 'pagination';
 
-let allData = []; // combined assembly + rework
+let allData = [];
+let paginator = null;
 
 function renderTable(data) {
   tbody.innerHTML = '';
@@ -71,13 +79,15 @@ function renderTable(data) {
     `;
     tbody.appendChild(row);
   });
+
+  document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
 }
 
 function loadData() {
   tbody.innerHTML = '';
   allData = [];
 
-  fetch('api/assembly/getAssemblyData.php')
+  fetch('api/controllers/assembly/getAssemblyData.php')
     .then(res => res.json())
     .then(assemblyData => {
       assemblyData.forEach(item => {
@@ -96,7 +106,7 @@ function loadData() {
         });
       });
 
-      return fetch('api/assembly/getManpowerRework.php');
+      return fetch('api/controllers/assembly/getManpowerRework.php');
     })
     .then(res => res.json())
     .then(reworkData => {
@@ -116,39 +126,44 @@ function loadData() {
         });
       });
 
-      renderTable(allData);
+      // Init paginator
+      paginator = createPaginator({
+        data: allData,
+        rowsPerPage: 10,
+        renderPageCallback: renderTable,
+        paginationContainerId: paginationContainerId
+      });
+      paginator.render();
     })
     .catch(console.error);
 }
 
-// Enable/disable filter input based on column select
+// Filter functionality
 filterColumn.addEventListener('change', () => {
-  if (filterColumn.value) {
-    filterInput.disabled = false;
-    filterInput.value = '';
-    renderTable(allData);
-  } else {
-    filterInput.disabled = true;
-    filterInput.value = '';
-    renderTable(allData);
-  }
+  filterInput.value = '';
+  filterInput.disabled = !filterColumn.value;
+  applyFilter();
 });
 
-// Filter table rows dynamically on input
-filterInput.addEventListener('input', () => {
-  const col = filterColumn.value;
-  const val = filterInput.value.toLowerCase();
+filterInput.addEventListener('input', applyFilter);
 
-  if (!col) return;
+function applyFilter() {
+  const column = filterColumn.value;
+  const val = filterInput.value.trim().toLowerCase();
+
+  if (!column) {
+    paginator.setData(allData);
+    return;
+  }
 
   const filtered = allData.filter(item => {
-    const cell = (item[col] || '').toString().toLowerCase();
-    return cell.includes(val);
+    const value = item[column] || '';
+    return value.toString().toLowerCase().includes(val);
   });
 
-  renderTable(filtered);
-});
+  paginator.setData(filtered);
+}
 
 loadData();
-
+enableTableSorting(".table");
 </script>

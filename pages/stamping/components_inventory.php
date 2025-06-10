@@ -1,5 +1,7 @@
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/sweetalert2@11.js"></script>
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -13,9 +15,9 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-     <div class="d-flex justify-content-between align-items-center mb-3">
+ <div class="d-flex align-items-center justify-content-between mb-2">
   <h6 class="card-title mb-0">Components Inventory</h6>
-
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
 </div>
  <div class="row mb-3">
             <div class="col-md-3">
@@ -41,38 +43,53 @@
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-    
-      <th style="width: 10%; text-align: center;">Material No</th>
-      <th style="width: 18%; text-align: center;">Component Name</th>
-      <th style="width: 8%; text-align: center;">Usage Type</th>
-      <th style="width: 8%; text-align: center;">Quantity</th>
-      <th style="width: 8%; text-align: center;">Raw Material Qty</th>
-    <th style="width: 8%; text-align: center;">Stock Status</th>
+      <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+      <th style="width: 18%; text-align: center;">Component Name <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Usage Type <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Raw Material Qty <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Stock Status <span class="sort-icon"></span></th>
     </tr>
   </thead>
   <tbody id="data-body"></tbody>
 </table>
 
+<div id="pagination" class="mt-3 d-flex justify-content-center"></div>
+
+ 
 
       
       </div>
     </div>
   </div>
 </div>
-
 <script>
   const dataBody = document.getElementById('data-body');
   const filterColumn = document.getElementById('filter-column');
   const filterInput = document.getElementById('filter-input');
-  let componentsData = [];
+  const paginationContainerId = 'pagination';
 
-  fetch('api/stamping/getComponents.php')
+  let componentsData = [];
+  let paginator = null;
+
+  fetch('api/controllers/stamping/getComponents.php')
     .then(response => response.json())
     .then(data => {
-      console.log(data);
       componentsData = data;
 
-      renderTable(componentsData);
+      paginator = createPaginator({
+        data: componentsData,
+        rowsPerPage: 10,
+        paginationContainerId,
+        renderPageCallback: renderTable,
+        defaultSortFn: (a, b) => {
+          const aNeedsRequest = a.actual_inventory <= a.reorder;
+          const bNeedsRequest = b.actual_inventory <= b.reorder;
+          return bNeedsRequest - aNeedsRequest;
+        }
+      });
+
+      paginator.render();
     })
     .catch(error => {
       console.error('Error fetching component data:', error);
@@ -83,17 +100,10 @@
       });
     });
 
-  function renderTable(data) {
+  function renderTable(data, currentPage) {
     dataBody.innerHTML = '';
 
-    data.sort((a, b) => {
-      const aNeedsRequest = a.actual_inventory <= a.reorder;
-      const bNeedsRequest = b.actual_inventory <= b.reorder;
-      return (bNeedsRequest - aNeedsRequest); // true = 1, false = 0
-    });
-
     data.forEach(item => {
-
       const inventory = item.actual_inventory;
       const reorder = item.reorder;
       const critical = item.critical;
@@ -102,7 +112,6 @@
 
       let statusLabel = '';
       let statusColor = '';
-      let isGood = false;
 
       if (inventory <= critical) {
         statusLabel = "Critical";
@@ -123,20 +132,12 @@
 
       const textColor = (statusColor === "yellow") ? "black" : "white";
 
-      let stockText = '';
-      if (isGood) {
-        stockText = `<span title="${statusLabel}" 
-          style="background-color: ${statusColor}; color: ${textColor}; " class="btn btn-sm" >
-          ${statusLabel}
-        </span>`;
-      } else {
-        stockText = `<button type="button" class="btn btn-sm" 
-          style="background-color: ${statusColor}; color: ${textColor};" 
-          title="${statusLabel}"
-          >
+      const stockText = `
+        <button type="button" class="btn btn-sm"
+          style="background-color: ${statusColor}; color: ${textColor};"
+          title="${statusLabel}">
           ${statusLabel}
         </button>`;
-      }
 
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -149,38 +150,32 @@
       `;
       dataBody.appendChild(row);
     });
+
+    const now = new Date();
+    document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
   }
 
-  // Enable input only when a column is selected
   filterColumn.addEventListener('change', () => {
     filterInput.value = '';
     filterInput.disabled = !filterColumn.value;
     if (!filterColumn.value) {
-      renderTable(componentsData);
+      paginator.setData(componentsData);
     }
   });
 
-  // Filter table by selected column and input text
   filterInput.addEventListener('input', () => {
     const column = filterColumn.value;
     const filterText = filterInput.value.trim().toLowerCase();
 
-    if (!column) return; // no column selected
-
-    if (!filterText) {
-      renderTable(componentsData);
-      return;
-    }
+    if (!column) return;
 
     const filtered = componentsData.filter(item => {
       const value = item[column];
-
-      if (value === null || value === undefined) return false;
-
-      // Convert to string and check includes
-      return value.toString().toLowerCase().includes(filterText);
+      return value && value.toString().toLowerCase().includes(filterText);
     });
 
-    renderTable(filtered);
+    paginator.setData(filtered);
   });
+
+  enableTableSorting(".table");
 </script>

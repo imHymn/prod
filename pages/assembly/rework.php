@@ -1,13 +1,9 @@
 
-<?php
-session_start();
-$role = $_SESSION['role'];
-$production = $_SESSION['production'];
-?>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/qrcodeScanner.php'; ?>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/html5.qrcode.js" type="text/javascript"></script>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -21,7 +17,11 @@ $production = $_SESSION['production'];
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h6 class="card-title">Reworked Material</h6>
+             <div class="d-flex align-items-center justify-content-between mb-2">
+                <h6 class="card-title">Reworked Material</h6>
+              <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+            </div>
+     
 <div class="row mb-3">
   <div class="col-md-3">
     <select id="filter-column" class="form-select">
@@ -45,22 +45,25 @@ $production = $_SESSION['production'];
   </div>
 </div>
 
-<table class="table table" style="table-layout: fixed; width: 100%;">
-<thead>
-  <tr>
-    <th style="width: 15%; text-align: center;">Material No</th>
-    <th style="width: 5%; text-align: center;">Model</th>
-    <th style="width: 8%; text-align: center;">Shift</th>
-    <th style="width: 8%; text-align: center;">Lot</th>
-    <th style="width: 8%; text-align: center;">Total Qty</th>
-    <th style="width: 15%; text-align: center;">Person Incharge</th>
-    <th style="width: 15%; text-align: center;">Time In | Time out</th>
-  </tr>
-</thead>
+<table class="table" style="table-layout: fixed; width: 100%;">
+  <thead>
+    <tr>
+      <th style="width: 15%; text-align: center;">Material No <span class="sort-icon"></span></th>
+      <th style="width: 5%; text-align: center;">Model <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Shift <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Lot <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Total Qty <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Time In | Time out <span class="sort-icon"></span></th>
+    </tr>
+  </thead>
 
-<tbody id="data-body" style="word-wrap: break-word; white-space: normal;"></tbody>
+  <tbody id="data-body" style="word-wrap: break-word; white-space: normal;"></tbody>
 </table>
 
+<nav aria-label="Page navigation" class="mt-3">
+  <ul class="pagination justify-content-center" id="pagination"></ul>
+</nav>
       
       </div>
     </div>
@@ -119,43 +122,53 @@ $production = $_SESSION['production'];
 <!-- SweetAlert2 CDN -->
 <script src="assets/js/sweetalert2@11.js"></script>
 <script>
-     let url='';
-    let selectedRowData = null;
-    let inspectionModal = null;
-    let fullDataSet = []; // Add this at the top
+let url = '';
+let selectedRowData = null;
+let inspectionModal = null;
+let fullDataSet = []; // Still global if needed
+let paginator = null;
 
 document.addEventListener('DOMContentLoaded', function () {
-  let fullDataSet = [];
   const tbody = document.getElementById('data-body');
   const filterColumnSelect = document.getElementById('filter-column');
   const filterInput = document.getElementById('filter-input');
+  const paginationContainerId = 'pagination';
+  const rowsPerPage = 10;
 
-  // Fetch and render data
-  fetch('api/assembly/getRework.php')
+  fetch('api/controllers/assembly/getRework.php')
     .then(response => response.json())
     .then(data => {
       fullDataSet = data;
-      renderTable(fullDataSet);
+      filteredData = [...fullDataSet];
+
+      // Initialize paginator
+      paginator = createPaginator({
+        data: filteredData,
+        rowsPerPage,
+        renderPageCallback: renderTable,
+        paginationContainerId,
+        defaultSortFn: sortByPriority
+      });
+
+      paginator.render();
     })
     .catch(error => {
       console.error('Fetch error:', error);
     });
 
-  // Render table function
-  function renderTable(data) {
+  function sortByPriority(a, b) {
+    const weight = item => {
+      if (item.assembly_timein && !item.assembly_timeout) return 2;
+      if (!item.assembly_timein) return 1;
+      return 0;
+    };
+    return weight(b) - weight(a);
+  }
+
+  function renderTable(pageData, currentPage) {
     tbody.innerHTML = '';
 
-    // Sort items: prioritize TIME OUT needed
-    data.sort((a, b) => {
-      const weight = item => {
-        if (item.assembly_timein && !item.assembly_timeout) return 2;
-        if (!item.assembly_timein) return 1;
-        return 0;
-      };
-      return weight(b) - weight(a);
-    });
-
-    data.forEach(item => {
+    pageData.forEach(item => {
       let actionHtml = '';
 
       if (!item.assembly_timein) {
@@ -198,9 +211,11 @@ document.addEventListener('DOMContentLoaded', function () {
       `;
       tbody.appendChild(tr);
     });
+
+    document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
   }
 
-  // Enable/disable input depending on column select
+  // Filtering logic
   filterColumnSelect.addEventListener('change', () => {
     filterInput.value = '';
     filterInput.disabled = !filterColumnSelect.value;
@@ -210,24 +225,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   filterInput.addEventListener('input', filterTable);
 
-  // Filtering function
   function filterTable() {
     const filterValue = filterInput.value.toLowerCase();
     const column = filterColumnSelect.value;
+
     if (!column) {
-      renderTable(fullDataSet);
-      return;
+      filteredData = [...fullDataSet];
+    } else {
+      filteredData = fullDataSet.filter(item => {
+        const val = item[column];
+        if (val === null || val === undefined) return false;
+        return String(val).toLowerCase().includes(filterValue);
+      });
     }
 
-    const filteredData = fullDataSet.filter(item => {
-      // Defensive: handle missing keys
-      const val = item[column];
-      if (val === null || val === undefined) return false;
-
-      return String(val).toLowerCase().includes(filterValue);
-    });
-
-    renderTable(filteredData);
+    paginator.setData(filteredData);
   }
 });
 
@@ -310,122 +322,56 @@ function submitInspection() {
     }
   });
 }
-
 function openQRModal(selectedRowData, mode) {
-    console.log(selectedRowData,mode);
-  const modalElement = document.getElementById('qrModal');
-  const modal = new bootstrap.Modal(modalElement);
-  modal.show();
+  console.log(selectedRowData, mode);
 
-  const resultContainer = document.getElementById('qr-result');
-  resultContainer.textContent = "Waiting for QR scan...";
+  scanQRCodeForUser({
+    onSuccess: ({ user_id, full_name }) => {
+      const data = {
+        id: selectedRowData.id,
+        full_name: full_name,
+        inputQty: selectedRowData.inputQty,
+        replace: selectedRowData.replace,
+        rework: selectedRowData.rework,
+        reference_no: selectedRowData.reference_no,
+        quantity: selectedRowData.quantity,
+        assembly_pending_quantity: selectedRowData.assembly_pending_quantity
+      };
 
-  const qrReader = new Html5Qrcode("qr-reader");
-  html5QrcodeScanner = qrReader;
+      let url = '/mes/api/controllers/assembly/timein_reworkOperator.php';
+      if (mode === 'timeOut') {
+        url = '/mes/api/controllers/assembly/timeout_reworkOperator.php';
+      }
 
-  qrReader.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 550 },
-    (decodedText, decodedResult) => {
-      resultContainer.textContent = `QR Code Scanned: ${decodedText}`;
-      qrReader.pause();
-
-      Swal.fire({
-        title: 'Confirm Scan',
-        text: `Is this the correct QR code?\n${decodedText}`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, confirm',
-        cancelButtonText: 'No, rescan'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Extract user_id and full_name from decodedText as before
-          const idMatch = decodedText.match(/ID:\s*([^\n]+)/);
-          const nameMatch = decodedText.match(/Name:\s*(.+)/);
-          
-          const user_id = idMatch ? idMatch[1].trim() : null;
-          const full_name = nameMatch ? nameMatch[1].trim() : null;
-          
-
-            const data = {
-                id: selectedRowData.id,
-                full_name: full_name,
-                inputQty:selectedRowData.inputQty,
-                replace:selectedRowData.replace,
-                rework:selectedRowData.rework,
-                reference_no:selectedRowData.reference_no,
-                quantity:selectedRowData.quantity,
-                assembly_pending_quantity:selectedRowData.assembly_pending_quantity
-            };
-
-            console.log(data,mode);
-             let url = '/mes/api/assembly/timein_reworkOperator.php';
-            if (mode === 'timeOut') {
-            url = '/mes/api/assembly/timeout_reworkOperator.php';
-
-            };
-
-          fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(response => {
-            console.log(response); // 🔍 You’ll now see the response
-            if (response.success) {
-                Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: 'Your operation was successful!',
-                confirmButtonColor: '#3085d6'
-                });
-            } else {
-                Swal.fire('Error', response.message, 'error');
-            }
-            })
-            .catch(err => {
-            console.error('Request failed', err);
-            Swal.fire('Error', 'Something went wrong.', 'error');
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+        .then(res => res.json())
+        .then(response => {
+          console.log(response);
+          if (response.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Your operation was successful!',
+              confirmButtonColor: '#3085d6'
             });
-
-          qrReader.stop().then(() => {
-            qrReader.clear();
-            modal.hide();
-          }).catch(err => {
-            console.error('Failed to stop scanner:', err);
-          });
-        } else {
-          qrReader.resume();
-          resultContainer.textContent = "Waiting for QR scan...";
-        }
-      });
-    },
-    (errorMessage) => {
-      // handle scan errors
-    }
-  ).catch(err => {
-    resultContainer.textContent = `Unable to start scanner: ${err}`;
-  });
-
-  modalElement.addEventListener('hidden.bs.modal', () => {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.stop().then(() => {
-        html5QrcodeScanner.clear();
-      }).catch(err => {
-        console.warn("QR scanner stop failed:", err);
-      });
-    }
-  }, { once: true });
-}
-
-function stopQRScanner() {
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.stop().then(() => {
-            html5QrcodeScanner.clear();
-        }).catch(err => {
-            console.warn("QR scanner stop failed:", err);
+          } else {
+            Swal.fire('Error', response.message || 'Operation failed.', 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Request failed', err);
+          Swal.fire('Error', 'Something went wrong.', 'error');
         });
+    },
+    onCancel: () => {
+      console.log('QR scan was cancelled or modal closed.');
     }
+  });
 }
+
+  enableTableSorting(".table");
 </script>

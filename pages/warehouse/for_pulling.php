@@ -1,11 +1,7 @@
 
+<?php include './components/reusable/tablesorting.php'; ?>
 
-<?php
-session_start();
-$name = $_SESSION['name'] ?? null;
-?>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
 
 
 <div class="page-content">
@@ -20,27 +16,29 @@ $name = $_SESSION['name'] ?? null;
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h6 class="card-title">Ready to be Pulled out</h6>
-
+     
+          <div class="d-flex align-items-center justify-content-between mb-2">
+     <h6 class="card-title">Ready to be Pulled out</h6>
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+</div>
   
-
 <table class="table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-      <th style="width: 10%; text-align: center;">Material No</th>
-      <th style="width: 15%; text-align: center;">Material Description</th>
-      <th style="width: 7%; text-align: center;">Model</th>
-      <th style="width: 7%; text-align: center;"> FG</th>
-      <th style="width: 7%; text-align: center;">Total Quantity</th>
-      <th style="width: 10%; text-align: center;">Shift</th>
-      <th style="width: 7%; text-align: center;">Lot No</th>
-      <th style="width: 10%; text-align: center;">Date Needed</th>
-      <th style="width: 10%; text-align: center;">Pull out</th>
-      
+      <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Material Description <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Model <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">FG <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Total Quantity <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Shift <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Lot No <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Date Needed <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Pull out <span class="sort-icon"></span></th>
     </tr>
   </thead>
   <tbody id="data-body" style="word-wrap: break-word; white-space: normal;"></tbody>
 </table>
+
 
 
       
@@ -120,7 +118,8 @@ function renderTable(data) {
 
     tbody.appendChild(row);
   });
-
+     const now = new Date();
+      document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
   // Attach event listeners only to non-DONE buttons
   document.querySelectorAll('.pull-btn').forEach(button => {
   const quantity = parseInt(button.getAttribute('data-quantity'));
@@ -143,7 +142,7 @@ const model = button.getAttribute('data-model');
     cancelButtonText: 'Cancel'
   }).then((result) => {
     if (result.isConfirmed) {
-      fetch('api/warehouse/pullItemWarehouse.php', {
+      fetch('api/controllers/warehouse/pullItemWarehouse.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +174,7 @@ const model = button.getAttribute('data-model');
 }
 
 function loadTable() {
-  fetch('api/warehouse/getPending_pulling.php')
+  fetch('api/controllers/warehouse/getPending_pulling.php')
     .then(response => response.json())
     .then(data => {
       console.log(data)
@@ -189,5 +188,5 @@ function loadTable() {
 
 // Initial load
 loadTable();
-
+enableTableSorting(".table");
 </script>

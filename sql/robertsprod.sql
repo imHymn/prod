@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 05, 2025 at 05:49 AM
+-- Generation Time: Jun 09, 2025 at 01:16 AM
 -- Server version: 8.0.42-0ubuntu0.22.04.1
 -- PHP Version: 8.1.31
 
@@ -41417,6 +41417,7 @@ CREATE TABLE `components_inventory` (
   `components_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `usage_type` int NOT NULL,
   `process_quantity` int DEFAULT NULL,
+  `stage_name` json DEFAULT NULL,
   `actual_inventory` int NOT NULL,
   `rm_stocks` int DEFAULT NULL,
   `maximum_inventory` int NOT NULL,
@@ -41432,61 +41433,61 @@ CREATE TABLE `components_inventory` (
 -- Dumping data for table `components_inventory`
 --
 
-INSERT INTO `components_inventory` (`id`, `material_no`, `components_name`, `usage_type`, `process_quantity`, `actual_inventory`, `rm_stocks`, `maximum_inventory`, `normal`, `reorder`, `minimum`, `critical`, `section`, `status`) VALUES
-(1, '80024330', 'CROSS MEMBER RR PANEL', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
-(2, '80024330', 'ASTEER', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
-(3, '80024330', 'BRACKET JACK', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
-(4, '80035725', 'HEADLAMP LH (BODY)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
-(5, '80035725', 'HEADLAMP EXTENSION (BIG)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
-(6, '80035725', 'HEADLAMP EXTENSION (SMALL)', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
-(7, '80035725', 'HEADLAMP ACCY #1', 2, 4, 500, 0, 900, 720, 540, 360, 180, 'rm', 'pending'),
-(8, '80035725', 'HEADLAMP ACCY #2', 2, 4, 500, 0, 900, 720, 540, 360, 180, 'rm', 'pending'),
-(9, '80035725', 'HEADLAMP ACCY #3', 2, 4, 500, 0, 900, 720, 540, 360, 180, 'rm', 'pending'),
-(10, '80035725', 'CLIP 25', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
-(11, '80035725', 'CLIP 60', 1, 4, 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
-(12, '80035726', 'HEADLAMP RH (BODY)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(13, '80035726', 'HEADLAMP EXTENSION (BIG)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(14, '80035726', 'HEADLAMP EXTENSION (SMALL)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(15, '80035726', 'HEADLAMP ACCY #1', 2, 4, 500, 0, 900, 720, 540, 360, 180, NULL, NULL),
-(16, '80035726', 'HEADLAMP ACCY #2', 2, 4, 500, 0, 900, 720, 540, 360, 180, NULL, NULL),
-(17, '80035726', 'HEADLAMP ACCY #3', 2, 4, 500, 0, 900, 720, 540, 360, 180, NULL, NULL),
-(18, '80035726', 'CLIP 25', 2, 4, 500, 0, 900, 720, 540, 360, 180, NULL, NULL),
-(19, '80035726', 'CLIP 60', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(20, '80026605', 'RAIL ROOF FRONT (LONG)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(21, '80026605', 'RAIL ROOF FRONT (SHORT)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(22, '80114943', 'PANEL REAR LOWER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(23, '80114943', 'CLIP 60', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(24, '80114943', 'BRKT HARNESS (A)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(25, '80114943', 'BRKT HARNESS 2 WAY', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(26, '80114943', 'BRACKET BATTERY', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(27, '80114930', 'PANEL, FENDER SHIELD INR RH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(28, '80114930', 'CLIP 60', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(29, '80114929', 'PANEL, FENDER SHIELD INR LH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(30, '80114929', 'BRKT HARNESS (A)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(31, '80114929', 'BATTERY TRAY', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(32, '80114929', 'FUEL FILTER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(33, '80009960', 'PAN FRONT FLOOR', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(34, '80120170', 'REINF LWR (LHD)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(35, '80009965', 'CROSS MEMBER FRONT', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(36, '80114945', 'COVER ECU', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(37, '80114942', 'BUMPER FRONT', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(38, '80009932', 'FLOOR UNDER LH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(39, '80128616', 'FLOOR UNDER RH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(40, '80114927', 'BODY MTG NO. 1 LH (BODY)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(41, '80114928', 'BODY MTG NO. 1 RH (BODY)', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(42, '80026602', 'RAIL ROOF SIDE LH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(43, '80026603', 'RAIL ROOF SIDE RH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(44, '80027183', '43 HINGE LOWER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(45, '80027186', '44 HINGE LOWER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(46, '80027184', '45 HINGE LOWER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(47, '80027187', '46 HINGE LOWER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(48, '80027185', '47 HINGE LOWER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(49, '80027188', '48 HINGE LOWER', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(50, '80009938', 'SIDE PANEL LH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(51, '80009939', 'SIDE PANEL RH', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(55, '80009960', '09-MIT-SS2-MB507000-PAN, FRONT FLOOR', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(56, '80009965', '09-MIT-SS2-MB586253-CROSS MEMBER, FRONT', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
-(57, '80114945', 'COVER ECU', 1, 4, 500, 0, 450, 360, 270, 180, 90, NULL, NULL);
+INSERT INTO `components_inventory` (`id`, `material_no`, `components_name`, `usage_type`, `process_quantity`, `stage_name`, `actual_inventory`, `rm_stocks`, `maximum_inventory`, `normal`, `reorder`, `minimum`, `critical`, `section`, `status`) VALUES
+(1, '80024330', 'CROSS MEMBER RR PANEL', 1, 5, '{\"BIG-MECH\": [\"BLANK/PIERCE\", \"DRAW 1\", \"DRAW 2\", \"PIERCE/RESTRIKE\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(2, '80024330', 'ASTEER', 1, 4, '{\"BIG-HYD\": [\"PIERCING\", \"DEBURRING\", \"SPOT NUT\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(3, '80024330', 'BRACKET JACK', 1, 5, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"1ST FORMING\", \"2ND FORMING\", \"BENDING\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(4, '80035725', 'HEADLAMP LH (BODY)', 1, 6, '{\"BIG-HYD\": [\"1ST FORMING\", \"2ND FORMING\", \"TRIM/FLARING\"], \"MUFFLER COMPS\": [\"PIERCING\", \"FLANGING\", \"SIDECUT\"]}', 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(5, '80035725', 'HEADLAMP EXTENSION (BIG)', 1, 5, '{\"BIG-HYD\": [\"BLANKING\", \"FORM/SEPARATE\"], \"OEM SMALL\": [\"BLANKING\", \"FORMING 1\", \"FORMING 2\"]}', 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(6, '80035725', 'HEADLAMP EXTENSION (SMALL)', 1, 5, '{\"BIG-HYD\": [\"BLANKING\", \"FORM/SEPARATE\"], \"OEM SMALL\": [\"BLANKING\", \"FORMING 1\", \"FORMING 2\"]}', 500, 0, 450, 360, 270, 180, 90, 'stamping', 'done'),
+(7, '80035725', 'HEADLAMP ACCY #1', 2, 5, '{\"OEM SMALL\": [\"BLANKING\", \"PIERCING\", \"FORMING 1\", \"FORMING 2\", \"SPOT NUT\"]}', 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(8, '80035725', 'HEADLAMP ACCY #2', 2, 4, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING 1\", \"FORMING 2\", \"SPOT NUT\"]}', 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(9, '80035725', 'HEADLAMP ACCY #3', 2, 3, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\", \"SPOT NUT\"]}', 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(10, '80035725', 'CLIP 25', 1, 2, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
+(11, '80035725', 'CLIP 60', 1, 2, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, 'rm', 'pending'),
+(12, '80035726', 'HEADLAMP RH (BODY)', 1, 6, '{\"BIG-HYD\": [\"1ST FORMING\", \"2ND FORMING\", \"TRIM/FLARING\"], \"MUFFLER COMPS\": [\"PIERCING\", \"FLANGING\", \"SIDECUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(13, '80035726', 'HEADLAMP EXTENSION (BIG)', 1, 5, '{\"BIG-HYD\": [\"BLANKING\", \"FORM/SEPARATE\"], \"OEM SMALL\": [\"BLANKING\", \"FORMING 1\", \"FORMING 2\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(14, '80035726', 'HEADLAMP EXTENSION (SMALL)', 1, 5, '{\"BIG-HYD\": [\"BLANKING\", \"FORM/SEPARATE\"], \"OEM SMALL\": [\"BLANKING\", \"FORMING 1\", \"FORMING 2\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(15, '80035726', 'HEADLAMP ACCY #1', 2, 5, '{\"OEM SMALL\": [\"BLANKING\", \"PIERCING\", \"FORMING 1\", \"FORMING 2\", \"SPOT NUT\"]}', 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(16, '80035726', 'HEADLAMP ACCY #2', 2, 4, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING 1\", \"FORMING 2\", \"SPOT NUT\"]}', 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(17, '80035726', 'HEADLAMP ACCY #3', 2, 3, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\", \"SPOT NUT\"]}', 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(18, '80035726', 'CLIP 25', 2, 2, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\"]}', 500, 0, 900, 720, 540, 360, 180, 'stamping', 'done'),
+(19, '80035726', 'CLIP 60', 1, 2, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(20, '80026605', 'RAIL ROOF FRONT (LONG)', 1, 3, '{\"BIG-MECH\": [\"DRAW\", \"TRIM/PIERCE\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(21, '80026605', 'RAIL ROOF FRONT (SHORT)', 1, 3, '{\"BIG-MECH\": [\"DRAW\", \"TRIM/PIERCE\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(22, '80114943', 'PANEL REAR LOWER', 1, 3, '{\"BIG-HYD\": [\"DRAW\"], \"BIG-MECH\": [\"TRIM\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(23, '80114943', 'CLIP 60', 1, 2, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(24, '80114943', 'BRKT HARNESS (A)', 1, 3, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING\", \"PIERCING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(25, '80114943', 'BRKT HARNESS 2 WAY', 1, 1, '{\"OEM SMALL\": [\"PROGRESSIVE\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(26, '80114943', 'BRACKET BATTERY', 1, 4, '{\"OEM SMALL\": [\"BLANKING\", \"BENDING\", \"FORMING\", \"PIERCING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(27, '80114930', 'PANEL, FENDER SHIELD INR RH', 1, 3, '{\"BIG-MECH\": [\"DRAW\", \"TRIM/PIERCE\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(28, '80114930', 'CLIP 60', 1, 2, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(29, '80114929', 'PANEL, FENDER SHIELD INR LH', 1, 3, '{\"BIG-MECH\": [\"DRAW\", \"TRIM/PIERCE\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(30, '80114929', 'BRKT HARNESS (A)', 1, 3, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING\", \"PIERCING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(31, '80114929', 'BATTERY TRAY', 1, 3, '{\"MUFFLER COMPS\": [\"FORMING\", \"TRIMMING\", \"PIERCE/SEPARATE\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(32, '80114929', 'FUEL FILTER', 1, 4, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\", \"TRIM-PIERCE\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(33, '80009960', 'PAN FRONT FLOOR', 1, 3, '{\"BIG-HYD\": [\"BLANKING\", \"DEBURRING\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(34, '80120170', 'REINF LWR (LHD)', 1, 5, '{\"BIG-HYD\": [\"DRAW\", \"TRIM/PIERCE\", \"DEBURRING\", \"FLANGING\", \"PIERCING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(35, '80009965', 'CROSS MEMBER FRONT', 1, 4, '{\"BIG-MECH\": [\"FORMING\", \"TRIMMING\", \"DEBURRING\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(36, '80114945', 'COVER ECU', 1, 5, '{\"OEM SMALL\": [\"FORMING\", \"TRIM/PIERCE\", \"TRIM 2\", \"TRIM 3\", \"BENDING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(37, '80114942', 'BUMPER FRONT', 1, 5, '{\"BIG-HYD\": [\"DRAW\", \"C-FORM\"], \"BIG-MECH\": [\"TRIM/C TRIM\", \"BEND/REST/BUR\", \"C TRIM/PI\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(38, '80009932', 'FLOOR UNDER LH', 1, 3, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING\", \"PIERCING/BENDING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(39, '80128616', 'FLOOR UNDER RH', 1, 3, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING\", \"PIERCING/BENDING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(40, '80114927', 'BODY MTG NO. 1 LH (BODY)', 1, 4, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING 1\", \"FORMING 2\", \"PIERCING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(41, '80114928', 'BODY MTG NO. 1 RH (BODY)', 1, 4, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING 1\", \"FORMING 2\", \"PIERCING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(42, '80026602', 'RAIL ROOF SIDE LH', 1, 4, '{\"BIG-HYD\": [\"DRAW/TRIM\", \"FLAGE/SEPARATE\", \"FLANGE/PIERCE\"], \"BIG-MECH\": [\"FLANGE/SEPARATE\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(43, '80026603', 'RAIL ROOF SIDE RH', 1, 4, '{\"BIG-HYD\": [\"DRAW/TRIM\", \"FLAGE/SEPARATE\", \"FLANGE/PIERCE\"], \"BIG-MECH\": [\"FLANGE/SEPARATE\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(44, '80027183', '43 HINGE LOWER', 1, 4, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"1ST FORMING\", \"2ND FORMING\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(45, '80027186', '44 HINGE LOWER', 1, 4, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"1ST FORMING\", \"2ND FORMING\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(46, '80027184', '45 HINGE LOWER', 1, 3, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(47, '80027187', '46 HINGE LOWER', 1, 3, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"FORMING\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(48, '80027185', '47 HINGE LOWER', 1, 4, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"1ST FORMING\", \"2ND FORMING\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(49, '80027188', '48 HINGE LOWER', 1, 4, '{\"OEM SMALL\": [\"BLANK/PIERCE\", \"1ST FORMING\", \"2ND FORMING\", \"SPOT NUT\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(50, '80009938', 'SIDE PANEL LH', 1, 3, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING\", \"PIERCING/FLARING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(51, '80009939', 'SIDE PANEL RH', 1, 3, '{\"MUFFLER COMPS\": [\"BLANKING\", \"FORMING\", \"PIERCING/FLARING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(55, '80009960', '09-MIT-SS2-MB507000-PAN, FRONT FLOOR', 1, 3, '{\"BIG-HYD\": [\"BLANKING\", \"DEBURRING\", \"FORMING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(56, '80009965', '09-MIT-SS2-MB586253-CROSS MEMBER, FRONT', 1, 4, '{\"BIG-MECH\": [\"FORMING\", \"TRIMMING\", \"DEBURRING\", \"FLANGING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL),
+(57, '80114945', 'COVER ECU', 1, 6, '{\"BIG-HYD\": [\"DRAW\"], \"OEM SMALL\": [\"FORMING\", \"TRIM 1/PIERCE\", \"TRIM 2\", \"TRIM 3\", \"BENDING\"]}', 500, 0, 450, 360, 270, 180, 90, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -41582,38 +41583,6 @@ CREATE TABLE `delivery_form_new` (
   `created_at` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `updated_at` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `delivery_form_new`
---
-
-INSERT INTO `delivery_form_new` (`id`, `reference_no`, `material_no`, `material_description`, `model_name`, `quantity`, `supplement_order`, `total_quantity`, `assembly_pending`, `lot_no`, `date_needed`, `shift`, `status`, `section`, `created_at`, `updated_at`) VALUES
-(1, '20250605-0001', '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(2, '20250605-0002', '80035725', '09-MIT-MB507047L1 HOUSING HEADLAMP LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(3, '20250605-0003', '80035726', '09-MIT-5215A320Y1 HOUSING HEADLAMP RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(4, '20250605-0004', '80120170', '09-MIT-MT1-MB280917L-REINF, LWR (LHD)', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(5, '20250605-0005', '80026605', '09-MIT-MT1-MB328814XL-RAIL,ROOF FRT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(6, '20250605-0006', '80114943', '09-MIT-5251F318 FLOOR ASSY, REAR LOWER', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(7, '20250605-0007', '80114942', '09-MIT-6400J617ZZ BUMPER, FRONT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(8, '20250605-0008', '80114930', '09-MIT-5220AB12 PANEL,FENDER SHIELD RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(9, '20250605-0009', '80114929', '09-MIT-5220AB11 PANEL,FENDER SHIELD LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(10, '20250605-0010', '80009932', '09-MIT-SS2-MB136218-REINF.FR.FLR UNDR RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(11, '20250605-0011', '80128616', '09-MIT-SS2-MB136217-REINF.FR.FLR UNDR LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(12, '20250605-0012', '80114927', '09-MIT-SS1-MB507013-BRKT BODY MTG NO1 LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(13, '20250605-0013', '80114928', '09-MIT-SS1-MB507014-BRKT BODY MTG NO1 RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(14, '20250605-0014', '80026602', '09-MIT-MT1-MB136363L-RAIL,ROOF SDE FRT L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(15, '20250605-0015', '80026603', '09-MIT-MT1-MB136362L-RAIL,ROOF SDE FRT R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(16, '20250605-0016', '80027183', '09-MIT-MT2-MB136443L-REIN.F/DR HNG LWR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(17, '20250605-0017', '80027186', '09-MIT-MT2-MB136444L-REIN.F/DR HNG LWR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(18, '20250605-0018', '80027184', '09-MIT-MT2-MB136445L-REIN.F/DR HNG LWR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(19, '20250605-0019', '80027187', '09-MIT-MT2-MB136446L-REIN.F/DR HNG LWR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(20, '20250605-0020', '80027185', '09-MIT-MT2-MB136447L-REIN.F/DR HNG UPR L', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(21, '20250605-0021', '80027188', '09-MIT-MT2-MB136448L-REIN.F/DR HNG UPR R', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(22, '20250605-0022', '80009938', '09-MIT-SS3-MB136313-SIDE PANEL,FRT LH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(23, '20250605-0023', '80009939', '09-MIT-SS3-MB136314-SIDE PANEL,FRT RH', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(24, '20250605-0024', '80009960', '09-MIT-SS2-MB507000-PAN, FRONT FLOOR', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(25, '20250605-0025', '80009965', '09-MIT-SS2-MB586253-CROSS MEMBER, FRONT', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16'),
-(26, '20250605-0026', '80114945', 'COVER ECU', 'L300', 30, NULL, 30, NULL, 1, '2025-06-05', '1st Shift', 'pending', 'DELIVERY', '2025-06-05 05:49:16', '2025-06-05 05:49:16');
 
 -- --------------------------------------------------------
 
@@ -42152,50 +42121,34 @@ CREATE TABLE `material_inventory` (
 --
 
 INSERT INTO `material_inventory` (`id`, `material_no`, `material_description`, `quantity`, `model_name`, `customer_name`) VALUES
-(1, '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', 70, 'L300', 'MMPC'),
-(2, '80035725', '09-MIT-MB507047L1 HOUSING HEADLAMP LH', 70, 'L300', 'MMPC'),
-(3, '80035726', '09-MIT-5215A320Y1 HOUSING HEADLAMP RH', 70, 'L300', 'MMPC'),
-(4, '80120170', '09-MIT-MT1-MB280917L-REINF, LWR (LHD)', 70, 'L300', 'MMPC'),
-(5, '80026605', '09-MIT-MT1-MB328814XL-RAIL,ROOF FRT', 70, 'L300', 'MMPC'),
-(6, '80114943', '09-MIT-5251F318 FLOOR ASSY, REAR LOWER', 70, 'L300', 'MMPC'),
-(7, '80114942', '09-MIT-6400J617ZZ BUMPER, FRONT', 70, 'L300', 'MMPC'),
-(8, '80114930', '09-MIT-5220AB12 PANEL,FENDER SHIELD RH', 70, 'L300', 'MMPC'),
-(9, '80114929', '09-MIT-5220AB11 PANEL,FENDER SHIELD LH', 70, 'L300', 'MMPC'),
-(10, '80009932', '09-MIT-SS2-MB136218-REINF.FR.FLR UNDR RH', 70, 'L300', 'MMPC'),
-(11, '80128616', '09-MIT-SS2-MB136217-REINF.FR.FLR UNDR LH', 70, 'L300', 'MMPC'),
-(12, '80114927', '09-MIT-SS1-MB507013-BRKT BODY MTG NO1 LH', 70, 'L300', 'MMPC'),
-(13, '80114928', '09-MIT-SS1-MB507014-BRKT BODY MTG NO1 RH', 70, 'L300', 'MMPC'),
-(14, '80026602', '09-MIT-MT1-MB136363L-RAIL,ROOF SDE FRT L', 70, 'L300', 'MMPC'),
-(15, '80026603', '09-MIT-MT1-MB136362L-RAIL,ROOF SDE FRT R', 70, 'L300', 'MMPC'),
-(16, '80027183', '09-MIT-MT2-MB136443L-REIN.F/DR HNG LWR L', 70, 'L300', 'MMPC'),
-(17, '80027186', '09-MIT-MT2-MB136444L-REIN.F/DR HNG LWR R', 70, 'L300', 'MMPC'),
-(18, '80027184', '09-MIT-MT2-MB136445L-REIN.F/DR HNG LWR L', 70, 'L300', 'MMPC'),
-(19, '80027187', '09-MIT-MT2-MB136446L-REIN.F/DR HNG LWR R', 70, 'L300', 'MMPC'),
-(20, '80027185', '09-MIT-MT2-MB136447L-REIN.F/DR HNG UPR L', 70, 'L300', 'MMPC'),
-(21, '80027188', '09-MIT-MT2-MB136448L-REIN.F/DR HNG UPR R', 70, 'L300', 'MMPC'),
-(22, '80009938', '09-MIT-SS3-MB136313-SIDE PANEL,FRT LH', 70, 'L300', 'MMPC'),
-(23, '80009939', '09-MIT-SS3-MB136314-SIDE PANEL,FRT RH', 70, 'L300', 'MMPC'),
+(1, '80024330', '09-MIT-L3-MB282966X10L-CMBR RR PANEL ASY', 100, 'L300', 'MMPC'),
+(2, '80035725', '09-MIT-MB507047L1 HOUSING HEADLAMP LH', 100, 'L300', 'MMPC'),
+(3, '80035726', '09-MIT-5215A320Y1 HOUSING HEADLAMP RH', 100, 'L300', 'MMPC'),
+(4, '80120170', '09-MIT-MT1-MB280917L-REINF, LWR (LHD)', 100, 'L300', 'MMPC'),
+(5, '80026605', '09-MIT-MT1-MB328814XL-RAIL,ROOF FRT', 100, 'L300', 'MMPC'),
+(6, '80114943', '09-MIT-5251F318 FLOOR ASSY, REAR LOWER', 100, 'L300', 'MMPC'),
+(7, '80114942', '09-MIT-6400J617ZZ BUMPER, FRONT', 100, 'L300', 'MMPC'),
+(8, '80114930', '09-MIT-5220AB12 PANEL,FENDER SHIELD RH', 100, 'L300', 'MMPC'),
+(9, '80114929', '09-MIT-5220AB11 PANEL,FENDER SHIELD LH', 100, 'L300', 'MMPC'),
+(10, '80009932', '09-MIT-SS2-MB136218-REINF.FR.FLR UNDR RH', 100, 'L300', 'MMPC'),
+(11, '80128616', '09-MIT-SS2-MB136217-REINF.FR.FLR UNDR LH', 100, 'L300', 'MMPC'),
+(12, '80114927', '09-MIT-SS1-MB507013-BRKT BODY MTG NO1 LH', 100, 'L300', 'MMPC'),
+(13, '80114928', '09-MIT-SS1-MB507014-BRKT BODY MTG NO1 RH', 100, 'L300', 'MMPC'),
+(14, '80026602', '09-MIT-MT1-MB136363L-RAIL,ROOF SDE FRT L', 100, 'L300', 'MMPC'),
+(15, '80026603', '09-MIT-MT1-MB136362L-RAIL,ROOF SDE FRT R', 100, 'L300', 'MMPC'),
+(16, '80027183', '09-MIT-MT2-MB136443L-REIN.F/DR HNG LWR L', 100, 'L300', 'MMPC'),
+(17, '80027186', '09-MIT-MT2-MB136444L-REIN.F/DR HNG LWR R', 100, 'L300', 'MMPC'),
+(18, '80027184', '09-MIT-MT2-MB136445L-REIN.F/DR HNG LWR L', 100, 'L300', 'MMPC'),
+(19, '80027187', '09-MIT-MT2-MB136446L-REIN.F/DR HNG LWR R', 100, 'L300', 'MMPC'),
+(20, '80027185', '09-MIT-MT2-MB136447L-REIN.F/DR HNG UPR L', 100, 'L300', 'MMPC'),
+(21, '80027188', '09-MIT-MT2-MB136448L-REIN.F/DR HNG UPR R', 100, 'L300', 'MMPC'),
+(22, '80009938', '09-MIT-SS3-MB136313-SIDE PANEL,FRT LH', 100, 'L300', 'MMPC'),
+(23, '80009939', '09-MIT-SS3-MB136314-SIDE PANEL,FRT RH', 100, 'L300', 'MMPC'),
 (25, 'd39847', 'test parts', 100, 'VIOS', 'TOYOTA'),
 (26, '80009939', '09-MIT-SS3-MB136314-SIDE PANEL,FRT RH', 100, 'L400', 'MMPC'),
-(27, '80009960', '09-MIT-SS2-MB507000-PAN, FRONT FLOOR', 70, 'L300', 'MMPC'),
-(28, '80009965', '09-MIT-SS2-MB586253-CROSS MEMBER, FRONT', 70, 'L300', 'MMPC'),
-(29, '80114945', 'COVER ECU', 70, 'L300', 'MMPC');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `pending_rmwarehouse`
---
-
-CREATE TABLE `pending_rmwarehouse` (
-  `id` int NOT NULL,
-  `material_no` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `material_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `process_quantity` int DEFAULT NULL,
-  `quantity` int DEFAULT NULL,
-  `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `section` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(27, '80009960', '09-MIT-SS2-MB507000-PAN, FRONT FLOOR', 100, 'L300', 'MMPC'),
+(28, '80009965', '09-MIT-SS2-MB586253-CROSS MEMBER, FRONT', 100, 'L300', 'MMPC'),
+(29, '80114945', 'COVER ECU', 100, 'L300', 'MMPC');
 
 -- --------------------------------------------------------
 
@@ -42317,6 +42270,23 @@ CREATE TABLE `rework_qc` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `rm_warehouse`
+--
+
+CREATE TABLE `rm_warehouse` (
+  `id` int NOT NULL,
+  `reference_no` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `material_no` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `component_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `process_quantity` int DEFAULT NULL,
+  `quantity` int DEFAULT NULL,
+  `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` varchar(30) COLLATE utf8mb4_general_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `section_area`
 --
 
@@ -42355,12 +42325,14 @@ CREATE TABLE `stamping` (
   `components_name` varchar(35) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `process_quantity` int DEFAULT NULL,
   `stage` int DEFAULT NULL,
+  `stage_name` varchar(15) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `quantity` int DEFAULT NULL,
   `pending_quantity` int DEFAULT NULL,
   `total_quantity` int DEFAULT NULL,
   `time_in` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `time_out` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `status` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `section` varchar(15) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `person_incharge` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `created_at` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `updated_at` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL
@@ -42530,12 +42502,6 @@ ALTER TABLE `material_inventory`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `pending_rmwarehouse`
---
-ALTER TABLE `pending_rmwarehouse`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Indexes for table `process_section`
 --
 ALTER TABLE `process_section`
@@ -42557,6 +42523,12 @@ ALTER TABLE `rework_assembly`
 -- Indexes for table `rework_qc`
 --
 ALTER TABLE `rework_qc`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `rm_warehouse`
+--
+ALTER TABLE `rm_warehouse`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -42634,7 +42606,7 @@ ALTER TABLE `delivery_forms`
 -- AUTO_INCREMENT for table `delivery_form_new`
 --
 ALTER TABLE `delivery_form_new`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `employee_info`
@@ -42653,12 +42625,6 @@ ALTER TABLE `fg_warehouse`
 --
 ALTER TABLE `material_inventory`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
-
---
--- AUTO_INCREMENT for table `pending_rmwarehouse`
---
-ALTER TABLE `pending_rmwarehouse`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `process_section`
@@ -42682,6 +42648,12 @@ ALTER TABLE `rework_assembly`
 -- AUTO_INCREMENT for table `rework_qc`
 --
 ALTER TABLE `rework_qc`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `rm_warehouse`
+--
+ALTER TABLE `rm_warehouse`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --

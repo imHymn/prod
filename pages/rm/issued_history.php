@@ -1,6 +1,8 @@
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/sweetalert2@11.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="assets/js/html5.qrcode.js"></script>
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -13,9 +15,12 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="card-title mb-0">To-do List</h6>
-          </div>
+
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+  <h6 class="card-title mb-0">To-do List</h6>
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+</div>
+
           <div class="row mb-3">
               <div class="col-md-3">
                 <select id="filter-column" class="form-select">
@@ -30,25 +35,28 @@
                 <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
               </div>
             </div>
-          <table class="table table" style="table-layout: fixed; width: 100%;">
-            <thead>
-              <tr>
-                <th style="width: 5%; text-align: center;">Material No</th>
-                <th style="width: 10%; text-align: center;">Material Description</th>
-                <th style="width: 5%; text-align: center;">Quantity</th>
-                <th style="width: 10%; text-align: center;">Time & Date</th>
-              </tr>
-            </thead>
-            <tbody id="data-body"></tbody>
-          </table>
+        <table class="table" style="table-layout: fixed; width: 100%;">
+          <thead>
+            <tr>
+              <th style="width: 5%; text-align: center;">Material No <span class="sort-icon"></span></th>
+              <th style="width: 10%; text-align: center;">Material Description <span class="sort-icon"></span></th>
+              <th style="width: 5%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+              <th style="width: 10%; text-align: center;">Time & Date <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="data-body"></tbody>
+        </table>
+        <div id="pagination" class="mt-3 d-flex justify-content-center"></div>
+
+ 
         </div>
       </div>
     </div>
   </div>
 </div>
-
 <script>
 let fullData = [];
+let paginator;
 
 const dataBody = document.getElementById('data-body');
 const filterColumn = document.getElementById('filter-column');
@@ -72,14 +80,22 @@ function renderTable(data) {
     `;
     dataBody.appendChild(row);
   });
+
+  const now = new Date();
+  document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
 }
 
-fetch('api/rm/getIssuedHistory.php')
+fetch('api/controllers/rm/getIssuedHistory.php')
   .then(response => response.json())
   .then(data => {
-    console.log(data.data);
     fullData = data.data || [];
-    renderTable(fullData);
+    paginator = createPaginator({
+      data: fullData,
+      rowsPerPage: 10,
+      paginationContainerId: 'pagination',
+      renderPageCallback: renderTable
+    });
+    paginator.render();
   })
   .catch(error => {
     console.error('Error fetching data:', error);
@@ -89,7 +105,7 @@ fetch('api/rm/getIssuedHistory.php')
 filterColumn.addEventListener('change', () => {
   filterInput.value = '';
   filterInput.disabled = !filterColumn.value;
-  renderTable(fullData);
+  paginator.setData(fullData); // reset to full data
 });
 
 // Filter logic
@@ -98,7 +114,7 @@ filterInput.addEventListener('input', () => {
   const keyword = filterInput.value.toLowerCase().trim();
 
   if (!column || keyword === '') {
-    renderTable(fullData);
+    paginator.setData(fullData);
     return;
   }
 
@@ -107,6 +123,8 @@ filterInput.addEventListener('input', () => {
     return field?.toString().toLowerCase().includes(keyword);
   });
 
-  renderTable(filtered);
+  paginator.setData(filtered);
 });
+
+enableTableSorting(".table");
 </script>

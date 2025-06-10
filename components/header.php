@@ -11,6 +11,10 @@ if (!empty($_SESSION['role'])) {
 if (!empty($_SESSION['production'])) {
   $production = $_SESSION['production'];
 }
+
+if (!empty($_SESSION['production_location'])) {
+  $production_location = $_SESSION['production_location'];
+}
 ?>
 
 
@@ -22,24 +26,17 @@ if (!empty($_SESSION['production'])) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>Roberts</title>
-	<!-- core:css -->
-     	<link rel="stylesheet" href="assets/vendors/core/core.css">
+
+  <link rel="stylesheet" href="assets/vendors/core/core.css">
 	<link rel="stylesheet" href="assets/vendors/core/core.css">
-	<!-- endinject -->
-  <!-- plugin css for this page -->
   <link rel="stylesheet" href="assets/vendors/datatables.net-bs4/dataTables.bootstrap4.css">
   <link rel="stylesheet" href="assets/vendors/mdi/css/materialdesignicons.min.css">
   <link rel="stylesheet" href="assets/vendors/prismjs/themes/prism.css">
-	<!-- end plugin css for this page -->
-	<!-- inject:css -->
 	<link rel="stylesheet" href="assets/fonts/feather-font/css/iconfont.css">
 	<link rel="stylesheet" href="assets/vendors/flag-icon-css/css/flag-icon.min.css">
-	<!-- endinject -->
-  <!-- Layout styles -->  
 	<link rel="stylesheet" href="assets/css/demo_1/style.css">
-  <!-- End layout styles -->
   <link rel="shortcut icon" href="assets/images/roberts_icon.png" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/all.min.css">
 
 </head>
 <body>
@@ -66,23 +63,25 @@ if (!empty($_SESSION['production'])) {
   $role = strtolower($role);
 $production = strtolower($production);
 
-  if($role == 'administrator' || $role == 'admin') {
+  if($role == 'administrator' || $role == 'user manager') {
   echo'
-     <li class="nav-item">
-  <a class="nav-link" href="?page_active=accounts">
+    <li class="nav-item">
+  <a class="nav-link" data-toggle="collapse" href="#admin" role="button" aria-expanded="false" aria-controls="tables">
     <i class="link-icon" data-feather="calendar"></i>
     <span class="link-title">Accounts</span>
+    <i class="link-arrow" data-feather="chevron-down"></i>
   </a>
+  <div class="collapse" id="admin">
+    <ul class="nav sub-menu">
+      <li class="nav-item">
+        <a href="?page_active=accounts" class="nav-link" data-page="accounts">Account Management</a>
+      </li>
+    </ul>
+  </div>
 </li>
-    <!--<li class="nav-item">
-  <a class="nav-link" href="?page_active=production">
-    <i class="link-icon" data-feather="calendar"></i>
-    <span class="link-title">Production</span>
-  </a>
-</li>-->
+    
     ';
   } 
-
 
   if($role == 'administrator' || ($production=='delivery' && $role=='supervisor')) {
   echo'
@@ -192,56 +191,41 @@ if($role == 'administrator' || ($production=='fg_warehouse' && $role=='superviso
   }
   
 
+if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervisor' || $role == 'line leader'))) {
+
+    echo '
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
+        <i class="link-icon" data-feather="layout"></i>
+        <span class="link-title">Stamping</span>
+        <i class="link-arrow" data-feather="chevron-down"></i>
+      </a>
+      <div class="collapse" id="stamping">
+        <ul class="nav sub-menu">
+
+  
+          <li class="nav-item">
+            <a href="?page_active=stamping_todolist" class="nav-link" data-page="stamping_todolist">To-do List</a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
+          </li>
+    
 
 
-if($role == 'administrator' || ($production == 'stamping' && $role == 'supervisor')) {
-  echo '
-  <li class="nav-item">
-    <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
-      <i class="link-icon" data-feather="layout"></i>
-      <span class="link-title">Stamping</span>
-      <i class="link-arrow" data-feather="chevron-down"></i>
-    </a>
-    <div class="collapse" id="stamping">
-      <ul class="nav sub-menu">
-        <!-- TO-DO LIST (With nested submenu) -->
-        <li class="nav-item">
-          <a class="nav-link" data-toggle="collapse" href="#todoSubMenu" role="button" aria-expanded="false" aria-controls="todoSubMenu">
-            <span class="link-title">To-do List</span>
-            <i class="link-arrow" data-feather="chevron-down"></i>
-          </a>
-          <div class="collapse" id="todoSubMenu">
-            <ul class="nav sub-menu">
-              <li class="nav-item">
-                <a href="?page_active=stamping_oem_small" class="nav-link" data-page="stamping_oem_small">OEM SMALL</a>
-              </li>
-              <li class="nav-item">
-                <a href="?page_active=stamping_muffler_comps" class="nav-link" data-page="stamping_muffler_comps">MUFFLER COMPS</a>
-              </li>
-              <li class="nav-item">
-                <a href="?page_active=stamping_big_hyd" class="nav-link" data-page="stamping_big_hyd">BIG-HYD</a>
-              </li>
-               <li class="nav-item">
-                <a href="?page_active=stamping_big_mech" class="nav-link" data-page="stamping_big_mech">BIG-MECH</a>
-              </li>
-            </ul>
-          </div>
-        </li>
-
-        <!-- Other Stamping Items -->
-        <li class="nav-item">
-          <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
-        </li>
-        <li class="nav-item">
-          <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
-        </li>
-        <li class="nav-item">
-          <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
-        </li>
-      </ul>
-    </div>
-  </li>';
+        </ul>
+      </div>
+    </li>';
 }
+
+
+
 
 
 
@@ -276,28 +260,14 @@ if($role == 'administrator' || ($production == 'stamping' && $role == 'superviso
         </ul>
       </div>
     </nav>
-   
-		<!-- partial -->
-	
+
 		<div class="page-wrapper">
-				
-			<!-- partial:partials/_navbar.html -->
+		
 			<nav class="navbar" >
 				<a href="#" class="sidebar-toggler">
 					<i data-feather="menu"></i>
 				</a>
 				<div class="navbar-content" >
-
-	
-						
-<!-- 						
-                  <div style="margin: 0;margin-left: 0;">
-                    <img src="assets/images/roberts2.png" alt="" width="235px;">
-                  </div> -->
-                  
-								
-							
-               
 					
 				
 					<ul class="navbar-nav">
@@ -375,14 +345,16 @@ if($role == 'administrator' || ($production == 'stamping' && $role == 'superviso
 									</div>
 									<div class="info text-center">
                     <p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['user_id']); ?></p>
-<p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['role']); ?></p>
-<?php if (!empty($_SESSION['production'])): ?>
-  <p class="name font-weight-bold mb-0">(<?php echo strtoupper($_SESSION['production']); ?>)</p>
-<?php endif; ?>
+                    <p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['role']); ?></p>
+
+                    <?php if (!empty($_SESSION['production'])): ?>
+                      <p class="name font-weight-bold mb-0">(<?php echo strtoupper($_SESSION['production']); ?>)</p>
+                      <p class="name font-weight-bold mb-0"><?php echo strtoupper($_SESSION['production_location']); ?></p>
+                    <?php endif; ?>
 
 
-  <p class="email text-muted mb-3"></p>
-</div>
+                      <p class="email text-muted mb-3"></p>
+                    </div>
 
 								</div>
 								<div class="dropdown-body">
@@ -395,7 +367,7 @@ if($role == 'administrator' || ($production == 'stamping' && $role == 'superviso
                   </li>
 
 										<li class="nav-item">
-											<a href="/mes/auth/logout.php" class="nav-link">
+											<a href="/mes/api/controllers/accounts/logout.php" class="nav-link">
 												<i data-feather="log-out"></i>
 												<span>Log Out</span>
 											</a>
@@ -408,27 +380,17 @@ if($role == 'administrator' || ($production == 'stamping' && $role == 'superviso
 				</div>
 			</nav>
       <script>
-  // Get the current page_active from the URL
   const urlParams = new URLSearchParams(window.location.search);
-  const pageActive = urlParams.get('page_active');  // e.g., 'test', 'dashbord', etc.
+  const pageActive = urlParams.get('page_active'); 
 
-  // If there's a page_active value in the URL, proceed
   if (pageActive) {
-    // Select all nav links that have the 'data-page' attribute
     const navLinks = document.querySelectorAll('.nav-link[data-page]');
-
-    // Loop through all the nav links
     navLinks.forEach(link => {
-      // If the data-page attribute matches the page_active value, mark it as active
       if (link.getAttribute('data-page') === pageActive) {
-        link.classList.add('active'); // Add 'active' class to the matching link
-        
-        // Expand the parent collapse section if it's not already expanded
+        link.classList.add('active'); 
         const parentCollapse = link.closest('.collapse');
         if (parentCollapse && !parentCollapse.classList.contains('show')) {
           parentCollapse.classList.add('show');
-          
-          // Set aria-expanded to true
           const parentLink = parentCollapse.previousElementSibling;
           if (parentLink) {
             parentLink.setAttribute('aria-expanded', 'true');

@@ -1,8 +1,34 @@
 <?php
+session_start(); 
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 header("Expires: 0");
 date_default_timezone_set('Asia/Manila');
+
+if (!isset($_COOKIE['AuthToken'], $_SESSION['auth_token']) || $_COOKIE['AuthToken'] !== $_SESSION['auth_token']) {
+    // Clear all session variables
+    $_SESSION = [];
+
+    // Destroy the session cookie if any
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+
+    // Destroy the session
+    session_destroy();
+
+    // Clear AuthToken cookie (optional, forces browser to delete)
+    setcookie('AuthToken', '', time() - 3600, '/');
+
+    // Redirect to login page
+    header('Location: /mes/auth/login.php');
+    exit();
+}
+
 
 include 'components/session.php';
 include 'components/header.php';
@@ -13,6 +39,7 @@ define('MES_ACCESS', true);
 $pageMap = [
     'admin' => [
         'accounts' => 'accounts.php',
+        'user' => 'user.php',
     ],
     'assembly' => [
         'assembly_todolist' => 'todo_list.php',
@@ -40,7 +67,7 @@ $pageMap = [
         'components_inventory' => 'components_inventory.php',
         'stamping_monitoring_data' => 'monitoring_data.php',
         'stamping_work_logs' => 'work_logs.php',
-        'stamping_oem_small' => 'section/oem_small.php',
+        'stamping_oem_small' => 'todo_list.php',
         'stamping_muffler_comps' => 'section/muffler_comps.php',
         'stamping_big_hyd' => 'section/big_hyd.php',
         'stamping_big_mech' => 'section/big_mech.php',

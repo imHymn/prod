@@ -1,3 +1,5 @@
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
 <div class="page-content">
   <nav class="page-breadcrumb">
     <ol class="breadcrumb">
@@ -10,7 +12,12 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h6 class="card-title">Work Logs</h6>
+         
+                   <div class="d-flex align-items-center justify-content-between mb-2">
+ <h6 class="card-title">Work Logs</h6>
+  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+</div>
+
 <div class="row mb-3">
   <div class="col-md-3">
     <select id="filter-column" class="form-select">
@@ -28,35 +35,36 @@
   </div>
 </div>
 
-<table class="table table" style="table-layout: fixed; width: 100%;">
-<thead>
-  <tr>
- 
-    <th style="width: 10%; text-align: center;">Material No</th>
-       <th style="width: 15%; text-align: center;">Material Description</th>
-    <th style="width: 8%; text-align: center;">Quantity</th>
-    
-    <th style="width: 10%; text-align: center;">Time In</th>
-    <th style="width: 10%; text-align: center;">Time Out</th>
-    <th style="width: 10%; text-align: center;">Person Incharge</th>
-  </tr>
-</thead>
+<table class="table" style="table-layout: fixed; width: 100%;">
+  <thead>
+    <tr>
+      <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Material Description <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Time In <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Time Out <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+    </tr>
+  </thead>
 
   <tbody id="data-body"></tbody>
 </table>
 
+
+<div id="pagination" class="mt-3 d-flex justify-content-center"></div>
+
+ 
       
       </div>
     </div>
   </div>
 </div>
-
 <script>
 const tbody = document.getElementById('data-body');
 const filterColumn = document.getElementById('filter-column');
 const filterInput = document.getElementById('filter-input');
-
-let allData = []; // will hold combined QC + Rework data
+let paginator = null;
+let allData = [];
 
 function renderTable(data) {
   tbody.innerHTML = '';
@@ -72,16 +80,17 @@ function renderTable(data) {
     `;
     tbody.appendChild(row);
   });
+
+  document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
 }
 
 function loadData() {
   tbody.innerHTML = '';
   allData = [];
 
-  fetch('api/qc/getQCData.php')
+  fetch('api/controllers/qc/getQCData.php')
     .then(res => res.json())
     .then(qcData => {
-      // Normalize QC data
       qcData.forEach(item => {
         if (item.time_out === null) return;
         allData.push({
@@ -94,11 +103,10 @@ function loadData() {
         });
       });
 
-      return fetch('api/qc/getReworkData.php');
+      return fetch('api/controllers/qc/getReworkData.php');
     })
     .then(res => res.json())
     .then(reworkData => {
-      // Normalize Rework data and append
       reworkData.forEach(item => {
         if (item.qc_timeout === null) return;
         allData.push({
@@ -111,40 +119,41 @@ function loadData() {
         });
       });
 
-      renderTable(allData);
+      // Initialize paginator after all data is loaded
+      paginator = createPaginator({
+        data: allData,
+        rowsPerPage: 10,
+        paginationContainerId: 'pagination',
+        renderPageCallback: renderTable
+      });
+
+      paginator.render();
     })
     .catch(console.error);
 }
 
 // Enable/disable filter input based on selected column
 filterColumn.addEventListener('change', () => {
-  if (filterColumn.value) {
-    filterInput.disabled = false;
-    filterInput.value = '';
-    renderTable(allData); // reset to full data
-  } else {
-    filterInput.disabled = true;
-    filterInput.value = '';
-    renderTable(allData);
-  }
+  filterInput.disabled = !filterColumn.value;
+  filterInput.value = '';
+  if (paginator) paginator.setData(allData); // Reset on change
 });
 
-// Filter on input change
+// Filter on input
 filterInput.addEventListener('input', () => {
   const col = filterColumn.value;
   const val = filterInput.value.toLowerCase();
-
-  if (!col) return;
+  if (!col || !paginator) return;
 
   const filtered = allData.filter(item => {
     const cell = (item[col] || '').toString().toLowerCase();
     return cell.includes(val);
   });
 
-  renderTable(filtered);
+  paginator.setData(filtered);
 });
 
 // Initial load
 loadData();
-
+enableTableSorting(".table");
 </script>
