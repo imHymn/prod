@@ -1,7 +1,11 @@
 <?php
 
-class UserValidator {
-    public static function validateRegister(array $data): array {
+namespace Validation;
+
+class AccountValidator
+{
+    public static function validateRegister(array $data): array
+    {
         $errors = [];
 
         if (empty($data['name'])) {
@@ -23,7 +27,8 @@ class UserValidator {
 
         return $errors;
     }
-    public static function validateUpdate(array $data): array {
+    public static function validateUpdate(array $data): array
+    {
         $errors = [];
 
         if (array_key_exists('name', $data) && empty($data['name'])) {
@@ -42,7 +47,8 @@ class UserValidator {
 
 
     // ✅ Add this for login validation
-    public static function validateLogin(array $data): array {
+    public static function validateLogin(array $data): array
+    {
         $errors = [];
 
         if (empty($data['user_id'])) {

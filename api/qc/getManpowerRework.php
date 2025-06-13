@@ -1,14 +1,11 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\QCModel;
 
 try {
-    $sql = "SELECT * FROM rework_qc
-            WHERE qc_timeout IS NOT NULL";
-
-    
-    $customers = $db->Select($sql);
+    $qcModel = new QCModel($db);
+    $customers = $qcModel->getManpowerReworkData();
     echo json_encode($customers);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();

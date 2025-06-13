@@ -1,16 +1,13 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
-
+use Model\DeliveryModel;
 
 try {
-    $sql = "SELECT * FROM delivery_form_new
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
+    $model = new DeliveryModel($db);
+    $sql = $model->getAllCustomers();
 
-    // section ='DELIVERY' AND  status ='pending' AND 
-    $customers = $db->Select($sql);
-    echo json_encode($customers);
+    echo json_encode($sql);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();
 } catch (Exception $e) {

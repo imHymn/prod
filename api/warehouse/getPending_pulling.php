@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\WarehouseModel;
 
 try {
     // SQL query to fetch customer names

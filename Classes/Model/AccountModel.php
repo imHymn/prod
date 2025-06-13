@@ -1,36 +1,44 @@
 <?php
-require_once __DIR__ . '/../Database/DatabaseClass.php';
 
-class UserModel {
-    private DatabaseClass $db;
+namespace Model;
 
-    public function __construct(DatabaseClass $db) {
+class AccountModel
+{
+    private \DatabaseClass $db;
+
+    public function __construct(\DatabaseClass $db)
+
+    {
         $this->db = $db;
     }
 
-    public function getAllUsers(): array {
-        return $this->db->Select("SELECT * FROM users_new");
+    public function getAllUsers(): array
+    {
+        return $this->db->Select("SELECT * FROM users");
     }
 
-    public function getUserById(int $id): ?array {
-        return $this->db->SelectOne("SELECT * FROM users_new WHERE id = :id", [
+    public function getUserById(int $id): ?array
+    {
+        return $this->db->SelectOne("SELECT * FROM users WHERE id = :id", [
             ':id' => $id
         ]);
     }
 
-    public function getUserByUserId(string $user_id): ?array {
-        $result = $this->db->SelectOne("SELECT * FROM users_new WHERE user_id = :user_id", [
+    public function getUserByUserId(string $user_id): ?array
+    {
+        $result = $this->db->SelectOne("SELECT * FROM users WHERE user_id = :user_id", [
             ':user_id' => $user_id
         ]);
         return $result === false ? null : $result;
     }
 
-    public function createUser(array $data): int|false {
-        $sql = "INSERT INTO users_new 
+    public function createUser(array $data): int|false
+    {
+        $sql = "INSERT INTO users 
                 (name, user_id, password, production, role, production_location, created_at)
                 VALUES 
                 (:name, :user_id, :password, :production, :role, :production_location, :created_at)";
-        
+
         return $this->db->Insert($sql, [
             ':name' => $data['name'],
             ':user_id' => $data['user_id'],
@@ -42,8 +50,9 @@ class UserModel {
         ]);
     }
 
-    public function updateUser(int $id, array $data): int {
-        $sql = "UPDATE users_new SET 
+    public function updateUser(int $id, array $data): int
+    {
+        $sql = "UPDATE users SET 
                     name = :name,
                     user_id = :user_id,
                     password = :password,
@@ -63,8 +72,9 @@ class UserModel {
         ]);
     }
 
-    public function deleteUser(int $id): int {
-        return $this->db->Update("DELETE FROM users_new WHERE id = :id", [
+    public function deleteUser(int $id): int
+    {
+        return $this->db->Update("DELETE FROM users WHERE id = :id", [
             ':id' => $id
         ]);
     }

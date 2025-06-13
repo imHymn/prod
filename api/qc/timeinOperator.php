@@ -1,47 +1,41 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\QCModel;
+use Validation\QCValidator;
 
 $id = $input['id'] ?? null;
 $name = $input['name'] ?? null;
 $time_in = date('Y-m-d H:i:s');
 
+$errors = QCValidator::verifyQCPersonInCharge($id, $name, $time_in);
+if (!empty($errors)) {
+    echo json_encode([
+        'success' => false,
+        'message' => $errors
+    ]);
+    exit;
+}
 
-    try {
-        // Begin transaction
-        $db->beginTransaction();
+try {
+    $qcModel = new QCModel($db);
 
-        // Step 1: Update delivery_forms to set person_incharge_assembly
-        $sqlUpdate = "UPDATE qc_list 
-              SET person_incharge = :name,
-                  time_in = :time_in
-              WHERE id = :id";
+    $db->beginTransaction();
 
-        $paramsUpdate = [
-            ':id' => $id,
-            ':name' => $name,
-            ':time_in'=>$time_in,
+    $qcModel->updateQCPersonInCharge($id, $name, $time_in);
 
-        ];
-        $updated = $db->Update($sqlUpdate, $paramsUpdate);
-        
+    $db->commit();
 
-        $db->commit();
-
-        echo json_encode([
-            'success' => true,
-            'message' => 'Update and insert successful. Inventory updated.',
-            'rows_updated' => $updated,
-       
-        ]);
-    } catch (PDOException $e) {
-        $db->rollBack();
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'DB Error: ' . $e->getMessage()]);
-    } catch (Exception $e) {
-        $db->rollBack();
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
-    }
-
+    echo json_encode([
+        'success' => true,
+        'message' => 'Update and insert successful. Inventory updated.',
+    ]);
+} catch (PDOException $e) {
+    $db->rollBack();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'DB Error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    $db->rollBack();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+}

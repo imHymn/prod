@@ -1,8 +1,12 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\AccountModel;
+use Validation\AccountValidator;
 
-$model = new UserModel($db);
+$model = new AccountModel($db);
+
+
 try {
     $users = $model->getAllUsers();
     echo json_encode($users);

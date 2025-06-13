@@ -1,8 +1,11 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\AccountModel;
+use Validation\AccountValidator;
 
-$model = new UserModel($db);
+$model = new AccountModel($db);
+
 
 $id = $input['id'] ?? null;
 
@@ -24,7 +27,6 @@ try {
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to delete user.']);
     }
-
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }

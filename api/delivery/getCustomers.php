@@ -1,13 +1,11 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\DeliveryModel;
 
 try {
-    // SQL query to fetch customer names
-    $sql = "SELECT DISTINCT customer_name FROM material_inventory";
-    // Use the Select method to fetch data
-    $customers = $db->Select($sql);
-    // Return the results as a JSON response
+    $model = new DeliveryModel($db);
+    $customers = $model->getDistinctCustomerNames();
     echo json_encode($customers);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();

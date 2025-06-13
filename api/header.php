@@ -10,11 +10,18 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 require_once __DIR__ . '/../Classes/Database/DatabaseClass.php';
-require_once __DIR__ . '/../Classes/Model/accounts.php';
-require_once __DIR__ . '/../Classes/Validation/accounts.php';
 
 date_default_timezone_set('Asia/Manila');
 header('Content-Type: application/json');
 
 $db = new DatabaseClass();
 $input = json_decode(file_get_contents('php://input'), true);
+
+spl_autoload_register(function ($class) {
+    $baseDir = __DIR__ . '/../Classes/';
+    $file = $baseDir . str_replace('\\', '/', $class) . '.php';
+
+    if (file_exists($file)) {
+        require_once $file;
+    }
+});
