@@ -89,7 +89,7 @@
 let userData = [];
 let selectedUsers = [];
 
-fetch('api/controllers/accounts/getAccounts.php')
+fetch('api/accounts/getAccounts.php')
   .then(res => res.json())
   .then(data => {
     userData = data.filter(u => u.user_id && u.name);

@@ -81,7 +81,7 @@ let originalData = [];
 let filteredData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-  fetch('api/controllers/delivery/getPulled_out.php')
+  fetch('api/delivery/getPulled_out.php')
     .then(res => res.json())
     .then(data => {
       const now = new Date();

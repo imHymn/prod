@@ -7,11 +7,11 @@ session_start();
 // }
 
 
-// if (isset($_SESSION['user_id'])) {
-//     $id = $_SESSION['user_id'];
-//     header("Location: /mes/index.php");
-//     exit();
-// }
+if (isset($_SESSION['user_id'])) {
+    $id = $_SESSION['user_id'];
+    header("Location: /mes/index.php?page_active=accounts");
+    exit();
+}
 
 
 if (isset($_SESSION['error_message'])) {
@@ -37,7 +37,7 @@ if (isset($_SESSION['error_message'])) {
   <body >
 
     <div class="signin-wrapper">
-        <form method="POST" action="/mes/api/controllers/accounts/login.php">
+        <form method="POST" action="/mes/api/accounts/login.php">
             <div class="signin-box">
                 <!-- <img src="assets/images/roberts2.png" alt="roberts" width="260px;" style="padding-bottom: 10px;"> -->
                 <h2 class="slim-logo"><a href="index.php">Roberts Production System<span>.</span></a></h2>

@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function loadData() {
-    fetch('api/controllers/warehouse/getPullingHistory.php')
+    fetch('api/warehouse/getPullingHistory.php')
       .then(res => res.json())
       .then(data => {
         fullDataSet = data;

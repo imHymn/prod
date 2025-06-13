@@ -76,7 +76,7 @@ const dataBody = document.getElementById('data-body');
 const filterColumn = document.getElementById('filter-column');
 const filterInput = document.getElementById('filter-input');
 
-fetch('api/controllers/stamping/getWorklogs.php')
+fetch('api/stamping/getWorklogs.php')
   .then(response => response.json())
   .then(data => {
     fullData = data;

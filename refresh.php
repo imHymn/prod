@@ -27,9 +27,6 @@ try {
 
     // Truncate tables one by one
     $tablesToTruncate = [
-        'assembly_list',
-        'components_task',
-        'delivery_forms',
         'fg_warehouse',
         'stock_warehouse',
         'rm_warehouse',

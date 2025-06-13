@@ -88,7 +88,7 @@ function loadData() {
   tbody.innerHTML = '';
   allData = [];
 
-  fetch('api/controllers/qc/getQCData.php')
+  fetch('api/qc/getQCData.php')
     .then(res => res.json())
     .then(qcData => {
       qcData.forEach(item => {
@@ -103,7 +103,7 @@ function loadData() {
         });
       });
 
-      return fetch('api/controllers/qc/getReworkData.php');
+      return fetch('api/qc/getReworkData.php');
     })
     .then(res => res.json())
     .then(reworkData => {

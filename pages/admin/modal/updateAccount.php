@@ -102,7 +102,7 @@ document.getElementById('update-user-form').addEventListener('submit', function(
     }
   });
 
-  fetch('/mes/api/controllers/accounts/updateAccount.php', { // your PHP endpoint
+  fetch('/mes/api/accounts/updateAccount.php', { // your PHP endpoint
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

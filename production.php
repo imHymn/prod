@@ -198,7 +198,7 @@ function applyHierarchicalFilters() {
 
 // Initial load
 document.addEventListener('DOMContentLoaded', function () {
-  fetch('api/controllers/assembly/getDeliveryforms.php')
+  fetch('api/assembly/getDeliveryforms.php')
     .then(response => response.json())
     .then(data => {
     console.log(data)

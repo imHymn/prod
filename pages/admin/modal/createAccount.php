@@ -26,6 +26,7 @@
               <option value="supervisor">Supervisor</option>
               <option value="administrator">Administrator</option>
               <option value="line leader">Line Leader</option>
+              <option value="worker">Worker</option>
           </select>
       </div>
 
@@ -114,7 +115,7 @@ createAccountForm.addEventListener('submit', (e) => {
     const formData = new FormData(createAccountForm);
     const data = Object.fromEntries(formData.entries());
   console.log('Form Data:', data); 
-    fetch('/mes/api/controllers/accounts/createAccount.php', {
+    fetch('/mes/api/accounts/createAccount.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)

@@ -29,10 +29,11 @@
   <div class="col-md-3">
     <select id="filter-column" class="form-select">
       <option value="" disabled selected>Select Column to Filter</option>
-      <option value="model">Model</option>
       <option value="material_no">Material No</option>
-      <option value="lot_no">Lot No</option>
+      <option value="model">Model</option>
       <option value="shift">Shift</option>
+      <option value="lot_no">Lot No</option>
+     
       <option value="total_quantity">Quantity</option>
       <option value="person_incharge">Person Incharge</option>
       <option value="time_in">Time In</option>
@@ -53,13 +54,12 @@
 <table class="table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-      <th style="width: 10%; text-align: center;">Model <span class="sort-icon"></span></th>
       <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
-      <!-- <th style="width: 15%; text-align: center;">Material Description</th> -->
+      <th style="width: 10%; text-align: center;">Model <span class="sort-icon"></span></th>
+       <th style="width: 10%; text-align: center;">Shift <span class="sort-icon"></span></th>
       <th style="width: 10%; text-align: center;">Lot No <span class="sort-icon"></span></th>
-      <th style="width: 10%; text-align: center;">Shift <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Quantity <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Status <span class="sort-icon"></span></th>
+       <th style="width: 8%; text-align: center;">Pending QTY <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Total QTY <span class="sort-icon"></span></th>
       <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
       <th style="width: 15%; text-align: center;">Time In | Time out <span class="sort-icon"></span></th>
     </tr>
@@ -217,12 +217,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td style="text-align: center;">${item.model || ''}</td>
           <td style="text-align: center;">${item.material_no || ''}</td>
-          <td style="text-align: center;">${item.lot_no || ''}</td>
+          <td style="text-align: center;">${item.model || ''}</td>
           <td style="text-align: center;">${item.shift || ''}</td>
-          <td style="text-align: center;">${item.total_quantity || ''}${item.pending_quantity != null ? ` (${item.pending_quantity})` : ''}</td>
-          <td style="text-align: center;">${item.status?.toUpperCase() || ''}</td>
+          <td style="text-align: center;">${item.lot_no || ''}</td>
+          <td style="text-align: center;"> ${item.pending_quantity != null ? `(${item.pending_quantity})` : `${item.total_quantity}`}</td>
+          <td style="text-align: center;">${item.total_quantity}</td>
           <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
           <td style="text-align: center;">${actionHtml}</td>
         `;
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Fetch and initialize
-  fetch('api/controllers/qc/getTodoList.php')
+  fetch('api/qc/getTodoList.php')
     .then(response => response.json())
     .then(data => {
       fullDataSet = data;
@@ -443,7 +443,7 @@ function openQRModal(selectedRowData, mode, timeoutData) {
       let url = '';
 
       if (mode === 'timeIn') {
-        url = 'api/controllers/qc/timeinOperator.php';
+        url = 'api/qc/timeinOperator.php';
       } else {
         data.quantity = timeoutData.quantity;
         data.good = timeoutData.good;
@@ -451,7 +451,7 @@ function openQRModal(selectedRowData, mode, timeoutData) {
         data.replace = timeoutData.replace;
         data.rework = timeoutData.rework;
         data.pending_quantity = selectedRowData.pending_quantity;
-        url = 'api/controllers/qc/timeoutOperator.php';
+        url = 'api/qc/timeoutOperator.php';
       }
 
       fetch(url, {

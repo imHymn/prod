@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 09, 2025 at 01:16 AM
+-- Generation Time: Jun 11, 2025 at 04:11 AM
 -- Server version: 8.0.42-0ubuntu0.22.04.1
 -- PHP Version: 8.1.31
 
@@ -20,49 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `robertsprod`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `assembly_list`
---
-
-CREATE TABLE `assembly_list` (
-  `id` int NOT NULL,
-  `itemID` int DEFAULT NULL,
-  `reference_no` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `model` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `material_no` int NOT NULL,
-  `material_description` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `lot_no` int NOT NULL,
-  `assembly_quantity_done` int DEFAULT NULL,
-  `assembly_quantity_pending` int DEFAULT NULL,
-  `assembly_total_quantity` int DEFAULT NULL,
-  `total_qty` int NOT NULL,
-  `good` int DEFAULT NULL,
-  `not_good` int DEFAULT NULL,
-  `rework` int DEFAULT NULL,
-  `replace` int DEFAULT NULL,
-  `person_incharge_assembly` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `person_incharge_qc` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `rework_incharge_assembly` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `rework_incharge_qc` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `status_assembly` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `status_qc` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `status_rework` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `prev_section` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `curr_section` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `time_in` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `time_out` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `timein_qc` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `timeout_qc` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `rework_timein` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `rework_timeout` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `rework_timein_qc` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `rework_timeout_qc` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `shift` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `date_needed` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -41532,36 +41489,6 @@ INSERT INTO `DAILYSTOPTIME` (`id`, `DAILYSTOPTIME`, `DATE_NOW`, `REMARKS`, `SECT
 -- --------------------------------------------------------
 
 --
--- Table structure for table `delivery_forms`
---
-
-CREATE TABLE `delivery_forms` (
-  `id` int NOT NULL,
-  `reference_no` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `model_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `material_no` int NOT NULL,
-  `material_description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `assembly_quantity_done` int DEFAULT NULL,
-  `assembly_quantity_pending` int DEFAULT NULL,
-  `assembly_total_quantity` int DEFAULT NULL,
-  `quantity` int NOT NULL,
-  `supplement_order` int DEFAULT NULL,
-  `total_quantity` int NOT NULL,
-  `lot_no` int NOT NULL,
-  `shift` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `section` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `person_incharge_assembly` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `person_incharge_qc` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `person_incharge_rework` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `date_needed` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `delivery_form_new`
 --
 
@@ -42323,6 +42250,7 @@ CREATE TABLE `stamping` (
   `reference_no` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `material_no` varchar(25) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `components_name` varchar(35) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `batch` int DEFAULT NULL,
   `process_quantity` int DEFAULT NULL,
   `stage` int DEFAULT NULL,
   `stage_name` varchar(15) COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -42351,6 +42279,30 @@ CREATE TABLE `stock_warehouse` (
   `model` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `quantity` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `test`
+--
+
+CREATE TABLE `test` (
+  `id` int NOT NULL,
+  `first_name` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `last_name` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `age` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `test`
+--
+
+INSERT INTO `test` (`id`, `first_name`, `last_name`, `age`) VALUES
+(1, 'Ron', 'Doe', 30),
+(2, 'John', 'Doe', 30),
+(3, 'John', 'Doe', 30),
+(4, 'John', 'Doe', 30),
+(5, 'John', 'Doe', 30);
 
 -- --------------------------------------------------------
 
@@ -42431,15 +42383,48 @@ INSERT INTO `users` (`id`, `name`, `user_id`, `username`, `password`, `email`, `
 (64, 'FG_WH', '5', NULL, '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', NULL, NULL, 'fg_warehouse', NULL, 'supervisor', 'fg_warehouse', '2025-05-29 06:45:17'),
 (65, 'RM_WH', '6', NULL, '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', NULL, NULL, 'rm_warehouse', NULL, 'supervisor', 'rm_warehouse', '2025-05-29 06:45:32');
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users_new`
+--
+
+CREATE TABLE `users_new` (
+  `id` int NOT NULL,
+  `user_id` varchar(15) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `password` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `role` varchar(15) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `production` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `production_location` varchar(15) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` varchar(35) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `users_new`
+--
+
+INSERT INTO `users_new` (`id`, `user_id`, `name`, `password`, `role`, `production`, `production_location`, `created_at`) VALUES
+(1, 'admin', 'ADMINISTRATOR', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'administrator', NULL, NULL, '2025-06-09 10:35:56'),
+(2, 'delivery', 'DELIVERY', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'supervisor', 'delivery', NULL, '2025-06-09 10:36:26'),
+(3, 'assembly', 'ASSEMBLY', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'supervisor', 'assembly', NULL, '2025-06-09 10:36:42'),
+(4, 'qc', 'QC', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'supervisor', 'qc', NULL, '2025-06-09 10:37:00'),
+(5, 'stamping', 'STAMPING', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'supervisor', 'stamping', NULL, '2025-06-09 10:37:25'),
+(6, 'fg', 'FG WAREHOUSE', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'supervisor', 'fg_warehouse', NULL, '2025-06-09 10:37:41'),
+(7, 'rm', 'RM WAREHOUSE', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'supervisor', 'rm_warehouse', NULL, '2025-06-09 10:38:12'),
+(8, 'oem-small', 'Line Leader (OEM Small)', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'line leader', 'stamping', 'OEM-SMALL', '2025-06-09 10:44:43'),
+(9, 'muffler-comps', 'Line Leader (Muffler Comps)', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'line leader', 'stamping', 'MUFFLER-COMPS', '2025-06-09 10:45:06'),
+(10, 'big-hyd', 'Line Leader (BIG-HYD)', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'line leader', 'stamping', 'BIG-HYD', '2025-06-09 10:45:45'),
+(11, 'big-mech', 'Line Leader (BIG-MECH)', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'line leader', 'stamping', 'BIG-MECH', '2025-06-09 10:46:13'),
+(12, 'user-manager', 'USER MANAGER', '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', 'user manager', NULL, NULL, '2025-06-09 10:52:24'),
+(13, 'ewqewq', 'ewq', 'bc897c9e649357cdd0152f9fa75b001df56084aa2a2be1b887d3215049e5b363752bfb5d1333614227d2f3d2a2cb7c3e496bd175d9686a8169e77528d901363f', 'user manager', NULL, NULL, '2025-06-10 08:50:25'),
+(14, 'admin', NULL, '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', NULL, NULL, NULL, '2025-06-11 08:40:48'),
+(15, 'admin', NULL, '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', NULL, NULL, NULL, '2025-06-11 08:40:56'),
+(16, 'admin', NULL, '3627909a29c31381a071ec27f7c9ca97726182aed29a7ddd2e54353322cfb30abb9e3a6df2ac2c20fe23436311d678564d0c8d305930575f60e2d3d048184d79', NULL, NULL, NULL, '2025-06-11 08:41:52');
+
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `assembly_list`
---
-ALTER TABLE `assembly_list`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `assembly_list_new`
@@ -42469,12 +42454,6 @@ ALTER TABLE `components_task`
 -- Indexes for table `DAILYSTOPTIME`
 --
 ALTER TABLE `DAILYSTOPTIME`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `delivery_forms`
---
-ALTER TABLE `delivery_forms`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -42550,6 +42529,12 @@ ALTER TABLE `stock_warehouse`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `test`
+--
+ALTER TABLE `test`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -42557,14 +42542,14 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `username` (`username`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- Indexes for table `users_new`
 --
+ALTER TABLE `users_new`
+  ADD PRIMARY KEY (`id`);
 
 --
--- AUTO_INCREMENT for table `assembly_list`
+-- AUTO_INCREMENT for dumped tables
 --
-ALTER TABLE `assembly_list`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `assembly_list_new`
@@ -42595,12 +42580,6 @@ ALTER TABLE `components_task`
 --
 ALTER TABLE `DAILYSTOPTIME`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `delivery_forms`
---
-ALTER TABLE `delivery_forms`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `delivery_form_new`
@@ -42675,10 +42654,22 @@ ALTER TABLE `stock_warehouse`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `test`
+--
+ALTER TABLE `test`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+
+--
+-- AUTO_INCREMENT for table `users_new`
+--
+ALTER TABLE `users_new`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

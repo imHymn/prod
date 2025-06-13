@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let choicesInstance = null;  // Track the Choices instance for SKU
 
     // Use fetch to make the GET request to get customer data
-    fetch('api/controllers/delivery/getCustomers.php')
+    fetch('api/delivery/getCustomers.php')
         .then(response => response.json())  // Parse the JSON response
         .then(customers => {
             // Get the <select> element for customers and models
@@ -340,7 +340,7 @@ document.getElementById('delivery_submit_btn').addEventListener('click', functio
 
             console.log('Compiled values:', results);
 
-         fetch('api/controllers/delivery/postForms.php', {
+         fetch('api/delivery/postForms.php', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'

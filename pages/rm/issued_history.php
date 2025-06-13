@@ -85,7 +85,7 @@ function renderTable(data) {
   document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
 }
 
-fetch('api/controllers/rm/getIssuedHistory.php')
+fetch('api/rm/getIssuedHistory.php')
   .then(response => response.json())
   .then(data => {
     fullData = data.data || [];

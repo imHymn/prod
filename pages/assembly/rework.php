@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const paginationContainerId = 'pagination';
   const rowsPerPage = 10;
 
-  fetch('api/controllers/assembly/getRework.php')
+  fetch('api/assembly/getRework.php')
     .then(response => response.json())
     .then(data => {
       fullDataSet = data;
@@ -338,9 +338,9 @@ function openQRModal(selectedRowData, mode) {
         assembly_pending_quantity: selectedRowData.assembly_pending_quantity
       };
 
-      let url = '/mes/api/controllers/assembly/timein_reworkOperator.php';
+      let url = '/mes/api/assembly/timein_reworkOperator.php';
       if (mode === 'timeOut') {
-        url = '/mes/api/controllers/assembly/timeout_reworkOperator.php';
+        url = '/mes/api/assembly/timeout_reworkOperator.php';
       }
 
       fetch(url, {

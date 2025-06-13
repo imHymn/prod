@@ -58,6 +58,14 @@ if (!empty($_SESSION['production_location'])) {
         <ul class="nav">
           <li class="nav-item nav-category">Main</li>
 
+<li class="nav-item">
+  <a href="?page_active=dashboard" class="nav-link d-flex align-items-center" data-page="dashboard">
+    <i class="link-icon" data-feather="calendar"></i>
+    <span style="margin-left:30px;">Dashboard</span>
+  </a>
+</li>
+
+
 
 <?php if (isset($role)&&isset($production)){
   $role = strtolower($role);
@@ -358,16 +366,9 @@ if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervi
 
 								</div>
 								<div class="dropdown-body">
-									<ul class="profile-nav p-0 pt-3">
-                  <li class="nav-item">
-                    <a href="?page_active=settings" class="nav-link">
-                      <i data-feather="settings"></i>
-                      <span> Settings</span>
-                    </a>
-                  </li>
-
+									<ul class="profile-nav p-0 pt-3"> 
 										<li class="nav-item">
-											<a href="/mes/api/controllers/accounts/logout.php" class="nav-link">
+											<a href="/mes/api/accounts/logout.php" class="nav-link">
 												<i data-feather="log-out"></i>
 												<span>Log Out</span>
 											</a>

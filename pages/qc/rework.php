@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   function loadTable() {
-    fetch('api/controllers/qc/getRework.php')
+    fetch('api/qc/getRework.php')
       .then(response => response.json())
       .then(data => {
         fullData = data;
@@ -355,9 +355,9 @@ function openQRModal(selectedRowData, mode) {
         qc_pending_quantity: selectedRowData.qc_pending_quantity
       };
 
-      let url = '/mes/api/controllers/qc/timein_reworkOperator.php';
+      let url = '/mes/api/qc/timein_reworkOperator.php';
       if (mode === 'timeOut') {
-        url = '/mes/api/controllers/qc/timeout_reworkOperator.php';
+        url = '/mes/api/qc/timeout_reworkOperator.php';
       }
 
       fetch(url, {

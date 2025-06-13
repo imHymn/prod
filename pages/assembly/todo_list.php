@@ -49,9 +49,11 @@
     <tr>
       <th style="width: 15%; text-align: center;">Material No <span class="sort-icon"></span></th>
       <th style="width: 10%; text-align: center;">Model <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Total Qty <span class="sort-icon"></span></th>
       <th style="width: 8%; text-align: center; margin-right:-30px;">Shift <span class="sort-icon"></span></th>
       <th style="width: 8%; text-align: center;">Lot <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Pending Qty <span class="sort-icon"></span></th>
+      <th style="width: 8%; text-align: center;">Total Qty <span class="sort-icon"></span></th>
+
       <th style="width: 20%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
       <th style="width: 15%; text-align: center;">Date needed <span class="sort-icon"></span></th>
       <th style="width: 15%; text-align: center;">Time In | Time out <span class="sort-icon"></span></th>
@@ -123,10 +125,10 @@ let paginator = null;
 document.addEventListener('DOMContentLoaded', function () {
   quantityModal = new bootstrap.Modal(document.getElementById('quantityModal'));
 
-  fetch('api/controllers/delivery/getDeliveryforms.php')
+  fetch('api/delivery/getDeliveryforms.php')
     .then(response => response.json())
     .then(deliveryData => {
-      fetch('api/controllers/assembly/getTodoList.php')
+      fetch('api/assembly/getTodoList.php')
         .then(response => response.json())
         .then(fetchedAssemblyData => {
           assemblyData = fetchedAssemblyData;
@@ -211,9 +213,10 @@ function renderPaginatedTable(pageData, page) {
     row.innerHTML = `
       <td style="text-align: center;">${item.material_no}</td>
       <td style="text-align: center;">${item.model_name}</td>
-      <td style="text-align: center;">${item.total_quantity} ${item.assembly_pending != null ? `(${item.assembly_pending})` : ''}</td>
       <td style="text-align: center;">${item.shift}</td>
       <td style="text-align: center;">${item.lot_no}</td>
+      <td style="text-align: center;"> ${item.assembly_pending != null ? `(${item.assembly_pending})` : `${item.total_quantity}`}</td>
+      <td style="text-align: center;">${item.total_quantity}</td>
       <td style="text-align: center;">${personInCharge}</td>
       <td style="text-align: center;">${item.date_needed}</td>
       <td style="text-align: center;">${timeStatus}</td>
@@ -266,7 +269,7 @@ document.addEventListener('click', function (event) {
 
     if (mode === 'timeIn') {
       // Fetch component stock information
-      fetch('api/controllers/assembly/getSpecificComponent.php', {
+      fetch('api/assembly/getSpecificComponent.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ materialId })
@@ -454,8 +457,8 @@ function openQRModal(materialId, item, mode, quantity, assemblyData) {
       }
 
       const apiEndpoint = mode === 'timeOut'
-        ? '/mes/api/controllers/assembly/timeoutOperator.php'
-        : '/mes/api/controllers/assembly/timeinOperator.php';
+        ? '/mes/api/assembly/timeoutOperator.php'
+        : '/mes/api/assembly/timeinOperator.php';
 
       fetch(apiEndpoint, {
         method: 'POST',
