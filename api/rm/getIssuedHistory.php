@@ -1,0 +1,25 @@
+<?php
+require_once __DIR__ . '/../header.php';
+
+
+
+try {
+    $sql = "SELECT * FROM rm_warehouse";
+
+    $results = $db->Select($sql);
+
+    echo json_encode([
+        'status' => 'success',
+        'data' => $results
+    ]);
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'DB Error: ' . $e->getMessage()
+    ]);
+} catch (Exception $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Error: ' . $e->getMessage()
+    ]);
+}

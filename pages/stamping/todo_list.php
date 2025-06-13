@@ -56,10 +56,12 @@ $production_location = $_SESSION['production_location'];
   <thead>
     <tr>
      
-        <th style="width: 5%; text-align: center;">Material No</th>
+       
         <th style="width: 10%; text-align: center;">Material Description</th>
+        <th style="width: 5%; text-align: center;">Section</th>
          <th style="width: 5%; text-align: center;">Process</th>
         <th style="width: 5%; text-align: center;">Total Quantity</th>
+        <th style="width: 5%; text-align: center;">Pending Quantity</th>
         <th style="width: 10%; text-align: center;">Person Incharge</th>
         <th style="width: 7%; text-align: center;">Time</th>
         <th style="width: 7%; text-align: center;">Action</th>
@@ -197,13 +199,18 @@ function renderTable(data, page = 1) {
     }
 
     row.innerHTML = `
-      <td style="text-align: center;">${item.material_no || ''}</td>
+      
       <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
+       <td style="text-align: center;">${item.section || '<i>Null</i>'}</td>
       <td style="text-align: center;">${item.stage_name || ''}</td>
       <td style="text-align: center;">
-        ${(item.total_quantity != null && item.total_quantity !== '' ? item.total_quantity : '<i>Null</i>') + 
-        (item.pending_quantity != null && item.pending_quantity !== '' ? ` (${item.pending_quantity})` : '')}
-      </td>
+  ${item.total_quantity != null && item.total_quantity !== '' ? item.total_quantity : '<i>Null</i>'}
+</td>
+<td style="text-align: center;">
+  ${item.pending_quantity != null && item.pending_quantity !== '' ? item.pending_quantity : '<i>0</i>'}
+</td>
+
+      
       <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
       <td style="text-align: center;">${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}</td>
       <td style="text-align: center;">${actionButton}</td>
@@ -319,7 +326,7 @@ if (!previousStageItem && !prevStageCompleted && !allPrevStageDone) {
 
   } else if (mode === 'time-out') {
   const quantityModal = new bootstrap.Modal(document.getElementById('quantityModal'));
-  document.getElementById('timeoutQuantity').value = selectedRowData.total_quantity || 1;
+  document.getElementById('timeoutQuantity').value = selectedRowData.pending_quantity || 1;
 
   const confirmBtn = document.getElementById('confirmQuantityBtn');
   confirmBtn.onclick = () => {
@@ -387,22 +394,30 @@ if (!previousStageItem && !prevStageCompleted && !allPrevStageDone) {
 
 
 
-function viewStageStatus(materialNo, componentName,batch) {
-  fetch('api/controllers/stamping/fetchStageStatus.php', {
+function viewStageStatus(materialNo, componentName, batch) {
+  fetch('api/stamping/fetchStageStatus.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ material_no: materialNo, components_name: componentName,batch })
+    body: JSON.stringify({ material_no: materialNo, components_name: componentName, batch })
   })
   .then(response => response.json())
   .then(data => {
     if (data.status === 'success') {
-      const stages = data.stages || [];
-      const len = stages.length;
+      let stages = data.stages || [];
 
+      // ✅ Remove duplicate stages by 'stage' value
+      const seen = new Set();
+      stages = stages.filter(stage => {
+        const key = stage.stage; // use stage.stage_name if preferred
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      const len = stages.length;
       let content = '<i>No stages found</i>';
 
       if (len > 0) {
-        // Two-row grid for odd ≥ 5 or even ≥ 6
         if ((len >= 5 && len % 2 === 1) || (len >= 6 && len % 2 === 0)) {
           const midpoint = Math.ceil(len / 2);
           const firstRow = stages.slice(0, midpoint);
@@ -419,7 +434,6 @@ function viewStageStatus(materialNo, componentName,batch) {
             </div>
           `;
         } else {
-          // Default horizontal scroll
           content = `
             <div style="display: flex; gap: 16px; overflow-x: auto; padding: 10px;">
               ${stages.map(stage => renderStageBox(stage)).join('')}
@@ -432,7 +446,7 @@ function viewStageStatus(materialNo, componentName,batch) {
         title: 'Stage Status',
         html: content,
         icon: 'info',
-        width: '60%'
+        width: '50%'
       });
     } else {
       Swal.fire('Error', data.message || 'Could not fetch stage data.', 'error');
@@ -443,8 +457,7 @@ function viewStageStatus(materialNo, componentName,batch) {
     Swal.fire('Error', 'Something went wrong.', 'error');
   });
 
-    function renderStageBox(stage) {
-    console.log(stage)
+  function renderStageBox(stage) {
     return `
       <div style="border: 1px solid #ccc; padding: 10px; min-width: 200px; border-radius: 8px; box-shadow: 1px 1px 5px rgba(0,0,0,0.1);">
         <b>Section:</b> ${stage.section}<br>
@@ -455,6 +468,7 @@ function viewStageStatus(materialNo, componentName,batch) {
     `;
   }
 }
+
 
 
 let isProcessingScan = false;
@@ -492,8 +506,8 @@ function openQRModal(mode) {
       };
 
       const endpoint = mode === 'time-in'
-        ? 'api/controllers/stamping/postTimeInTask.php'
-        : 'api/controllers/stamping/postTimeOutTask.php';
+        ? 'api/stamping/postTimeInTask.php'
+        : 'api/stamping/postTimeOutTask.php';
 
       fetch(endpoint, {
         method: 'POST',

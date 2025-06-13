@@ -86,7 +86,7 @@ function renderTable(data) {
 }
 
 function loadTable() {
-  fetch('api/controllers/warehouse/getStockWarehouse.php')
+  fetch('api/warehouse/getStockWarehouse.php')
     .then(response => response.json())
     .then(data => {
       fullData = data.filter(item => item.model_name === 'L300');

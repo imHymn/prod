@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let inventoryData = []; // All inventory records
   let inventoryPaginator = null;
 
-  fetch('api/controllers/rm/getIssued.php')
+  fetch('api/rm/getIssued.php')
     .then(response => response.json())
     .then(issuedResponse => {
       const pendingIssuedSet = new Set(
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
           .map(entry => `${entry.material_no}|${entry.component_name}`)
       );
 
-      fetch('api/controllers/rm/getComponents.php')
+      fetch('api/rm/getComponents.php')
         .then(response => response.json())
         .then(components => {
           // Preprocess inventory data for pagination
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function sendIssueRequest(data) {
-    fetch('api/controllers/rm/postIssuedComponent.php', {
+    fetch('api/rm/postIssuedComponent.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)

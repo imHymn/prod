@@ -87,7 +87,7 @@ function loadData() {
   tbody.innerHTML = '';
   allData = [];
 
-  fetch('api/controllers/assembly/getAssemblyData.php')
+  fetch('api/assembly/getAssemblyData.php')
     .then(res => res.json())
     .then(assemblyData => {
       assemblyData.forEach(item => {
@@ -106,7 +106,7 @@ function loadData() {
         });
       });
 
-      return fetch('api/controllers/assembly/getManpowerRework.php');
+      return fetch('api/assembly/getManpowerRework.php');
     })
     .then(res => res.json())
     .then(reworkData => {

@@ -38,13 +38,14 @@
 <table class="table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-      <th style="width: 20%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
-      <th style="width: 10%; text-align: center;">Quantity <span class="sort-icon"></span></th>
-      <th style="width: 10%; text-align: center;">Date <span class="sort-icon"></span></th>
-      <th style="width: 10%; text-align: center;">Time In <span class="sort-icon"></span></th>
-      <th style="width: 10%; text-align: center;">Time Out <span class="sort-icon"></span></th>
-      <th style="width: 25%; text-align: center;">Spent/Standby/Total Span <span class="sort-icon"></span></th>
-      <th style="width: 15%; text-align: center;">Time per Unit (min) <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Date <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Time In <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
     </tr>
   </thead>
   <tbody id="data-body"></tbody>
@@ -77,43 +78,122 @@ let paginator;
 function extractDateOnly(datetimeStr) {
   return datetimeStr ? datetimeStr.slice(0, 10) : '';
 }
-
-function renderPageCallback(pageData) {
+function renderPageCallback(pageData, cycleData) {
   tbody.innerHTML = '';
 
   pageData.forEach(entry => {
     const firstIn = new Date(Math.min(...entry.timeIns.map(t => t.getTime())));
     const lastOut = new Date(Math.max(...entry.timeOuts.map(t => t.getTime())));
 
-    const spanMinutes = (lastOut - firstIn) / (1000 * 60);
-    const standbyMinutes = spanMinutes - entry.totalWorkMinutes;
-    const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
+    const spanSeconds = (lastOut - firstIn) / 1000;
+    const workSeconds = entry.totalWorkMinutes * 60;
+    const standbySeconds = spanSeconds - workSeconds;
 
-    const spanHours = spanMinutes / 60;
-    const standbyHours = standbyMinutes / 60;
-    const timePerUnitHours = timePerUnit / 60;
+    const totalQty = entry.totalFinished;
+    const timePerUnit = totalQty > 0 ? (workSeconds / totalQty) : 0;
 
-    const totalQty = (entry.assemblyMax || 0) + (entry.reworkMax || 0);
+    const model = entry.model?.toUpperCase?.() || '';
+    const targetCycleTime = parseFloat(cycleData?.[model] || 0);
+
+    const mpeff = targetCycleTime && workSeconds > 0
+      ? ((targetCycleTime * totalQty) / workSeconds) * 100
+      : 0;
 
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td style="text-align: center;">${entry.person}</td>
-      <td style="text-align: center;">${entry.totalFinished}/${totalQty}</td>
       <td style="text-align: center;">${entry.date}</td>
+      <td style="text-align: center;">${entry.person}</td>
+      <td style="text-align: center;">${totalQty}</td>
       <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
       <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>
       <td style="text-align: center;">
-        ${formatHoursMinutes(entry.totalWorkMinutes / 60)} / 
-        ${formatHoursMinutes(standbyHours)} / 
-        ${formatHoursMinutes(spanHours)}
+        ${workSeconds.toFixed(0)} sec
+        ${standbySeconds > 0 ? ` (${standbySeconds.toFixed(0)} sec)` : ''}
       </td>
-      <td style="text-align: center;">${timePerUnit > 0 ? formatHoursMinutes(timePerUnitHours) : '-'}</td>
+
+      <td style="text-align: center;">${targetCycleTime.toFixed(2)} sec</td>
+      <td style="text-align: center;">${mpeff ? mpeff.toFixed(1) + '%' : '-'}</td>
     `;
     tbody.appendChild(row);
   });
 
   document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
 }
+
+Promise.all([
+  fetch('api/assembly/getAssemblyData.php').then(res => res.json()),
+  fetch('api/assembly/getManpowerRework.php').then(res => res.json()),
+  fetch('api/mpeff_cycle/assembly.php').then(res => res.json())
+])
+.then(([assemblyData, reworkData, cycleData]) => {
+  const mergedData = {};
+
+ function addEntry(person, date, reference, timeIn, timeOut, finishedQty, source = 'assembly', model = '') {
+  const key = `${person}_${date}`; // <-- changed this line
+
+  if (!mergedData[key]) {
+    mergedData[key] = {
+      person,
+      date,
+      totalFinished: 0,
+      timeIns: [],
+      timeOuts: [],
+      totalWorkMinutes: 0,
+      model: model
+    };
+  }
+
+  const group = mergedData[key];
+  const timeInDate = new Date(timeIn);
+  const timeOutDate = new Date(timeOut);
+
+  if (model && !group.model) {
+    group.model = model;
+  }
+
+  if (!isNaN(timeInDate) && !isNaN(timeOutDate) && timeOutDate > timeInDate && finishedQty > 0) {
+    const workedMin = (timeOutDate - timeInDate) / (1000 * 60);
+    group.totalWorkMinutes += workedMin;
+    group.timeIns.push(timeInDate);
+    group.timeOuts.push(timeOutDate);
+    group.totalFinished += finishedQty;
+  }
+}
+
+
+  assemblyData.forEach(item => {
+    if (!item.time_out || !item.time_in || !item.person_incharge || !item.reference_no || !item.created_at) return;
+
+    const day = extractDateOnly(item.created_at);
+    const finishedQty = parseInt(item.done_quantity) || 0;
+    const model = item.model || '';
+
+    addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, finishedQty, 'assembly', model);
+  });
+
+  reworkData.forEach(item => {
+    if (!item.assembly_timeout || !item.assembly_timein || !item.assembly_person_incharge || !item.reference_no || !item.created_at) return;
+
+    const day = extractDateOnly(item.created_at);
+    const finishedQty = (parseInt(item.rework) || 0) + (parseInt(item.replace) || 0);
+    const model = item.model || '';
+
+    addEntry(item.assembly_person_incharge, day, item.reference_no, item.assembly_timein, item.assembly_timeout, finishedQty, 'rework', model);
+  });
+
+  mergedDataArray = Object.values(mergedData);
+  filteredData = mergedDataArray.slice();
+
+  paginator = createPaginator({
+    data: filteredData,
+    rowsPerPage: 10,
+    renderPageCallback: (page) => renderPageCallback(page, cycleData),
+    paginationContainerId: 'pagination'
+  });
+
+  paginator.render();
+})
+.catch(console.error);
 
 function filterAndRender() {
   const col = filterColumn.value;
@@ -143,90 +223,6 @@ function filterAndRender() {
   paginator.setData(filteredData);
 }
 
-Promise.all([
-  fetch('api/controllers/assembly/getAssemblyData.php').then(res => res.json()),
-  fetch('api/controllers/assembly/getManpowerRework.php').then(res => res.json())
-])
-.then(([assemblyData, reworkData]) => {
-  const mergedData = {};
-  const assemblyMaxMap = {};
-  const reworkMaxMap = {};
-
-  function addEntry(person, date, reference, timeIn, timeOut, finishedQty, totalQty, source = 'assembly') {
-    const key = `${person}_${date}_${reference}`;
-    if (!mergedData[key]) {
-      mergedData[key] = {
-        person,
-        date,
-        reference,
-        totalFinished: 0,
-        timeIns: [],
-        timeOuts: [],
-        totalWorkMinutes: 0,
-        assemblyMax: 0,
-        reworkMax: 0,
-      };
-    }
-
-    const group = mergedData[key];
-    const timeInDate = new Date(timeIn);
-    const timeOutDate = new Date(timeOut);
-
-    if (source === 'assembly') {
-      if (!assemblyMaxMap[key] || totalQty > assemblyMaxMap[key]) {
-        assemblyMaxMap[key] = totalQty;
-      }
-      group.assemblyMax = assemblyMaxMap[key];
-    } else {
-      if (!reworkMaxMap[key] || totalQty > reworkMaxMap[key]) {
-        reworkMaxMap[key] = totalQty;
-      }
-      group.reworkMax = reworkMaxMap[key];
-    }
-
-    if (!isNaN(timeInDate) && !isNaN(timeOutDate) && timeOutDate > timeInDate && finishedQty > 0) {
-      const workedMin = (timeOutDate - timeInDate) / (1000 * 60);
-      group.totalWorkMinutes += workedMin;
-      group.timeIns.push(timeInDate);
-      group.timeOuts.push(timeOutDate);
-      group.totalFinished += finishedQty;
-    }
-  }
-
-  assemblyData.forEach(item => {
-    if (!item.time_out || !item.time_in || !item.person_incharge || !item.reference_no || !item.created_at) return;
-
-    const day = extractDateOnly(item.created_at);
-    const finishedQty = parseInt(item.done_quantity) || 0;
-    const totalQty = parseInt(item.total_quantity) || 0;
-
-    addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, finishedQty, totalQty, 'assembly');
-  });
-
-  reworkData.forEach(item => {
-    if (!item.assembly_timeout || !item.assembly_timein || !item.assembly_person_incharge || !item.reference_no || !item.created_at) return;
-
-    const day = extractDateOnly(item.created_at);
-    const finishedQty = (parseInt(item.rework) || 0) + (parseInt(item.replace) || 0);
-    const totalQty = parseInt(item.quantity) || 0;
-
-    addEntry(item.assembly_person_incharge, day, item.reference_no, item.assembly_timein, item.assembly_timeout, finishedQty, totalQty, 'rework');
-  });
-
-  mergedDataArray = Object.values(mergedData);
-  filteredData = mergedDataArray.slice();
-
-  paginator = createPaginator({
-    data: filteredData,
-    rowsPerPage: 10,
-    renderPageCallback,
-    paginationContainerId: 'pagination'
-  });
-
-  paginator.render();
-})
-.catch(console.error);
-
 // Filter controls
 filterColumn.addEventListener('change', () => {
   filterInput.disabled = !filterColumn.value;
@@ -241,4 +237,3 @@ filterInput.addEventListener('input', () => {
 // Optional: initialize sorting
 enableTableSorting(".table");
 </script>
-

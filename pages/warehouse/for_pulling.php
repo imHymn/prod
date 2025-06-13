@@ -142,7 +142,7 @@ const model = button.getAttribute('data-model');
     cancelButtonText: 'Cancel'
   }).then((result) => {
     if (result.isConfirmed) {
-      fetch('api/controllers/warehouse/pullItemWarehouse.php', {
+      fetch('api/warehouse/pullItemWarehouse.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -174,7 +174,7 @@ const model = button.getAttribute('data-model');
 }
 
 function loadTable() {
-  fetch('api/controllers/warehouse/getPending_pulling.php')
+  fetch('api/warehouse/getPending_pulling.php')
     .then(response => response.json())
     .then(data => {
       console.log(data)

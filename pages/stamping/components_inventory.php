@@ -72,7 +72,7 @@
   let componentsData = [];
   let paginator = null;
 
-  fetch('api/controllers/stamping/getComponents.php')
+  fetch('api/stamping/getComponents.php')
     .then(response => response.json())
     .then(data => {
       componentsData = data;

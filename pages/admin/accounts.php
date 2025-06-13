@@ -78,6 +78,7 @@
 <script src="assets/js/jquery.min.js"></script>
 <script src="assets/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/sweetalert2@11.js"></script>
+<link href="./assets/css/bootstrap-icons.css" rel="stylesheet">
 
 <script>
 // Role-based field toggling logic
@@ -132,16 +133,25 @@ function renderTable(users) {
       </td>
       <td>${user.user_id ?? 'null'}</td>
       <td>
-        <button class="btn btn-sm btn-primary btn-update-user" 
+        <button class="btn btn-sm btn-outline-primary btn-update-user" 
+                title="Update"
                 data-user-id="${user.user_id}" 
                 data-id="${user.id}">
-          Update
+          <i class="bi bi-pencil-square"style="font-size:16px"></i>
+        </button>
+         <button class="btn btn-sm btn-outline-danger btn-delete-user" 
+                title="Delete"
+                data-user-id="${user.user_id}" 
+                data-id="${user.id}">
+          <i class="bi bi-trash" style="font-size:16px"></i>
         </button>
       </td>
+  
     `;
     tbody.appendChild(tr);
   });
   bindUpdateButtons(users);
+  bindDeleteButtons(users);
 }
 
 function bindUpdateButtons(users) {
@@ -164,10 +174,56 @@ function bindUpdateButtons(users) {
       updateUserModal.show();
     });
   });
+  
+}
+function bindDeleteButtons(users) {
+  document.querySelectorAll('.btn-delete-user').forEach(button => {
+    button.addEventListener('click', function () {
+      const userId = this.getAttribute('data-user-id');
+      const id = this.getAttribute('data-id');
+
+      const selectedUser = users.find(u => u.user_id === userId);
+      if (!selectedUser) return;
+
+      Swal.fire({
+        title: `Delete ${selectedUser.name}?`,
+        text: "This action cannot be undone.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete it!'
+      }).then(result => {
+        if (result.isConfirmed) {
+          fetch('api/accounts/deleteAccount.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+          })
+            .then(res => res.json())
+            .then(response => {
+              if (response.success) {
+                Swal.fire('Deleted!', response.message, 'success');
+                 loadAccounts(); // Refresh table
+              } else {
+                Swal.fire('Failed!', response.message, 'error');
+              }
+            })
+            .catch(error => {
+              console.error('Delete error:', error);
+              Swal.fire('Error!', 'An error occurred while deleting.', 'error');
+            });
+        }
+      });
+    });
+  });
 }
 
+
 function loadAccounts() {
-  fetch('api/controllers/accounts/getAccounts.php')
+  fetch('api/accounts/getAccounts.php')
     .then(res => res.json())
     .then(data => {
       allUsers = data;

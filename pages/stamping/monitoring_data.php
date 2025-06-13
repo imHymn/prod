@@ -1,3 +1,10 @@
+<?php
+session_start();
+$role = $_SESSION['role'];
+$production = $_SESSION['production'];
+$production_location = $_SESSION['production_location'];
+?>
+
 <script src="assets/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/sweetalert2@11.js"></script>
 <script src="assets/js/html5.qrcode.js"></script>
@@ -45,14 +52,14 @@
 <table class="table table" style="table-layout: fixed; width: 100%;">
   <thead>
     <tr>
-      <th style="width: 7%; text-align: center;">Material No <span class="sort-icon"></span></th>
-      <th style="width: 10%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
-      <th style="width: 7%; text-align: center;">Date <span class="sort-icon"></span></th>
-      <th style="width: 7%; text-align: center;">Total Quantity <span class="sort-icon"></span></th>
-      <th style="width: 6%; text-align: center;">Time In <span class="sort-icon"></span></th>
-      <th style="width: 6%; text-align: center;">Time Out <span class="sort-icon"></span></th>
-      <th style="width: 15%; text-align: center;">Spent/Standby/Total Span <span class="sort-icon"></span></th>
-      <th style="width: 10%; text-align: center;">UnitperMin <span class="sort-icon"></span></th>
+    <th style="width: 7%; text-align: center;">Date <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Time In <span class="sort-icon"></span></th>
+      <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th>
+      <th style="width: 15%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
+      <th style="width: 10%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
     </tr>
   </thead>
   <tbody id="data-body"></tbody>
@@ -67,45 +74,44 @@
 <script>
 let fullData = [];
 let paginator;
+let cycleTimes = {};
+  const sessionRole = "<?php echo $role; ?>";
+  const sessionProduction = "<?php echo $production; ?>";
+  const sessionLocation = "<?php echo $production_location; ?>";
 
 const dataBody = document.getElementById('data-body');
 const filterColumn = document.getElementById('filter-column');
 const filterInput = document.getElementById('filter-input');
 
-function formatHoursMinutes(decimalHours) {
-  const hours = Math.floor(decimalHours);
-  const minutes = Math.round((decimalHours - hours) * 60);
-  return `${hours} hrs${minutes > 0 ? ' ' + minutes + ' mins' : ''}`;
-}
+// Fetch cycle times and manpower data
+Promise.all([
+  fetch('api/mpeff_cycle/stamping.php').then(res => res.json()),
+  fetch('api/stamping/getManpowerData.php').then(res => res.json())
+])
+.then(([cycleTimeData, manpowerData]) => {
+  cycleTimes = cycleTimeData;
+  fullData = manpowerData;
 
-fetch('api/controllers/stamping/getManpowerData.php')
-  .then(response => response.json())
-  .then(data => {
-    fullData = data;
-
-    // Group and sort by reference and stage
-    const grouped = {};
-    data.forEach(item => {
-      if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
-      grouped[item.reference_no].push(item);
-    });
-
-    const sorted = Object.values(grouped)
-      .flatMap(group => group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0))));
-
-    // Save for filtering
-    fullData = sorted;
-
-    // Init paginator
-    paginator = createPaginator({
-      data: sorted,
-      rowsPerPage: 10,
-      paginationContainerId: 'pagination',
-      renderPageCallback: renderTable
-    });
-
-    paginator.render();
+  const grouped = {};
+  manpowerData.forEach(item => {
+    if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
+    grouped[item.reference_no].push(item);
   });
+
+  const sorted = Object.values(grouped)
+    .flatMap(group => group.sort((a, b) => parseInt(a.stage || 0) - parseInt(b.stage || 0)));
+
+  fullData = sorted;
+
+  paginator = createPaginator({
+    data: sorted,
+    rowsPerPage: 10,
+    paginationContainerId: 'pagination',
+    renderPageCallback: renderTable
+  });
+
+  paginator.render();
+});
 
 function renderTable(data, page = 1) {
   const merged = {};
@@ -114,11 +120,12 @@ function renderTable(data, page = 1) {
     if (!item.person_incharge || !item.created_at) return;
 
     const createdDate = item.created_at.split(' ')[0];
-    const key = `${item.person_incharge}_${createdDate}`;
+    const key = `${item.section}_${item.person_incharge}_${createdDate}`;
 
     if (!merged[key]) {
       merged[key] = {
         person: item.person_incharge,
+        section: item.section,
         date: createdDate,
         material_no: item.material_no,
         totalFinished: 0,
@@ -135,8 +142,8 @@ function renderTable(data, page = 1) {
     const finishedQty = parseInt(item.process_quantity) || 0;
     group.totalFinished += finishedQty;
 
-    const totalQty = parseInt(item.total_quantity) || 0;
-    if (totalQty > group.totalQuantity) group.totalQuantity = totalQty;
+    const totalQty = parseInt(item.quantity) || 0;
+    group.totalQuantity += totalQty;
 
     const pendingQty = parseInt(item.pending_quantity) || 0;
     group.pendingQuantity += pendingQty;
@@ -154,59 +161,87 @@ function renderTable(data, page = 1) {
     group.references.add(item.reference_no);
   });
 
+  // Clear table
   dataBody.innerHTML = '';
 
-  Object.values(merged).forEach(group => {
-    if (group.timeIns.length === 0 || group.timeOuts.length === 0) return;
 
-    const firstIn = new Date(Math.min(...group.timeIns.map(d => d.getTime())));
-    const lastOut = new Date(Math.max(...group.timeOuts.map(d => d.getTime())));
-    const spanMinutes = (lastOut - firstIn) / (1000 * 60);
-    const standbyMinutes = spanMinutes - group.totalWorkMinutes;
-    const timePerUnit = group.totalFinished > 0 ? (group.totalWorkMinutes / group.totalFinished) : 0;
+const groupedBySection = {};
+Object.values(merged).forEach(group => {
+  // Normalize strings for comparison: lowercase, replace hyphens/spaces
+  const normalize = str => str.toLowerCase().replace(/[\s-]/g, '');
 
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td style="text-align: center;">${group.material_no}</td>
-      <td style="text-align: center;">${group.person}</td>
-      <td style="text-align: center;">${group.date}</td>
-      <td style="text-align: center;">${group.totalQuantity || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
-      <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>
-      <td style="text-align: center;">${formatHoursMinutes(group.totalWorkMinutes / 60)} / ${formatHoursMinutes(standbyMinutes / 60)} / ${formatHoursMinutes(spanMinutes / 60)}</td>
-      <td style="text-align: center;">${timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-'}</td>
+  const sectionNormalized = normalize(group.section || '');
+  const sessionLocationNormalized = normalize(sessionLocation || '');
+
+  const canAccess =
+    sessionRole === 'administrator' ||
+    (sessionProduction.toLowerCase() === 'stamping' &&
+     sectionNormalized === sessionLocationNormalized);
+
+  if (!canAccess) return;
+
+  if (!groupedBySection[group.section]) {
+    groupedBySection[group.section] = [];
+  }
+  groupedBySection[group.section].push(group);
+});
+
+
+  // Render each section
+  Object.keys(groupedBySection).forEach(section => {
+    const groups = groupedBySection[section];
+
+    // Insert section header row
+    const sectionRow = document.createElement('tr');
+    sectionRow.innerHTML = `
+      <td colspan="8" style="background: #f0f0f0; font-weight: bold; text-align: left; padding: 8px;">
+        Section: ${section}
+      </td>
     `;
-    dataBody.appendChild(row);
+    dataBody.appendChild(sectionRow);
+
+    groups.forEach(group => {
+      if (group.timeIns.length === 0 || group.timeOuts.length === 0) return;
+
+      const firstIn = new Date(Math.min(...group.timeIns.map(d => d.getTime())));
+      const lastOut = new Date(Math.max(...group.timeOuts.map(d => d.getTime())));
+      const spanMinutes = (lastOut - firstIn) / (1000 * 60);
+      const standbyMinutes = spanMinutes - group.totalWorkMinutes;
+
+      const totalWorkSeconds = group.totalWorkMinutes * 60;
+      const standbySeconds = standbyMinutes * 60;
+
+      const targetCycleTime = cycleTimes[section] || 0; // in seconds
+      const timePerUnitSeconds = group.totalQuantity > 0
+        ? totalWorkSeconds / group.totalQuantity
+        : 0;
+
+      const mpeff = (targetCycleTime && timePerUnitSeconds > 0)
+        ? (targetCycleTime / timePerUnitSeconds) * 100
+        : 0;
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="text-align: center;">${group.date}</td>
+        <td style="text-align: center;">${group.person}</td>
+        <td style="text-align: center;">${group.totalQuantity || '<i>Null</i>'}</td>
+        <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
+        <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>
+        <td style="text-align: center;">
+          ${Math.round(totalWorkSeconds)}s  
+          (${Math.round(standbySeconds)}s)
+        </td>
+        <td style="text-align: center;">${targetCycleTime}s</td>
+        <td style="text-align: center;">${mpeff ? mpeff.toFixed(2) + '%' : '-'}</td>
+      `;
+
+      dataBody.appendChild(row);
+    });
   });
 
+  // Update timestamp
   const now = new Date();
   document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
 }
 
-// Enable input if column is selected
-filterColumn.addEventListener('change', () => {
-  filterInput.value = '';
-  filterInput.disabled = !filterColumn.value;
-  paginator.setData(fullData);
-});
-
-// Filter logic with pagination update
-filterInput.addEventListener('input', () => {
-  const column = filterColumn.value;
-  const value = filterInput.value.toLowerCase().trim();
-
-  if (!column || value === '') {
-    paginator.setData(fullData);
-    return;
-  }
-
-  const filtered = fullData.filter(item => {
-    const field = item[column];
-    return field?.toString().toLowerCase().includes(value);
-  });
-
-  paginator.setData(filtered);
-});
-
-enableTableSorting(".table");
 </script>

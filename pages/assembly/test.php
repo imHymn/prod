@@ -34,7 +34,7 @@
   </div>
 </div>
 <script>
-fetch('api/controllers/assembly/getAssemblyData.php')
+fetch('api/assembly/getAssemblyData.php')
   .then(response => response.json())
   .then(data => {
     console.log(data);
@@ -70,7 +70,7 @@ fetch('api/controllers/assembly/getAssemblyData.php')
     });
 
     // After assembly data, fetch and render rework data
-    return fetch('api/controllers/assembly/getManpowerRework.php');
+    return fetch('api/assembly/getManpowerRework.php');
   })
   .then(response => response.json())
   .then(reworkData => {
