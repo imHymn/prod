@@ -1,11 +1,15 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\AccountModel;
+use Validation\AccountValidator;
 
-$model = new UserModel($db);
+$model = new AccountModel($db);
 
 
-function trimOrNull($value) {
+
+function trimOrNull($value)
+{
     $trimmed = trim($value ?? '');
     return $trimmed === '' ? null : $trimmed;
 }
@@ -37,7 +41,7 @@ $data = array_filter($data, fn($v) => $v !== null);
 if (!empty($data['password'])) {
     $data['password'] = hash('sha512', $data['password']);
 } else {
-    unset($data['password']); 
+    unset($data['password']);
 }
 
 $errors = UserValidator::validateUpdate(array_merge($user, $data));

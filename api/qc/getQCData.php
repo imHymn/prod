@@ -1,12 +1,11 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\QCModel;
 
 try {
-    $sql = "SELECT * FROM qc_list  ";
-    
-    $customers = $db->Select($sql);
+    $qcModel = new QCModel($db);
+    $customers = $qcModel->getQCData();
     echo json_encode($customers);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();

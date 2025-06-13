@@ -1,15 +1,11 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\QCModel;
 
 try {
-    // SQL: Get rows where status = 'pending' and created_at within last 2 days
-    $sql = "SELECT * FROM qc_list 
-            WHERE status = 'pending' AND section ='qc'
-              AND created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
-    
-    $customers = $db->Select($sql);
+    $qcModel = new QCModel($db);
+    $customers = $qcModel->getTodoList();
     echo json_encode($customers);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();

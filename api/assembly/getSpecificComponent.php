@@ -1,16 +1,20 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\AssemblyModel;
+use Validation\AssemblyValidator;
 
 $materialId = $input['materialId'];
+$errors = AssemblyValidator::validateMaterialId($materialId);
+if (!empty($errors)) {
+    echo json_encode(['success' => false, 'errors' => $errors]);
+    exit;
+}
 
 try {
-    // SQL query to fetch customer names
-    $sql = "SELECT * FROM `components_inventory` WHERE material_no ='$materialId' ";
-    // Use the Select method to fetch data
-    $users = $db->Select($sql);
-    // Return the results as a JSON response
+    $model = new AssemblyModel($db);
+    $users = $model->getSpecificComponent($materialId);
+
     echo json_encode($users);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();

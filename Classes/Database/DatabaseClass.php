@@ -1,10 +1,12 @@
 <?php
 
 
-class DatabaseClass {
+class DatabaseClass
+{
     private $connection = null;
 
-    public function __construct() {
+    public function __construct()
+    {
         try {
             $dsn = "mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'] . ";charset=utf8mb4";
             $this->connection = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS']);
@@ -14,45 +16,54 @@ class DatabaseClass {
         }
     }
 
-    public function Select($sql, $params = []) {
+    public function Select($sql, $params = [])
+    {
         $stmt = $this->executeStatement($sql, $params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function SelectOne($sql, $params = []) {
+    public function SelectOne($sql, $params = [])
+    {
         $stmt = $this->executeStatement($sql, $params);
-        return $stmt->fetch(PDO::FETCH_ASSOC); 
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    public function Update($sql, $params = []) {
+    public function Update($sql, $params = [])
+    {
         $stmt = $this->executeStatement($sql, $params);
-        return $stmt->rowCount();  
+        return $stmt->rowCount();
     }
-    public function Insert($sql, $params = []) {
-    $stmt = $this->executeStatement($sql, $params);
+    public function Insert($sql, $params = [])
+    {
+        $stmt = $this->executeStatement($sql, $params);
         if ($stmt->rowCount() > 0) {
             $lastInsertId = $this->connection->lastInsertId();
-            return $lastInsertId;  
+            return $lastInsertId;
         }
-        return false;  
+        return false;
     }
-    private function executeStatement($sql, $params = []) {
+    private function executeStatement($sql, $params = [])
+    {
         $stmt = $this->connection->prepare($sql);
         $stmt->execute($params);
         return $stmt;
     }
-    public function beginTransaction() {
+    public function beginTransaction()
+    {
         return $this->connection->beginTransaction();
     }
-    public function commit() {
+    public function commit()
+    {
         return $this->connection->commit();
     }
-    public function rollBack() {
+    public function rollBack()
+    {
         if ($this->connection->inTransaction()) {
             return $this->connection->rollBack();
         }
         return false;
     }
-    public function DuplicateAndModify($selectSql, $selectParams, callable $modifyCallback, $insertSql) {
+    public function DuplicateAndModify($selectSql, $selectParams, callable $modifyCallback, $insertSql)
+    {
         $rows = $this->Select($selectSql, $selectParams);
         if (empty($rows)) {
             return 0;
@@ -64,16 +75,11 @@ class DatabaseClass {
             foreach ($modifiedRow as $key => $value) {
                 $insertParams[":$key"] = $value;
             }
-            
+
             $this->Insert($insertSql, $insertParams);
             $insertCount++;
         }
-        
+
         return $insertCount;
     }
-
-
-
 }
-?>
-

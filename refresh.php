@@ -28,24 +28,22 @@ try {
     // Truncate tables one by one
     $tablesToTruncate = [
         'fg_warehouse',
-        'stock_warehouse',
+
         'rm_warehouse',
         'stamping',
-        'delivery_form_new',
-        'assembly_list_new',
+        'delivery_form',
+        'assembly_list',
         'qc_list',
         'rework_assembly',
-         'rework_qc'
+        'rework_qc'
     ];
     foreach ($tablesToTruncate as $table) {
         $db->Update("TRUNCATE TABLE `$table`");
     }
 
     echo json_encode(['success' => true, 'message' => 'Tables updated and truncated successfully.']);
-
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'DB Error: ' . $e->getMessage()]);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
 }
-

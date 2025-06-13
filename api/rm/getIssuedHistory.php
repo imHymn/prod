@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\RM_WarehouseModel;
 
 
 try {
-    $sql = "SELECT * FROM rm_warehouse";
+    $rmModel = new RM_WarehouseModel($db);
 
-    $results = $db->Select($sql);
+
+    $results = $rmModel->getIssuedHistory();
 
     echo json_encode([
         'status' => 'success',

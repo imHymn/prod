@@ -2,8 +2,10 @@
 require_once __DIR__ . '/../header.php';
 
 
-$userModel = new UserModel($db);
+use Model\AccountModel;
+use Validation\AccountValidator;
 
+$account = new AccountModel($db);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Sanitize and collect POST data
@@ -11,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
 
     // Validate login inputs
-    $validationErrors = UserValidator::validateLogin(['user_id' => $user_id, 'password' => $password]);
+    $validationErrors = AccountValidator::validateLogin(['user_id' => $user_id, 'password' => $password]);
 
     if (!empty($validationErrors)) {
         $_SESSION['error_message'] = implode(' ', $validationErrors);
@@ -19,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     try {
-        $user = $userModel->getUserByUserId($user_id);
+        $user = $account->getUserByUserId($user_id);
 
         if ($user && hash('sha512', $password) === $user['password']) {
             // Set session values

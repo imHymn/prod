@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\RM_WarehouseModel;
 
 
 try {
-    $sql = "SELECT * FROM rm_warehouse
-            WHERE created_at >= CURDATE()";  // Only today from midnight
+    $rmModel = new RM_WarehouseModel($db);
 
-    $results = $db->Select($sql);
+    $results = $rmModel->getIssued();
 
     echo json_encode([
         'status' => 'success',
