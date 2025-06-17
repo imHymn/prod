@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../header.php';
 
 use Model\AccountModel;
-use Validation\AccountValidator;
 
 $model = new AccountModel($db);
 
@@ -13,6 +12,7 @@ if (!$id) {
     echo json_encode(['success' => false, 'message' => 'User ID is required for deletion.']);
     exit;
 }
+
 try {
     $user = $model->getUserById($id);
     if (!$user) {

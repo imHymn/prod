@@ -1,30 +1,29 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\StampingModel;
+use Validation\StampingValidator;
 
 try {
     $section = $_GET['section'] ?? null;
 
-    if (!$section) {
-        echo json_encode(['error' => 'Missing section']);
-        exit;
+    $errors = StampingValidator::validateSection($section);
+    if (!empty($errors)) {
+        echo json_encode([
+            'success' => false,
+            'message' => $errors
+        ]);
     }
 
+    $stampingModel = new StampingModel($db);
     if ($section === "all") {
-        $sql = "SELECT * FROM stamping WHERE created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
-        $data = $db->Select($sql);
+        $data = $stampingModel->getTodoListAllSection();
     } else {
-            $normalizedSection = str_replace('-', ' ', $section);  // Normalize input
-            $sql = "SELECT * FROM stamping 
-                    WHERE REPLACE(section, '-', ' ') = :section 
-                    AND created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
-            $data = $db->Select($sql, [':section' => $normalizedSection]);
 
+        $data = $stampingModel->getTodoListSpecificSection($section);
     }
 
     echo json_encode($data);
-
 } catch (PDOException $e) {
     echo json_encode(['error' => 'DB Error: ' . $e->getMessage()]);
 } catch (Exception $e) {

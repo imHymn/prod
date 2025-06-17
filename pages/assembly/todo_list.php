@@ -213,7 +213,7 @@
       <td style="text-align: center;">${item.model_name}</td>
       <td style="text-align: center;">${item.shift}</td>
       <td style="text-align: center;">${item.lot_no}</td>
-      <td style="text-align: center;"> ${item.assembly_pending != null ? `(${item.assembly_pending})` : `${item.total_quantity}`}</td>
+      <td style="text-align: center;"> ${item.assembly_pending != null ? `${item.assembly_pending}` : `${item.total_quantity}`}</td>
       <td style="text-align: center;">${item.total_quantity}</td>
       <td style="text-align: center;">${personInCharge}</td>
       <td style="text-align: center;">${item.date_needed}</td>
@@ -394,8 +394,7 @@
       // 🧠 Check done_quantity sum for the current reference_no
       const currentRef = currentItem.reference_no;
       const relatedAssemblies = Array.isArray(assemblyData) ?
-        assemblyData.filter(item => item.reference_no === currentRef) :
-        [];
+        assemblyData.filter(item => item.reference_no === currentRef) : [];
 
       const totalDone = relatedAssemblies.reduce((sum, record) => {
         const done = parseInt(record.done_quantity, 10);

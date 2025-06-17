@@ -27,7 +27,7 @@ class QCModel
     }
     public function getReworkData()
     {
-        $sql = "SELECT * FROM rework_qcWHERE status = 'done'";
+        $sql = "SELECT * FROM rework_qc WHERE status = 'done'";
         return $this->db->Select($sql);
     }
     public function getTodoList()
@@ -217,5 +217,132 @@ class QCModel
     )";
 
         return $this->db->DuplicateAndModify($selectSql, $selectParams, $modifyCallback, $insertSql);
+    }
+    public function updateReworkQCTimeIn(int $id, string $fullName, string $timeIn): bool
+    {
+        $sql = "UPDATE rework_qc
+                SET qc_person_incharge = :full_name, 
+                    qc_timein = :time_in 
+                WHERE id = :id";
+
+        $params = [
+            ':full_name' => $fullName,
+            ':time_in' => $timeIn,
+            ':id' => $id
+        ];
+
+        return $this->db->Update($sql, $params);
+    }
+    public function updateReworkQcTimeout(array $params): bool
+    {
+        $sql = "UPDATE rework_qc 
+            SET qc_person_incharge = :full_name, 
+                no_good = :no_good, 
+                good = :good,
+                qc_pending_quantity = :qc_pending_quantity,
+                qc_timeout = :time_out 
+            WHERE id = :id";
+
+        return $this->db->Update($sql, $params);
+    }
+
+    public function getQcSummaryByReference(string $reference_no): ?array
+    {
+        $sql = "SELECT 
+                model,
+                material_no,
+                material_description,
+                shift,
+                lot_no,
+                date_needed,
+                SUM(`no_good`) AS total_noGood,
+                SUM(`good`) AS total_good,
+                SUM(`qc_pending_quantity`) AS total_qc_pending_quantity,
+                MAX(quantity) AS total_quantity
+            FROM rework_qc
+            WHERE reference_no = :reference_no
+            GROUP BY reference_no, model, material_no, material_description, shift, lot_no, date_needed";
+
+        return $this->db->SelectOne($sql, [':reference_no' => $reference_no]);
+    }
+
+    public function markQcReferenceDone(string $reference_no): bool
+    {
+        $sql = "UPDATE rework_qc 
+            SET status = 'done' 
+            WHERE reference_no = :reference_no";
+
+        return $this->db->Update($sql, [':reference_no' => $reference_no]);
+    }
+
+    public function updateDeliveryFormSection(string $reference_no, string $section = 'WAREHOUSE'): bool
+    {
+        $sql = "UPDATE delivery_form 
+            SET section = :section 
+            WHERE reference_no = :reference_no";
+
+        return $this->db->Update($sql, [
+            ':reference_no' => $reference_no,
+            ':section' => $section
+        ]);
+    }
+
+    public function updateFgWarehouseQuantity(string $reference_no, int $quantity): bool
+    {
+        $sql = "UPDATE fg_warehouse 
+            SET quantity = quantity + :total_good 
+            WHERE reference_no = :reference_no";
+
+        return $this->db->Update($sql, [
+            ':reference_no' => $reference_no,
+            ':total_good' => $quantity
+        ]);
+    }
+
+    public function getReworkQcById(int $id): ?array
+    {
+        $sql = "SELECT * FROM rework_qc WHERE id = :id";
+        return $this->db->SelectOne($sql, [':id' => $id]);
+    }
+
+    public function duplicateReworkQc(array $row, string $time_out): int
+    {
+        $insertSql = "INSERT INTO rework_qc (
+        itemID, reference_no, model, material_no, material_description,
+        shift, lot_no, no_good, good, quantity,
+        qc_quantity, qc_pending_quantity, qc_person_incharge,
+        qc_timein, qc_timeout,
+        status, section, date_needed, created_at
+    ) VALUES (
+        :itemID, :reference_no, :model, :material_no, :material_description,
+        :shift, :lot_no, :no_good, :good, :quantity,
+        :qc_quantity, :qc_pending_quantity, :qc_person_incharge,
+        :qc_timein, :qc_timeout,
+        :status, :section, :date_needed, :created_at
+    )";
+
+        $data = [
+            'itemID' => $row['id'],
+            'reference_no' => $row['reference_no'],
+            'model' => $row['model'],
+            'material_no' => $row['material_no'],
+            'material_description' => $row['material_description'],
+            'shift' => $row['shift'],
+            'lot_no' => $row['lot_no'],
+            'no_good' => null,
+            'good' => null,
+            'quantity' => $row['quantity'],
+            'qc_quantity' => $row['qc_pending_quantity'],
+            'qc_pending_quantity' => $row['qc_pending_quantity'],
+            'qc_person_incharge' => null,
+            'qc_timein' => null,
+            'qc_timeout' => null,
+            'status' => 'continue',
+            'section' => 'qc',
+            'date_needed' => $row['date_needed'],
+            'created_at' => $time_out,
+        ];
+
+        return $this->db->Insert($insertSql, $data);
     }
 }

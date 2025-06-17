@@ -48,7 +48,15 @@ try {
 
         // 4. Get last batch number for this material/component
         $nextBatch = $rmModel->getNextStampingBatch($material_no, $component_name);
-        $flattenedStages = RM_WarehouseValidator::flattenStages($stage_name);
+
+        $decodedStageGroup = json_decode($stage_name, true);
+
+        if (!is_array($decodedStageGroup)) {
+            throw new Exception("Invalid JSON format in stage_name.");
+        }
+
+        $flattenedStages = RM_WarehouseValidator::flattenStages($decodedStageGroup);
+
 
         $result3 = $rmModel->insertStampingStages([
             'material_no' => $material_no,

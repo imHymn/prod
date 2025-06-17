@@ -16,19 +16,14 @@ require_once __DIR__ . '/Classes/Database/DatabaseClass.php'; // Adjust the path
 $db = new DatabaseClass();
 
 try {
-    // Update components_inventory actual_inventory to 500
     $sql1 = "UPDATE components_inventory SET actual_inventory = 500, rm_stocks=0";
     $db->Update($sql1);
 
-    // Update material_inventory quantity to 100
     $sql2 = "UPDATE material_inventory SET quantity = 100";
     $db->Update($sql2);
 
-
-    // Truncate tables one by one
     $tablesToTruncate = [
         'fg_warehouse',
-
         'rm_warehouse',
         'stamping',
         'delivery_form',

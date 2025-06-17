@@ -74,29 +74,45 @@ class RM_WarehouseModel
     public function insertStampingStages(array $data, array $flattenedStages, int $existingCount, string $dateToday, int $nextBatch): bool
     {
         $sql = "INSERT INTO `stamping` 
-        (`material_no`, `components_name`, `process_quantity`, `stage`, `stage_name`, `section`, `total_quantity`, `pending_quantity`, `status`, `reference_no`, `created_at`, `batch`)
-        VALUES (:material_no, :components_name, :process_quantity, :stage, :stage_name, :section, :total_quantity, :pending_quantity, :status, :reference_no, :created_at, :batch)";
+        (`material_no`, `components_name`, `process_quantity`, `stage`, `stage_name`, `section`, 
+         `total_quantity`, `pending_quantity`, `status`, `reference_no`, `created_at`, `batch`)
+        VALUES 
+        (:material_no, :components_name, :process_quantity, :stage, :stage_name, :section, 
+         :total_quantity, :pending_quantity, :status, :reference_no, :created_at, :batch)";
 
-        for ($i = 1; $i <= (int)$data['process_quantity']; $i++) {
-            $referenceNo = $dateToday . '-' . str_pad($existingCount + $i, 4, '0', STR_PAD_LEFT);
+        $processQty = (int) $data['process_quantity'];
+        $totalQty   = $data['quantity'];
+        $materialNo = $data['material_no'];
+        $componentName = $data['component_name'];
+        $createdAt = $data['created_at'];
+
+        for ($i = 0; $i < $processQty; $i++) {
+            // Prevent index error if stages are fewer than expected
+            if (!isset($flattenedStages[$i])) {
+                return false;
+            }
+
+            $stageIndex = $i + 1;
+            $referenceNo = $dateToday . '-' . str_pad($existingCount + $stageIndex, 4, '0', STR_PAD_LEFT);
 
             $params = [
-                ':material_no' => $data['material_no'],
-                ':components_name' => $data['component_name'],
-                ':process_quantity' => $data['process_quantity'],
-                ':stage' => $i,
-                ':stage_name' => $flattenedStages[$i - 1]['stage_name'],
-                ':section' => $flattenedStages[$i - 1]['section'],
-                ':pending_quantity' => $data['quantity'],
-                ':total_quantity' => $data['quantity'],
-                ':status' => 'pending',
-                ':reference_no' => $referenceNo,
-                ':created_at' => $data['created_at'],
-                ':batch' => $nextBatch
+                ':material_no'       => $materialNo,
+                ':components_name'   => $componentName,
+                ':process_quantity'  => $processQty,
+                ':stage'             => $stageIndex,
+                ':stage_name'        => $flattenedStages[$i]['stage_name'],
+                ':section'           => $flattenedStages[$i]['section'],
+                ':total_quantity'    => $totalQty,
+                ':pending_quantity'  => $totalQty,
+                ':status'            => 'pending',
+                ':reference_no'      => $referenceNo,
+                ':created_at'        => $createdAt,
+                ':batch'             => $nextBatch
             ];
 
-            $inserted = $this->db->Insert($sql, $params);
-            if (!$inserted) return false;
+            if (!$this->db->Insert($sql, $params)) {
+                return false;
+            }
         }
 
         return true;

@@ -1,14 +1,12 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\StampingModel;
 
 try {
-    // SQL query to fetch customer names
-    $sql = "SELECT * FROM `components_inventory`";
-    // Use the Select method to fetch data
-    $users = $db->Select($sql);
-    // Return the results as a JSON response
+    $stampingModel = new StampingModel($db);
+    $users = $stampingModel->getComponents();
+
     echo json_encode($users);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();

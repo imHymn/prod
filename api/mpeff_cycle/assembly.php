@@ -1,11 +1,15 @@
 <?php
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../header.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
-$dotenv->load();
+use Model\CycleTimeModel;
 
-// require_once __DIR__ . '/../header.php';
+$model = new CycleTimeModel($db);
 
-echo json_encode([
-  'L300' => floatval($_ENV['L300_ASSY'] ?? 0),
-]);
+try {
+  $data = $model->getAssemblyCycleTimes(); // or getAssemblyCycleTimes()
+  echo json_encode($data);
+  exit;
+} catch (Exception $e) {
+  http_response_code(500);
+  echo json_encode(["error" => $e->getMessage()]);
+}

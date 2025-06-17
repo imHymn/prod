@@ -1,12 +1,14 @@
 <?php
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../header.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
-$dotenv->load();
-
-echo json_encode([
-  'OEM SMALL' => floatval($_ENV['L300_OEM_SMALL'] ?? 0),
-  'BIG-HYD' => floatval($_ENV['L300_BIG_HYD'] ?? 0),
-  'BIG-MECH' => floatval($_ENV['L300_BIG_MECH'] ?? 0),
-  'MUFFLER COMPS' => floatval($_ENV['L300_MUFFLER_COMPS'] ?? 0),
-]);
+try {
+  $sql = "SELECT material_no, stage_name FROM components_inventory";
+  $data = $db->Select($sql);
+  echo json_encode($data);
+} catch (PDOException $e) {
+  http_response_code(500);
+  echo json_encode(["error" => "DB Error: " . $e->getMessage()]);
+} catch (Exception $e) {
+  http_response_code(500);
+  echo json_encode(["error" => "Error: " . $e->getMessage()]);
+}

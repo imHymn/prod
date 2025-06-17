@@ -4,11 +4,8 @@ require_once __DIR__ . '/../header.php';
 use Model\WarehouseModel;
 
 try {
-    // SQL query to fetch customer names
-    $sql = "SELECT * from fg_warehouse WHERE status='pending'";
-    // Use the Select method to fetch data
-    $customers = $db->Select($sql);
-    // Return the results as a JSON response
+    $warehouseModel = new WarehouseModel($db);
+    $customers = $warehouseModel->getPendingPulling();
     echo json_encode($customers);
 } catch (PDOException $e) {
     echo "DB Error: " . $e->getMessage();

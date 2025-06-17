@@ -14,25 +14,29 @@ class RM_WarehouseValidator
 
         return $errors;
     }
-    public static function flattenStages($stage_name): array
+    public static function flattenStages(array $stageGroup): array
     {
-        if (is_string($stage_name)) {
-            $stage_name = json_decode($stage_name, true);
-        }
-
-        if (!is_array($stage_name)) {
-            throw new \InvalidArgumentException("Invalid stage_name format; expected array or valid JSON string.");
-        }
-
         $flattened = [];
-        foreach ($stage_name as $section => $stages) {
-            foreach ($stages as $stage) {
-                $flattened[] = [
-                    'stage_name' => $stage,
-                    'section' => $section
-                ];
+
+        foreach ($stageGroup as $section => $stages) {
+            // If the section contains a 'stages' subkey (nested structure)
+            if (is_array($stages) && isset($stages['stages']) && is_array($stages['stages'])) {
+                foreach ($stages['stages'] as $stageName => $value) {
+                    $flattened[] = [
+                        'stage_name' => is_string($stageName) ? $stageName : $value,
+                        'section' => $section
+                    ];
+                }
+            } else {
+                foreach ($stages as $stageName => $value) {
+                    $flattened[] = [
+                        'stage_name' => is_string($stageName) ? $stageName : $value,
+                        'section' => $section
+                    ];
+                }
             }
         }
+
         return $flattened;
     }
 }
