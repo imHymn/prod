@@ -1,5 +1,9 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
+
+
+
 <div class="page-content">
   <nav class="page-breadcrumb">
     <ol class="breadcrumb">
@@ -22,13 +26,16 @@
             <div class="col-md-3">
               <select id="filter-column" class="form-select">
                 <option value="" disabled selected>Filter by column</option>
+                <option value="date">Date</option>
                 <option value="person">Person Incharge</option>
                 <option value="totalFinished">Quantity</option>
-                <option value="date">Date</option>
                 <option value="timeIn">Time In</option>
                 <option value="timeOut">Time Out</option>
-                <option value="timePerUnit">Time per Unit</option>
+                <option value="totalWorkingTime">Total Working Time</option>
+                <option value="targetCycleTime">Target Cycle Time</option>
+                <option value="actualCycleTime">Actual Cycle Time</option>
               </select>
+
             </div>
             <div class="col-md-4">
               <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
@@ -81,69 +88,58 @@
 
     function renderPageCallback(pageData, cycleDataList) {
       tbody.innerHTML = '';
+      console.log(pageData, cycleDataList);
 
       const cycleMap = {};
-      cycleDataList.forEach(cd => {
-        const mat = cd.material_no;
-        const time = parseFloat(cd.assembly_cycletime || 0);
-        if (mat && !isNaN(time)) {
-          cycleMap[mat] = time;
+      Object.entries(cycleDataList).forEach(([materialNo, timeStr]) => {
+        const time = parseFloat(timeStr);
+        if (!isNaN(time)) {
+          cycleMap[materialNo] = time;
         }
       });
 
       pageData.forEach(entry => {
         const firstIn = new Date(Math.min(...entry.timeIns.map(t => t.getTime())));
         const lastOut = new Date(Math.max(...entry.timeOuts.map(t => t.getTime())));
-
         const spanSeconds = (lastOut - firstIn) / 1000;
         const workSeconds = entry.totalWorkMinutes * 60;
         const standbySeconds = spanSeconds - workSeconds;
-        const totalQty = entry.totalFinished;
-
-        let totalEff = 0;
-        let totalCycleTarget = 0;
-
-        const effList = [];
-        const cycleList = [];
 
         Object.entries(entry.materialCount).forEach(([material, qty]) => {
           const cycle = cycleMap[material] || 0;
-          const eff = (workSeconds > 0 && qty > 0) ?
-            (workSeconds / qty).toFixed(2) + ' sec' :
-            '-';
+          const actual = (workSeconds > 0 && qty > 0) ? (workSeconds / qty).toFixed(2) : '-';
 
-          cycleList.push(cycle.toFixed(2));
-          effList.push(eff);
-        });
-
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
+          const row = document.createElement('tr');
+          row.innerHTML = `
         <td style="text-align: center;">${entry.date}</td>
         <td style="text-align: center;">${entry.person}</td>
-        <td style="text-align: center;">${totalQty}</td>
+        <td style="text-align: center;">${qty}</td>
         <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
         <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>
         <td style="text-align: center;">
           ${workSeconds.toFixed(0)} sec
           ${standbySeconds > 0 ? ` (${standbySeconds.toFixed(0)} sec)` : ''}
         </td>
-        <td style="text-align: center;">${cycleList.join(' / ')} sec</td>
-        <td style="text-align: center;">${effList.join(' / ')}</td>
+        <td style="text-align: center;">${cycle.toFixed(2)} sec</td>
+        <td style="text-align: center;">${actual !== '-' ? `${actual} sec` : '-'}</td>
       `;
-        tbody.appendChild(row);
+          tbody.appendChild(row);
+        });
       });
 
       document.getElementById('last-updated').textContent =
         `Last updated: ${new Date().toLocaleString()}`;
     }
 
+
     Promise.all([
         fetch('api/assembly/getAssemblyData.php').then(res => res.json()),
         fetch('api/assembly/getManpowerRework.php').then(res => res.json()),
-        fetch('api/mpeff_cycle/assembly.php').then(res => res.json())
+        fetch('api/mpeff_cycle/assembly_processtime.php').then(res => res.json())
       ])
       .then(([assemblyData, reworkData, cycleData]) => {
+
+        console.log(cycleData)
         const mergedData = {};
 
         function addEntry(person, date, reference, timeIn, timeOut, finishedQty, material_no = '') {
@@ -213,56 +209,58 @@
         });
 
         paginator.render();
+        setupSearchFilter({
+          filterColumnSelector: '#filter-column',
+          filterInputSelector: '#filter-input',
+          data: mergedDataArray,
+          onFilter: (filtered) => {
+            filteredData = filtered;
+            paginator.setData(filtered);
+          },
+          customValueResolver: (item, column) => {
+            switch (column) {
+              case 'date':
+                return item.date;
+              case 'person':
+                return item.person;
+              case 'totalFinished':
+                return item.totalFinished;
+              case 'timeIn':
+                return item.timeIns.length ?
+                  new Date(Math.min(...item.timeIns.map(t => new Date(t).getTime()))).toISOString() :
+                  '';
+              case 'timeOut':
+                return item.timeOuts.length ?
+                  new Date(Math.max(...item.timeOuts.map(t => new Date(t).getTime()))).toISOString() :
+                  '';
+              case 'totalWorkingTime':
+                return (item.totalWorkMinutes * 60).toFixed(0); // in seconds
+              case 'actualCycleTime': {
+                const totalQty = item.totalFinished;
+                const workSeconds = item.totalWorkMinutes * 60;
+                return totalQty > 0 ? (workSeconds / totalQty).toFixed(2) : '';
+              }
+              case 'targetCycleTime': {
+                // Calculate weighted average cycle time
+                const totalQty = Object.values(item.materialCount).reduce((a, b) => a + b, 0);
+                let totalWeighted = 0;
+                for (const [mat, qty] of Object.entries(item.materialCount)) {
+                  const cycle = parseFloat(cycleData[mat]?.assembly || 0);
+                  totalWeighted += cycle * qty;
+                }
+                return totalQty > 0 ? (totalWeighted / totalQty).toFixed(2) : '';
+              }
+              default:
+                return item[column] || '';
+            }
+          }
+        });
+
       })
       .catch(console.error);
 
-    function filterAndRender() {
-      const col = filterColumn.value;
-      const val = filterInput.value.toLowerCase();
 
-      if (!col || !val) {
-        filteredData = mergedDataArray.slice();
-      } else {
-        filteredData = mergedDataArray.filter(entry => {
-          let field = '';
-          switch (col) {
-            case 'person':
-              field = entry.person;
-              break;
-            case 'totalFinished':
-              field = `${entry.totalFinished}`;
-              break;
-            case 'date':
-              field = entry.date;
-              break;
-            case 'timeIn':
-              field = entry.timeIns.map(d => d.toTimeString().slice(0, 5)).join(', ');
-              break;
-            case 'timeOut':
-              field = entry.timeOuts.map(d => d.toTimeString().slice(0, 5)).join(', ');
-              break;
-            case 'timePerUnit': {
-              const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
-              field = timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-';
-              break;
-            }
-          }
-          return field.toString().toLowerCase().includes(val);
-        });
-      }
 
-      paginator.setData(filteredData);
-    }
-
-    filterColumn.addEventListener('change', () => {
-      filterInput.disabled = !filterColumn.value;
-      filterInput.value = '';
-      filterAndRender();
-    });
-
-    filterInput.addEventListener('input', () => {
-      filterAndRender();
-    });
 
     enableTableSorting(".table");
   </script>

@@ -1,12 +1,12 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
 <?php include './components/reusable/qrcodeScanner.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
 
 
 
 <script src="assets/js/bootstrap.bundle.min.js"></script>
 
-<script src="assets/js/html5.qrcode.js" type="text/javascript"></script>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -30,15 +30,14 @@
             <div class="col-md-3">
               <select id="filter-column" class="form-select">
                 <option value="" disabled selected>Select Column to Filter</option>
-                <option value="model">Model</option>
                 <option value="material_no">Material No</option>
-                <option value="lot_no">Lot No</option>
+                <option value="model">Model</option>
                 <option value="shift">Shift</option>
-                <option value="quantity">Quantity</option>
+                <option value="lot_no">Lot No</option>
                 <option value="qc_person_incharge">Person Incharge</option>
-                <option value="qc_timein">Time In</option>
-                <option value="qc_timeout">Time Out</option>
+                <option value="date_needed">Date Needed</option>
               </select>
+
             </div>
             <div class="col-md-4">
               <input
@@ -52,14 +51,16 @@
           <table class="table" style="table-layout: fixed; width: 100%;">
             <thead>
               <tr>
-                <th style="width: 15%; text-align: center;">Material No <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Material Description <span class="sort-icon"></span></th>
                 <th style="width: 5%; text-align: center;">Model <span class="sort-icon"></span></th>
                 <th style="width: 8%; text-align: center;">Shift <span class="sort-icon"></span></th>
                 <th style="width: 8%; text-align: center;">Lot <span class="sort-icon"></span></th>
                 <th style="width: 8%; text-align: center;">Pending Qty <span class="sort-icon"></span></th>
                 <th style="width: 8%; text-align: center;">Total Qty <span class="sort-icon"></span></th>
                 <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
-                <th style="width: 15%; text-align: center;">Time In | Time out <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Date needed <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Time In | Time out <span class="sort-icon"></span></th>
               </tr>
             </thead>
 
@@ -68,21 +69,6 @@
           <div id="pagination" class="mt-3 d-flex justify-content-center"></div>
 
 
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- QR Code Modal -->
-  <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="qrModalLabel">QR Code Scanner</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div id="qr-reader" style="width:100%"></div>
-          <div id="qr-result" class="mt-3 fw-bold text-primary">Waiting for QR scan...</div>
         </div>
       </div>
     </div>
@@ -96,11 +82,6 @@
         </div>
         <div class="modal-body">
           <form id="inspectionForm">
-            <div class="mb-3">
-              <label for="displayTotalQty" class="form-label">Total Quantity</label>
-              <input type="number" class="form-control" id="displayTotalQty" required>
-            </div>
-
             <div class="mb-3">
               <label for="good" class="form-label">Good</label>
               <input type="number" class="form-control" id="good" required>
@@ -180,12 +161,14 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
           <td style="text-align: center;">${item.material_no || '-'}</td>
+           <td style="text-align: center;white-space: normal; word-wrap: break-word;">${item.material_description || '-'}</td>
           <td style="text-align: center;">${item.model || '-'}</td>
           <td style="text-align: center;">${item.shift || '-'}</td>
           <td style="text-align: center;">${item.lot_no || '-'}</td>
           <td style="text-align: center;">${item.qc_quantity}</td>
           <td style="text-align: center;">${item.quantity}</td>
           <td style="text-align: center;">${item.qc_person_incharge || '-'}</td>
+          <td style="text-align: center;">${item.date_needed || '-'}</td>
           <td style="text-align: center;">${actionHtml}</td>
         `;
 
@@ -202,12 +185,40 @@
           .then(response => response.json())
           .then(data => {
             fullData = data;
-            paginator.setData(fullData);
+            paginator.setData(fullData); // ✅ Initial render
+
+            setupSearchFilter({
+              filterColumnSelector: '#filter-column',
+              filterInputSelector: '#filter-input',
+              data: fullData,
+              onFilter: filtered => paginator.setData(filtered),
+              customValueResolver: (item, column) => {
+                switch (column) {
+                  case 'material_no':
+                    return item.material_no ?? '';
+                  case 'model':
+                    return item.model ?? '';
+                  case 'shift':
+                    return item.shift ?? '';
+                  case 'lot_no':
+                    return item.lot_no?.toString() ?? '';
+                  case 'qc_person_incharge':
+                    return item.qc_person_incharge ?? '';
+                  case 'date_needed':
+                    return item.date_needed ?? '';
+                  default:
+                    return item[column] ?? '';
+                }
+              }
+
+            });
           })
           .catch(error => {
             console.error('Fetch error:', error);
           });
       }
+
+
 
       // Filter logic
       const filterColumn = document.getElementById('filter-column');
@@ -256,27 +267,54 @@
         console.log('Mode:', mode);
         console.log('Record ID:', id);
         console.log(selectedRowData);
-        if (mode === 'timeIn') {
-          openQRModal(selectedRowData, mode);
-        } else if (mode === 'timeOut') {
-          document.getElementById('recordIdHidden').value = selectedRowData.id;
-          document.getElementById('totalQtyHidden').value = selectedRowData.quantity;
 
-          // Set values for editable inputs
-          // Clear any previous error messages
-          document.getElementById('errorMsg').textContent = '';
+        const {
+          material_no,
+          material_description
+        } = selectedRowData;
 
-          // Show the modal
-          inspectionModal = new bootstrap.Modal(document.getElementById('inspectionModal'));
-          inspectionModal.show();
-        }
+        Swal.fire({
+          icon: 'question',
+          title: `Confirm ${mode === 'timeIn' ? 'Time-In' : 'Time-Out'}`,
+          html: `<b>Material No:</b> ${material_no}<br><b>Component:</b> ${material_description}`,
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Proceed',
+          cancelButtonText: 'Cancel'
+        }).then(result => {
+          if (result.isConfirmed) {
+            if (mode === 'timeIn') {
+              openQRModal(selectedRowData, mode);
+            } else if (mode === 'timeOut') {
+              document.getElementById('recordIdHidden').value = selectedRowData.id;
+              document.getElementById('totalQtyHidden').value = selectedRowData.quantity;
+
+              // Reset form and clear messages
+              document.getElementById('inspectionForm').reset();
+              if (document.getElementById('errorMsg')) {
+                document.getElementById('errorMsg').textContent = '';
+              }
+              if (document.getElementById('followUpErrorMsg')) {
+                document.getElementById('followUpErrorMsg').textContent = '';
+              }
+              if (document.getElementById('followUpSection')) {
+                document.getElementById('followUpSection').style.display = 'none';
+              }
+
+
+              // Show the modal
+              inspectionModal = new bootstrap.Modal(document.getElementById('inspectionModal'));
+              inspectionModal.show();
+            }
+          }
+        });
       }
     });
+
 
     function submitInspection() {
       const good = parseInt(document.getElementById('good').value, 10) || 0;
       const no_good = parseInt(document.getElementById('no_good').value, 10) || 0;
-      const quantity = parseInt(document.getElementById('displayTotalQty').value, 10) || 0;
+      const quantity = good + no_good; // ✅ Calculate total quantity directly
 
       console.log(quantity, good, no_good);
 
@@ -309,6 +347,8 @@
         return;
       }
 
+      // This check is no longer necessary since quantity = good + no_good by definition,
+      // but you can leave it for data safety if needed
       if ((good + no_good) !== quantity) {
         Swal.fire({
           icon: 'error',
@@ -344,12 +384,26 @@
 
     function openQRModal(selectedRowData, mode) {
       console.log(selectedRowData, mode);
-      
+
       scanQRCodeForUser({
         onSuccess: ({
           user_id,
           full_name
         }) => {
+          // ✅ Apply mismatch check only on timeOut
+          if (mode === 'timeOut') {
+            const expectedPersonInCharge = selectedRowData.qc_person_incharge || '';
+            if (full_name !== expectedPersonInCharge) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Person In-Charge Mismatch',
+                text: `Scanned name "${full_name}" does not match assigned person "${expectedPersonInCharge}".`,
+                confirmButtonText: 'OK'
+              });
+              return;
+            }
+          }
+
           const data = {
             id: selectedRowData.id,
             full_name: full_name,

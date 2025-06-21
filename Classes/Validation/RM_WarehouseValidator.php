@@ -18,22 +18,17 @@ class RM_WarehouseValidator
     {
         $flattened = [];
 
-        foreach ($stageGroup as $section => $stages) {
-            // If the section contains a 'stages' subkey (nested structure)
-            if (is_array($stages) && isset($stages['stages']) && is_array($stages['stages'])) {
-                foreach ($stages['stages'] as $stageName => $value) {
-                    $flattened[] = [
-                        'stage_name' => is_string($stageName) ? $stageName : $value,
-                        'section' => $section
-                    ];
-                }
-            } else {
-                foreach ($stages as $stageName => $value) {
-                    $flattened[] = [
-                        'stage_name' => is_string($stageName) ? $stageName : $value,
-                        'section' => $section
-                    ];
-                }
+        foreach ($stageGroup as $entry) {
+            // Each entry must have both 'section' and 'stages'
+            if (!isset($entry['section'], $entry['stages']) || !is_array($entry['stages'])) {
+                continue;
+            }
+
+            foreach ($entry['stages'] as $stageName => $value) {
+                $flattened[] = [
+                    'stage_name' => is_string($stageName) ? $stageName : $value,
+                    'section'    => $entry['section']
+                ];
             }
         }
 

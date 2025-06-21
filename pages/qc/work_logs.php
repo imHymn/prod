@@ -1,5 +1,6 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
 <div class="page-content">
   <nav class="page-breadcrumb">
     <ol class="breadcrumb">
@@ -21,16 +22,15 @@
             <div class="col-md-3">
               <select id="filter-column" class="form-select">
                 <option value="" disabled selected>Select Column</option>
-                <option value="material_no">Material No</option>
+                <option value="person_incharge">Person Incharge</option>
                 <option value="material_description">Material Description</option>
-                <option value="lot_model">Lot No + Model</option>
-                <option value="quantity">Quantity</option>
+                <option value="lot">Lot</option>
                 <option value="good">Good</option>
                 <option value="no_good">No Good</option>
-                <option value="time_in">Time In</option>
-                <option value="time_out">Time Out</option>
-                <option value="person_incharge">Person Incharge</option>
+                <option value="quantity">Quantity</option>
+                <option value="date_needed">Date Needed</option>
               </select>
+
             </div>
             <div class="col-md-4">
               <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
@@ -61,11 +61,11 @@
     </div>
   </div>
 </div>
-
 <script>
   const tbody = document.getElementById('data-body');
   const filterColumn = document.getElementById('filter-column');
   const filterInput = document.getElementById('filter-input');
+
   let paginator = null;
   let allData = [];
 
@@ -74,17 +74,16 @@
     data.forEach(item => {
       const row = document.createElement('tr');
       row.innerHTML = `
-      <td style="text-align: center;">${item.person_incharge || ''}</td>
-      <td style="text-align: center; white-space: normal; word-wrap: break-word; ">${item.material_description || ''}</td>
-      <td style="text-align: center;">${item.lot_model || ''}</td>
-
-      <td style="text-align: center;">${item.good}</td>
-      <td style="text-align: center;">${item.no_good}</td>
-            <td style="text-align: center;">${item.quantity}</td>
-      <td style="text-align: center;">${item.time_in || ''}</td>
-      <td style="text-align: center;">${item.time_out || ''}</td>
-      <td style="text-align: center;">${item.date_needed || ''}</td>
-    `;
+        <td style="text-align: center;white-space: normal; word-wrap: break-word;">${item.person_incharge || ''}</td>
+        <td style="text-align: center; white-space: normal; word-wrap: break-word;">${item.material_description || ''}</td>
+        <td style="text-align: center;">${item.lot_model || ''}</td>
+        <td style="text-align: center;">${item.good}</td>
+        <td style="text-align: center;">${item.no_good}</td>
+        <td style="text-align: center;">${item.quantity}</td>
+        <td style="text-align: center;">${item.time_in || ''}</td>
+        <td style="text-align: center;">${item.time_out || ''}</td>
+        <td style="text-align: center;">${item.date_needed || ''}</td>
+      `;
       tbody.appendChild(row);
     });
 
@@ -142,31 +141,40 @@
         });
 
         paginator.render();
+
+        // ✅ Integrate reusable filter logic
+        setupSearchFilter({
+          filterColumnSelector: '#filter-column',
+          filterInputSelector: '#filter-input',
+          data: allData,
+          onFilter: filtered => {
+            paginator.setData(filtered);
+          },
+          customValueResolver: (item, column) => {
+            switch (column) {
+              case 'person_incharge':
+                return item.person_incharge ?? '';
+              case 'material_description':
+                return item.material_description ?? '';
+              case 'lot':
+                return item.lot_model ?? '';
+              case 'good':
+                return item.good?.toString() ?? '';
+              case 'no_good':
+                return item.no_good?.toString() ?? '';
+              case 'quantity':
+                return item.quantity?.toString() ?? '';
+              case 'date_needed':
+                return item.date_needed ?? '';
+              default:
+                return item[column] ?? '';
+            }
+          }
+        });
+
       })
       .catch(console.error);
-    console.log(allData)
   }
-
-  // Enable/disable filter input based on selected column
-  filterColumn.addEventListener('change', () => {
-    filterInput.disabled = !filterColumn.value;
-    filterInput.value = '';
-    if (paginator) paginator.setData(allData); // Reset on change
-  });
-
-  // Filter on input
-  filterInput.addEventListener('input', () => {
-    const col = filterColumn.value;
-    const val = filterInput.value.toLowerCase();
-    if (!col || !paginator) return;
-
-    const filtered = allData.filter(item => {
-      const cell = (item[col] || '').toString().toLowerCase();
-      return cell.includes(val);
-    });
-
-    paginator.setData(filtered);
-  });
 
   // Initial load
   loadData();

@@ -1,6 +1,6 @@
-
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
 <script src="assets/js/bootstrap.bundle.min.js"></script>
 
 <div class="page-content">
@@ -15,10 +15,10 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-  <h6 class="card-title mb-0">Pulled out History</h6>
-  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
-</div>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="card-title mb-0">Pulled out History</h6>
+            <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+          </div>
 
           <div class="row mb-3">
             <div class="col-md-3">
@@ -39,28 +39,28 @@
             </div>
           </div>
 
-        <table class="table" style="table-layout: fixed; width: 100%;">
-        <thead>
-          <tr>
-            <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
-            <th style="width: 15%; text-align: center;">Material Description <span class="sort-icon"></span></th>
-            <th style="width: 5%; text-align: center;">Model <span class="sort-icon"></span></th>
-            <th style="width: 7%; text-align: center;">Total Quantity <span class="sort-icon"></span></th>
-            <th style="width: 7%; text-align: center;">Shift <span class="sort-icon"></span></th>
-            <th style="width: 5%; text-align: center;">Lot No <span class="sort-icon"></span></th>
-            <th style="width: 10%; text-align: center;">Date Needed <span class="sort-icon"></span></th>
-            <th style="width: 10%; text-align: center;">Pulled At <span class="sort-icon"></span></th>
-          </tr>
-        </thead>
-        <tbody id="data-body" style="word-wrap: break-word; white-space: normal;"></tbody>
-      </table>
+          <table class="table" style="table-layout: fixed; width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Material Description <span class="sort-icon"></span></th>
+                <th style="width: 5%; text-align: center;">Model <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Total Quantity <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Shift <span class="sort-icon"></span></th>
+                <th style="width: 5%; text-align: center;">Lot No <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Date Needed <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Pulled At <span class="sort-icon"></span></th>
+              </tr>
+            </thead>
+            <tbody id="data-body" style="word-wrap: break-word; white-space: normal;"></tbody>
+          </table>
 
 
           <!-- Pagination -->
           <div id="pagination" class="d-flex justify-content-center mt-3"></div>
 
           <!-- Last Updated -->
-     
+
 
         </div>
       </div>
@@ -70,25 +70,25 @@
 
 <script src="assets/js/sweetalert2@11.js"></script>
 <script>
-let fullDataSet = [];
+  let fullDataSet = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-  const tbody = document.getElementById('data-body');
-  const searchInput = document.getElementById('search-input');
-  const columnSelect = document.getElementById('column-select');
+  document.addEventListener('DOMContentLoaded', () => {
+    const tbody = document.getElementById('data-body');
+    const searchInput = document.getElementById('search-input');
+    const columnSelect = document.getElementById('column-select');
 
-  searchInput.disabled = true; // disable input until a column is selected
+    searchInput.disabled = true; // disable input until a column is selected
 
-  const paginator = createPaginator({
-    data: [],
-    rowsPerPage: 10,
-    paginationContainerId: 'pagination',
-    defaultSortFn: (a, b) => new Date(b.pulled_at) - new Date(a.pulled_at),
-    renderPageCallback: (pageData) => {
-      tbody.innerHTML = '';
-      pageData.forEach(item => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
+    const paginator = createPaginator({
+      data: [],
+      rowsPerPage: 10,
+      paginationContainerId: 'pagination',
+      defaultSortFn: (a, b) => new Date(b.pulled_at) - new Date(a.pulled_at),
+      renderPageCallback: (pageData) => {
+        tbody.innerHTML = '';
+        pageData.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
           <td style="text-align: center;">${item.material_no || ''}</td>
           <td class="text-center text-truncate" style="max-width: 200px;">${item.material_description || ''}</td>
           <td style="text-align: center;">${item.model || ''}</td>
@@ -98,54 +98,36 @@ document.addEventListener('DOMContentLoaded', () => {
           <td style="text-align: center;">${item.date_needed || ''}</td>
           <td style="text-align: center;">${item.pulled_at}</td>
         `;
-        tbody.appendChild(row);
-      });
+          tbody.appendChild(row);
+        });
 
-      const now = new Date();
-      document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
-    }
-  });
-
-  function applyFilter() {
-    const column = columnSelect.value;
-    const query = searchInput.value.toLowerCase().trim();
-
-    if (!column || !query) {
-      paginator.setData(fullDataSet);
-      return;
-    }
-
-    const filtered = fullDataSet.filter(item => {
-      const value = (item[column] ?? '').toString().toLowerCase();
-      return value.includes(query);
+        const now = new Date();
+        document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
+      }
     });
 
-    paginator.setData(filtered);
-  }
 
-  searchInput.addEventListener('input', applyFilter);
 
-  columnSelect.addEventListener('change', () => {
-    const hasSelection = !!columnSelect.value;
-    searchInput.disabled = !hasSelection;
-    searchInput.value = '';
-    applyFilter();
+    function loadData() {
+      fetch('api/warehouse/getPullingHistory.php')
+        .then(res => res.json())
+        .then(data => {
+          fullDataSet = data;
+          paginator.setData(fullDataSet);
+          setupSearchFilter({
+            filterColumnSelector: '#column-select',
+            filterInputSelector: '#search-input',
+            data: fullDataSet,
+            onFilter: (filtered) => paginator.setData(filtered)
+          });
+
+        })
+        .catch(err => {
+          console.error('Error loading data:', err);
+        });
+    }
+
+    enableTableSorting(".table");
+    loadData();
   });
-
-  function loadData() {
-    fetch('api/warehouse/getPullingHistory.php')
-      .then(res => res.json())
-      .then(data => {
-        fullDataSet = data;
-        paginator.setData(fullDataSet);
-      })
-      .catch(err => {
-        console.error('Error loading data:', err);
-      });
-  }
-
-  enableTableSorting(".table");
-  loadData();
-});
-
 </script>

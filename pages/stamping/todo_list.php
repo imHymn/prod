@@ -164,64 +164,92 @@ $production_location = $_SESSION['production_location'];
       return sorted.filter(item => item.status !== 'done');
     }
 
-
     function renderTable(data, page = 1) {
-      // Group and sort before rendering
       const grouped = {};
       data.forEach(item => {
-        if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
-        grouped[item.reference_no].push(item);
+        if (!grouped[item.batch]) grouped[item.batch] = [];
+        grouped[item.batch].push(item);
       });
 
-      const sorted = Object.values(grouped)
-        .flatMap(group => group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0))));
-
+      const dataBody = document.getElementById('data-body');
       dataBody.innerHTML = ''; // Clear table
 
-      sorted.forEach(item => {
-        if (item.status === 'done') return;
+      Object.entries(grouped).forEach(([batch, group]) => {
+        // Sort group by stage
+        group.sort((a, b) => parseInt(a.stage || 0) - parseInt(b.stage || 0));
 
-        const row = document.createElement('tr');
-        const status = item.status?.toLowerCase();
-        const itemDataAttr = encodeURIComponent(JSON.stringify(item));
-
-        const hasTimeIn = item.time_in !== null && item.time_in !== '';
-        const hasTimeOut = item.time_out !== null && item.time_out !== '';
-
-        let actionButton = '';
-        if (hasTimeIn && hasTimeOut) {
-          actionButton = `<span class="btn btn-sm btn-primary">Done</span>`;
-        } else {
-          actionButton = hasTimeIn ?
-            `<button type="button" class="btn btn-sm btn-success time-action-btn" data-item="${itemDataAttr}" data-mode="time-out">Time Out</button>` :
-            `<button type="button" class="btn btn-sm btn-primary time-action-btn" data-item="${itemDataAttr}" data-mode="time-in">Time In</button>`;
-        }
-
-        row.innerHTML = `
-      
-      <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
-       <td style="text-align: center;">${item.section || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${item.stage_name || ''}</td>
-      <td style="text-align: center;">
-  ${item.total_quantity != null && item.total_quantity !== '' ? item.total_quantity : '<i>Null</i>'}
-</td>
-<td style="text-align: center;">
-  ${item.pending_quantity != null && item.pending_quantity !== '' ? item.pending_quantity : '<i>0</i>'}
-</td>
-
-      
-      <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}</td>
-      <td style="text-align: center;">${actionButton}</td>
-      <td style="text-align: center;">
-        <button onclick="viewStageStatus('${item.material_no}', '${item.components_name}', '${item.batch}')" class="btn btn-sm" title="View Stages">🔍</button>
+        // Group header row
+        const groupRow = document.createElement('tr');
+        groupRow.classList.add('group-header');
+        groupRow.style.backgroundColor = '#e6e6e6';
+        groupRow.style.cursor = 'pointer';
+        groupRow.setAttribute('data-batch', batch);
+        groupRow.innerHTML = `
+      <td colspan="9" style="font-weight: bold; text-align: left;">
+        🔽 Batch: ${batch}
       </td>
     `;
-        dataBody.appendChild(row);
+        dataBody.appendChild(groupRow);
+
+        // Child rows
+        group.forEach(item => {
+          if (item.status === 'done') return;
+
+          const itemDataAttr = encodeURIComponent(JSON.stringify(item));
+          const hasTimeIn = item.time_in !== null && item.time_in !== '';
+          const hasTimeOut = item.time_out !== null && item.time_out !== '';
+
+          let actionButton = '';
+          if (hasTimeIn && hasTimeOut) {
+            actionButton = `<span class="btn btn-sm btn-primary">Done</span>`;
+          } else {
+            actionButton = hasTimeIn ?
+              `<button type="button" class="btn btn-sm btn-success time-action-btn" data-item="${itemDataAttr}" data-mode="time-out">Time Out</button>` :
+              `<button type="button" class="btn btn-sm btn-primary time-action-btn" data-item="${itemDataAttr}" data-mode="time-in">Time In</button>`;
+          }
+
+          const row = document.createElement('tr');
+          row.classList.add(`batch-group-${batch}`, 'ref-item-row');
+          row.style.display = 'none'; // initially hidden
+          row.innerHTML = `
+        <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
+        <td style="text-align: center;">${item.section || '<i>Null</i>'}</td>
+        <td style="text-align: center;">${item.stage_name || ''}</td>
+        <td style="text-align: center;">${item.total_quantity != null ? item.total_quantity : '<i>Null</i>'}</td>
+        <td style="text-align: center;">${item.pending_quantity != null ? item.pending_quantity : '<i>0</i>'}</td>
+        <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
+        <td style="text-align: center;">${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}</td>
+        <td style="text-align: center;">${actionButton}</td>
+        <td style="text-align: center;">
+          <button onclick="viewStageStatus('${item.material_no}', '${item.components_name}', '${item.batch}')" class="btn btn-sm" title="View Stages">🔍</button>
+        </td>
+      `;
+          dataBody.appendChild(row);
+        });
       });
 
       document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
     }
+
+    document.getElementById('data-body').addEventListener('click', function(event) {
+      const groupRow = event.target.closest('.group-header');
+      if (!groupRow) return;
+
+      const batch = groupRow.getAttribute('data-batch');
+      const rows = document.querySelectorAll(`.batch-group-${batch}`);
+
+      if (rows.length === 0) return;
+
+      const isVisible = rows[0].style.display !== 'none';
+
+      rows.forEach(row => {
+        row.style.display = isVisible ? 'none' : '';
+      });
+
+      // Toggle arrow icon and label
+      groupRow.querySelector('td').innerHTML = `${isVisible ? '▶️' : '🔽'} Batch: ${batch}`;
+    });
+
 
 
 
@@ -256,61 +284,60 @@ $production_location = $_SESSION['production_location'];
       paginator.setData(filtered);
     }
 
+    function showConfirmation(mode, materialNo, componentName) {
+      return Swal.fire({
+        icon: 'question',
+        title: `Confirm ${mode === 'time-in' ? 'Time-In' : 'Time-Out'}`,
+        html: `<b>Material No:</b> ${materialNo}<br><b>Component:</b> ${componentName}`,
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Proceed',
+        cancelButtonText: 'Cancel'
+      });
+    }
 
     document.getElementById('data-body').addEventListener('click', (event) => {
       const btn = event.target.closest('.time-action-btn');
       if (!btn) return;
 
       const encodedItem = btn.getAttribute('data-item');
-      mode = btn.getAttribute('data-mode');
+      const mode = btn.getAttribute('data-mode');
 
       selectedRowData = JSON.parse(decodeURIComponent(encodedItem));
       console.log('Selected Row:', selectedRowData);
 
+      const {
+        material_no,
+        components_name // ← updated this line
+      } = selectedRowData;
+
       if (mode === 'time-in') {
-        console.log(fullData);
-
         const stage = parseInt(selectedRowData.stage || 0);
-        const material_no = selectedRowData.material_no;
-
-        // Get all items for this material_no
-        const relatedItems = fullData.filter(item => item.material_no === material_no);
-
-        // Find max total_quantity across related items (assuming total_quantity is same or max applies)
+        const referenceNo = selectedRowData.reference_no;
+        const relatedItems = fullData.filter(item => item.reference_no === referenceNo);
         const maxTotalQuantity = Math.max(...relatedItems.map(i => i.total_quantity || 0));
 
         if (stage === 1) {
-          // Sum the quantity of all stage 1 items
           const stage1Items = relatedItems.filter(item => parseInt(item.stage) === 1);
           const sumStage1Quantity = stage1Items.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-          // If stage 1 quantity sum equals max total_quantity, skip "ongoing" check because stage 1 is completed
           if (sumStage1Quantity >= maxTotalQuantity) {
-            console.log('Stage 1 completed, no need to check ongoing status.');
-            openQRModal(mode);
+            showConfirmation(mode, material_no, components_name).then(result => {
+              if (result.isConfirmed) openQRModal(mode);
+            });
             return;
           }
         }
 
         if (stage > 1) {
           const prevStage = stage - 1;
-
           const previousStageItem = relatedItems.find(item =>
-            parseInt(item.stage) === prevStage &&
-            item.status?.toLowerCase() === 'ongoing'
+            parseInt(item.stage) === prevStage && item.status?.toLowerCase() === 'ongoing'
           );
-
-          // Get all previous stage items
           const prevStageItems = relatedItems.filter(item => parseInt(item.stage) === prevStage);
-
-          // Check if all are marked as 'done'
           const allPrevStageDone = prevStageItems.every(item => item.status?.toLowerCase() === 'done');
-
-          // Check if total quantity reached
           const sumPrevStageQuantity = prevStageItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
           const prevStageCompleted = sumPrevStageQuantity >= maxTotalQuantity;
 
-          // Updated check: allow if any of these is true
           if (!previousStageItem && !prevStageCompleted && !allPrevStageDone) {
             Swal.fire({
               icon: 'warning',
@@ -320,8 +347,10 @@ $production_location = $_SESSION['production_location'];
             return;
           }
         }
-        console.log('Ready for QR Time-In with:', selectedRowData);
-        openQRModal(mode);
+
+        showConfirmation(mode, material_no, components_name).then(result => {
+          if (result.isConfirmed) openQRModal(mode);
+        });
 
       } else if (mode === 'time-out') {
         const quantityModal = new bootstrap.Modal(document.getElementById('quantityModal'));
@@ -344,52 +373,50 @@ $production_location = $_SESSION['production_location'];
           const totalQuantity = parseInt(selectedRowData.total_quantity, 10) || 0;
           const pendingQuantity = parseInt(selectedRowData.pending_quantity, 10) || 0;
 
-          // Sum current quantity from fullData with the same reference_no
           const sumQuantity = fullData
             .filter(row => row.reference_no === referenceNo)
             .reduce((sum, row) => sum + (parseInt(row.quantity, 10) || 0), 0);
 
-          // Check if input exceeds pending quantity
           if (inputQuantity > pendingQuantity) {
             Swal.fire({
               icon: 'error',
               title: 'Pending Quantity Limit Exceeded',
               html: `
-          <p>You entered <strong>${inputQuantity}</strong> units.</p>
-          <p>But only <strong>${pendingQuantity}</strong> units are pending for processing.</p>
-          <p>Please adjust your quantity accordingly.</p>
-        `
+            <p>You entered <strong>${inputQuantity}</strong> units.</p>
+            <p>But only <strong>${pendingQuantity}</strong> units are pending for processing.</p>
+            <p>Please adjust your quantity accordingly.</p>
+          `
             });
             return;
           }
 
-          // Check if input causes sum to exceed total quantity
           if (sumQuantity + inputQuantity > totalQuantity) {
             const remaining = totalQuantity - sumQuantity;
             Swal.fire({
               icon: 'error',
               title: 'Total Quantity Limit Exceeded',
               html: `
-          <p>Reference #: <strong>${referenceNo}</strong></p>
-          <p>Already processed: <strong>${sumQuantity}</strong> / ${totalQuantity}</p>
-          <p>Your input of <strong>${inputQuantity}</strong> would exceed the total allowed.</p>
-          <p>You can only process up to <strong>${remaining}</strong> more units.</p>
-        `
+            <p>Reference #: <strong>${referenceNo}</strong></p>
+            <p>Already processed: <strong>${sumQuantity}</strong> / ${totalQuantity}</p>
+            <p>Your input of <strong>${inputQuantity}</strong> would exceed the total allowed.</p>
+            <p>You can only process up to <strong>${remaining}</strong> more units.</p>
+          `
             });
             return;
           }
 
           selectedRowData.inputQuantity = inputQuantity;
-
           quantityModal.hide();
-          console.log('Ready for QR Time-Out with:', selectedRowData);
-          openQRModal(mode);
+
+          showConfirmation(mode, material_no, components_name).then(result => {
+            if (result.isConfirmed) openQRModal(mode);
+          });
         };
 
         quantityModal.show();
       }
-
     });
+
 
 
 
@@ -490,6 +517,20 @@ $production_location = $_SESSION['production_location'];
           user_id,
           full_name
         }) => {
+          // ✅ Check mismatch only for time-out
+          if (mode === 'time-out') {
+            const expectedPerson = selectedRowData.person_incharge || '';
+            if (full_name !== expectedPerson) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Person In-Charge Mismatch',
+                text: `Scanned name "${full_name}" does not match assigned person "${expectedPerson}".`,
+                confirmButtonText: 'OK'
+              });
+              return; // ⛔ Stop further execution
+            }
+          }
+
           const {
             material_no,
             material_description,
@@ -543,6 +584,7 @@ $production_location = $_SESSION['production_location'];
         }
       });
     }
+
 
 
     function stopQRScanner() {

@@ -12888,7 +12888,7 @@ address p {
       width: 100%;
       left: 0; }
       .navbar .navbar-content {
-        width: calc(100% - 70px - 1px); } }
+        width: calc(50% - 70px - 1px); } }
   .navbar .sidebar-toggler {
     height: 100%;
     border-right: 1px solid #e8ebf1;

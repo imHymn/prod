@@ -1,9 +1,13 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+
+use Model\CycleTimeModel;
+
 try {
-  $sql = "SELECT material_no, stage_name FROM components_inventory";
-  $data = $db->Select($sql);
+  $model = new CycleTimeModel($db);
+  $data = $model->getComponentStages();
+
   echo json_encode($data);
 } catch (PDOException $e) {
   http_response_code(500);

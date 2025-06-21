@@ -1,5 +1,6 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -22,16 +23,14 @@
             <div class="col-md-3">
               <select id="filter-column" class="form-select">
                 <option value="" disabled selected>Select Column</option>
-                <option value="person">Person Incharge</option>
-                <option value="totalFinished">Quantity Finished</option>
-                <option value="date">Date</option>
-                <option value="timeIn">Time In</option>
-                <option value="timeOut">Time Out</option>
-                <option value="spent">Spent</option>
-                <option value="standby">Standby</option>
-                <option value="span">Total Span</option>
-                <option value="timePerUnit">Time per Unit</option>
+                <option value="material_no">Material No</option>
+                <option value="material_description">Material Description</option>
+                <option value="model">Model</option>
+                <option value="lot">Lot No</option>
+                <option value="person">Person</option>
+                <option value="date">Date Needed</option>
               </select>
+
             </div>
             <div class="col-md-4">
               <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
@@ -111,10 +110,11 @@
 
         const row = document.createElement('tr');
         row.innerHTML = `
-        <td style="text-align: center;">${entry.date}</td>
+        <td style="text-align: center;">${entry.date_needed}</td>
+
         <td style="text-align: center; white-space: normal; word-wrap: break-word;">${entry.material_description || '-'}</td>
         <td style="text-align: center;">${entry.model || '-'} - ${entry.lot || '-'}</td>
-        <td style="text-align: center;">${entry.person}</td>
+        <td style="text-align: center;white-space: normal; word-wrap: break-word; ">${entry.person}</td>
         <td style="text-align: center;">${entry.good}</td>
         <td style="text-align: center;">${entry.no_good}</td>
         <td style="text-align: center;">${totalQty}</td>
@@ -141,7 +141,8 @@
       .then(([qcData, reworkData, cycleData]) => {
         const mergedData = {};
 
-        function addEntry(person, date, reference, timeIn, timeOut, finishedQty, source = 'qc', material_no = '', material_description = '', good = 0, no_good = 0, lot = '', model = '') {
+        function addEntry(person, date, reference, timeIn, timeOut, finishedQty, source = 'qc', material_no = '', material_description = '', good = 0, no_good = 0, lot = '', model = '', date_needed = '') {
+
           const key = `${person}_${date}_${material_description}`;
 
           if (!mergedData[key]) {
@@ -169,6 +170,7 @@
           if (material_description && !group.material_description) group.material_description = material_description;
           if (lot && !group.lot) group.lot = lot;
           if (model && !group.model) group.model = model;
+          if (date_needed && !group.date_needed) group.date_needed = date_needed;
 
           if (!isNaN(timeInDate) && !isNaN(timeOutDate) && timeOutDate > timeInDate && finishedQty > 0) {
             const workedMin = (timeOutDate - timeInDate) / (1000 * 60);
@@ -196,7 +198,7 @@
           const lot = item.lot_no || '';
           const model = item.model || '';
 
-          addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, finishedQty, 'qc', material_no, material_description, good, no_good, lot, model);
+          addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, finishedQty, 'qc', material_no, material_description, good, no_good, lot, model, item.date_needed);
 
         });
 
@@ -213,7 +215,7 @@
           const lot = item.lot_no || '';
           const model = item.model || '';
 
-          addEntry(item.qc_person_incharge, day, item.reference_no, item.qc_timein, item.qc_timeout, finishedQty, 'rework', material_no, material_description, good, no_good, lot, model);
+          addEntry(item.qc_person_incharge, day, item.reference_no, item.qc_timein, item.qc_timeout, finishedQty, 'rework', material_no, material_description, good, no_good, lot, model, item.date_needed);
 
         });
 
@@ -226,60 +228,39 @@
           renderPageCallback: (page) => renderPageCallback(page, cycleData),
           paginationContainerId: 'pagination'
         });
-
+        console.log(filteredData)
         paginator.render();
-      })
-      .catch(console.error);
-
-    function filterAndRender() {
-      const col = filterColumn.value;
-      const val = filterInput.value.toLowerCase();
-
-      if (!col || !val) {
-        filteredData = mergedDataArray.slice();
-      } else {
-        filteredData = mergedDataArray.filter(entry => {
-          let field = '';
-          switch (col) {
-            case 'person':
-              field = entry.person;
-              break;
-            case 'totalFinished':
-              field = `${entry.totalFinished}`;
-              break;
-            case 'date':
-              field = entry.date;
-              break;
-            case 'timeIn':
-              field = entry.timeIns.map(d => d.toTimeString().slice(0, 5)).join(', ');
-              break;
-            case 'timeOut':
-              field = entry.timeOuts.map(d => d.toTimeString().slice(0, 5)).join(', ');
-              break;
-            case 'timePerUnit': {
-              const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
-              field = timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-';
-              break;
+        setupSearchFilter({
+          filterColumnSelector: '#filter-column',
+          filterInputSelector: '#filter-input',
+          data: mergedDataArray,
+          onFilter: filtered => {
+            filteredData = filtered;
+            paginator.setData(filtered);
+          },
+          customValueResolver: (item, column) => {
+            switch (column) {
+              case 'person':
+                return item.person;
+              case 'material_no':
+                return item.material_no;
+              case 'material_description':
+                return item.material_description;
+              case 'model':
+                return item.model;
+              case 'lot':
+                return item.lot;
+              case 'date': // ✅ fix this line
+                return item.date;
+              default:
+                return item[column];
             }
           }
-          return field.toString().toLowerCase().includes(val);
+
         });
-      }
 
-      paginator.setData(filteredData);
-    }
-
-
-    // Filter controls
-    filterColumn.addEventListener('change', () => {
-      filterInput.disabled = !filterColumn.value;
-      filterInput.value = '';
-      filterAndRender();
-    });
-
-    filterInput.addEventListener('input', () => {
-      filterAndRender();
-    });
+      })
+      .catch(console.error);
 
     // Optional: initialize sorting
     enableTableSorting(".table");

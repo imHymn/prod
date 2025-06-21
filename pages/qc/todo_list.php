@@ -1,10 +1,11 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
 <?php include './components/reusable/qrcodeScanner.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
 
 
 <script src="assets/js/bootstrap.bundle.min.js"></script>
-<script src="assets/js/html5.qrcode.js"></script>
+
 
 
 <div class="page-content">
@@ -32,12 +33,11 @@
                 <option value="model">Model</option>
                 <option value="shift">Shift</option>
                 <option value="lot_no">Lot No</option>
-
                 <option value="total_quantity">Quantity</option>
                 <option value="person_incharge">Person Incharge</option>
-                <option value="time_in">Time In</option>
-                <option value="time_out">Time Out</option>
+                <option value="date_needed">Date Needed</option>
               </select>
+
             </div>
             <div class="col-md-4">
               <input
@@ -53,12 +53,14 @@
             <thead>
               <tr>
                 <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Model <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Shift <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Lot No <span class="sort-icon"></span></th>
+                <th style="width: 20%; text-align: center;">Material Description <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Model <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Shift <span class="sort-icon"></span></th>
+                <th style="width: 6%; text-align: center;">Lot No <span class="sort-icon"></span></th>
                 <th style="width: 8%; text-align: center;">Pending QTY <span class="sort-icon"></span></th>
                 <th style="width: 8%; text-align: center;">Total QTY <span class="sort-icon"></span></th>
                 <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Date needed <span class="sort-icon"></span></th>
                 <th style="width: 15%; text-align: center;">Time In | Time out <span class="sort-icon"></span></th>
               </tr>
             </thead>
@@ -82,10 +84,7 @@
         </div>
         <div class="modal-body">
           <form id="inspectionForm">
-            <div class="mb-3">
-              <label for="inputQty" class="form-label">Quantity</label>
-              <input type="number" class="form-control" id="inputQty" required min="1">
-            </div>
+            <input type="hidden" id="inspectionModeHidden" />
 
             <div class="mb-3">
               <label for="goodQty" class="form-label">Good</label>
@@ -125,27 +124,14 @@
     </div>
   </div>
 
-  <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="qrModalLabel">Scan QR Code</h5>
 
-        </div>
-        <div class="modal-body">
-          <div id="qr-reader" style="width: 100%"></div>
-          <div id="qr-result" class="mt-3 text-center fw-bold text-success"></div>
-        </div>
-      </div>
-    </div>
-  </div>
   <script src="assets/js/sweetalert2@11.js"></script>
 
   <script>
     let inspectionModalInstance = null;
     let fullDataSet = [];
     let selectedRowData = null;
-    let mode = null;
+    let mode = '';
 
     document.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('data-body');
@@ -214,12 +200,14 @@
             const row = document.createElement('tr');
             row.innerHTML = `
           <td style="text-align: center;">${item.material_no || ''}</td>
+          <td style="text-align: center;white-space: normal; word-wrap: break-word;">${item.material_description || ''}</td>
           <td style="text-align: center;">${item.model || ''}</td>
           <td style="text-align: center;">${item.shift || ''}</td>
           <td style="text-align: center;">${item.lot_no || ''}</td>
           <td style="text-align: center;"> ${item.pending_quantity != null ? `${item.pending_quantity}` : `${item.total_quantity}`}</td>
           <td style="text-align: center;">${item.total_quantity}</td>
           <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
+          <td style="text-align: center;">${item.date_needed || '<i>NONE</i>'}</td>
           <td style="text-align: center;">${actionHtml}</td>
         `;
             tbody.appendChild(row);
@@ -230,49 +218,41 @@
         }
       });
 
-      function applyFilter() {
-        const column = filterColumnSelect.value;
-        const filterText = filterInput.value.trim().toLowerCase();
-
-        if (!column || !filterText) {
-          filteredData = [...fullDataSet];
-        } else {
-          filteredData = fullDataSet.filter(item => {
-            let value = item[column];
-
-            if (column === 'quantity') value = item.total_quantity;
-            else if (column === 'qc_person_incharge') value = item.person_incharge;
-            else if (column === 'qc_timein') value = item.time_in;
-            else if (column === 'qc_timeout') value = item.time_out;
-
-            if (value === null || value === undefined) return false;
-            if (typeof value === 'number') value = value.toString();
-
-            return String(value).toLowerCase().includes(filterText);
-          });
-        }
-
-        paginator.setData(filteredData);
-      }
-
-      // Fetch and initialize
       fetch('api/qc/getTodoList.php')
         .then(response => response.json())
         .then(data => {
           fullDataSet = data;
-          applyFilter(); // Initially show all
+
+          paginator.setData(fullDataSet); // ✅ Initial render
+
+          setupSearchFilter({
+            filterColumnSelector: '#filter-column',
+            filterInputSelector: '#filter-input',
+            data: fullDataSet,
+            onFilter: (filtered) => paginator.setData(filtered),
+            customValueResolver: (item, column) => {
+              switch (column) {
+                case 'material_no':
+                  return item.material_no ?? '';
+                case 'model':
+                  return item.model ?? '';
+                case 'shift':
+                  return item.shift ?? '';
+                case 'lot_no':
+                  return item.lot_no?.toString() ?? '';
+                case 'total_quantity':
+                  return item.total_quantity?.toString() ?? '';
+                case 'person_incharge':
+                  return item.person_incharge ?? '';
+                case 'date_needed':
+                  return item.date_needed ?? '';
+                default:
+                  return item[column] ?? '';
+              }
+            }
+          });
         })
         .catch(err => console.error('Fetch error:', err));
-
-      // Filter event handlers
-      filterColumnSelect.addEventListener('change', () => {
-        filterInput.disabled = !filterColumnSelect.value;
-        filterInput.value = '';
-        applyFilter();
-      });
-
-      filterInput.addEventListener('input', applyFilter);
-
 
 
 
@@ -282,30 +262,65 @@
         if (itemData) {
           selectedRowData = JSON.parse(itemData.replace(/&apos;/g, "'")); // assuming selectedRowData is global
         }
-
+        console.log(mode)
         if (event.target.matches('.time-in-btn')) {
-          openQRModal(selectedRowData, mode);
+          const {
+            material_no,
+            material_description
+          } = selectedRowData;
+
+          Swal.fire({
+            icon: 'question',
+            title: 'Confirm Time-In',
+            html: `<b>Material No:</b> ${material_no}<br><b>Component:</b> ${material_description}`,
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Proceed',
+            cancelButtonText: 'Cancel'
+          }).then(result => {
+            if (result.isConfirmed) {
+              openQRModal(selectedRowData, mode);
+            }
+          });
         } else if (event.target.matches('.time-out-btn')) {
           const itemData = event.target.getAttribute('data-item');
           if (itemData) {
             const parsedData = JSON.parse(itemData.replace(/&apos;/g, "'"));
 
-            // Set hidden fields
-            document.getElementById('totalQtyHidden').value = parsedData.total_quantity;
-            document.getElementById('recordIdHidden').value = event.target.getAttribute('data-id');
+            const {
+              material_no,
+              material_description
+            } = parsedData;
 
-            // Reset form
-            document.getElementById('inspectionForm').reset();
-            document.getElementById('followUpSection').style.display = 'none';
-            document.getElementById('errorMsg').textContent = '';
-            document.getElementById('followUpErrorMsg').textContent = '';
+            Swal.fire({
+              icon: 'question',
+              title: 'Confirm Time-Out',
+              html: `<b>Material No:</b> ${material_no}<br><b>Component:</b> ${material_description}`,
+              showCancelButton: true,
+              confirmButtonText: 'Yes, Proceed',
+              cancelButtonText: 'Cancel'
+            }).then(result => {
+              if (result.isConfirmed) {
+                // Store mode in hidden input
+                document.getElementById('inspectionModeHidden').value = mode;
 
-            // Show modal
-            inspectionModalInstance = new bootstrap.Modal(document.getElementById('inspectionModal'));
-            inspectionModalInstance.show();
+                // Set hidden fields
+                document.getElementById('totalQtyHidden').value = parsedData.total_quantity;
+                document.getElementById('recordIdHidden').value = event.target.getAttribute('data-id');
 
+                // Reset form
+                document.getElementById('inspectionForm').reset();
+                document.getElementById('followUpSection').style.display = 'none';
+                document.getElementById('errorMsg').textContent = '';
+                document.getElementById('followUpErrorMsg').textContent = '';
+
+                // Show modal
+                inspectionModalInstance = new bootstrap.Modal(document.getElementById('inspectionModal'));
+                inspectionModalInstance.show();
+              }
+            });
           }
         }
+
 
 
       });
@@ -336,16 +351,15 @@
 
     });
 
-
     function submitInspection() {
-      const inputQty = parseInt(document.getElementById('inputQty').value) || 0;
       const good = parseInt(document.getElementById('goodQty').value) || 0;
       const nogood = parseInt(document.getElementById('notGoodQty').value) || 0;
-
+      const inputQty = good + nogood; // Calculate instead of getting from input
+      const mode = document.getElementById('inspectionModeHidden').value;
       const followUpSection = document.getElementById('followUpSection');
       const followUpError = document.getElementById('followUpErrorMsg');
+      console.log(mode);
 
-      // Clear follow-up error text (keep for inline errors)
       followUpError.textContent = '';
 
       if (!selectedRowData) {
@@ -361,16 +375,7 @@
         Swal.fire({
           icon: 'error',
           title: 'Invalid Quantity',
-          text: `Entered Quantity must be less or equal than total quantity (${selectedRowData.total_quantity}).`
-        });
-        return;
-      }
-
-      if ((good + nogood) !== inputQty) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Mismatch Quantity',
-          text: `Good + No Good must equal the entered Quantity (${inputQty}).`
+          text: `Total (Good + No Good = ${inputQty}) must not exceed total quantity (${selectedRowData.total_quantity}).`
         });
         return;
       }
@@ -382,7 +387,6 @@
         const replace = parseInt(document.getElementById('replace').value) || 0;
 
         if ((rework + replace) !== nogood) {
-          // For follow-up errors, keep inline message or you can also switch to Swal
           followUpError.textContent = `Rework + Replace must equal No Good (${nogood}).`;
           return;
         }
@@ -393,7 +397,7 @@
       const sameReferenceItems = fullDataSet.filter(item => item.reference_no === selectedRowData.reference_no);
       const sumDoneQuantity = sameReferenceItems.reduce((sum, item) => sum + (item.done_quantity || 0), 0);
       const maxTotalQuantity = Math.max(...sameReferenceItems.map(item => item.total_quantity || 0));
-      console.log(sameReferenceItems, sumDoneQuantity, inputQty, maxTotalQuantity)
+
       if (sumDoneQuantity + inputQty > maxTotalQuantity) {
         Swal.fire({
           icon: 'error',
@@ -420,11 +424,25 @@
 
 
     function openQRModal(selectedRowData, mode, timeoutData) {
+
       scanQRCodeForUser({
         onSuccess: ({
           user_id,
           full_name
         }) => {
+          console.log(selectedRowData, mode, full_name)
+          if (mode === 'timeOut') {
+            const expectedPersonInCharge = selectedRowData.person_incharge || '';
+            if (full_name !== expectedPersonInCharge) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Person In-Charge Mismatch',
+                text: `Scanned name "${full_name}" does not match assigned person "${expectedPersonInCharge}".`,
+                confirmButtonText: 'OK'
+              });
+              return;
+            }
+          }
 
           let data = {
             name: full_name,
@@ -444,7 +462,8 @@
           if (mode === 'timeIn') {
             url = 'api/qc/timeinOperator.php';
           } else {
-            data.quantity = timeoutData.quantity;
+            data.quantity = timeoutData.good + timeoutData.nogood;
+
             data.good = timeoutData.good;
             data.nogood = timeoutData.nogood;
             data.replace = timeoutData.replace;
@@ -483,6 +502,7 @@
         }
       });
     }
+
 
 
     enableTableSorting(".table");

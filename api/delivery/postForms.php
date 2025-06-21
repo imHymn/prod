@@ -9,7 +9,6 @@ $currentDateTime = date('Y-m-d H:i:s');
 $model_name = $input[0]['model_name'] ?? null;
 $today = date('Ymd');
 
-// 1. Validate input
 $validate = DeliveryValidator::validatePostForms($input);
 if (!empty($validate)) {
     echo json_encode([

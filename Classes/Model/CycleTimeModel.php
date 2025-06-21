@@ -34,4 +34,37 @@ class CycleTimeModel
 
         return $data;
     }
+    public function getAssemblyProcessTimes(): array
+    {
+        $sql = "SELECT material_no, assembly_processtime FROM material_inventory";
+        $rows = $this->db->Select($sql);
+        $data = [];
+        foreach ($rows as $row) {
+            $data[$row['material_no']] = $row['assembly_processtime']; // ✅ FIXED
+        }
+
+        return $data;
+    }
+    // Inside CycleTimeModel.php
+    public function getStampingCycleTimes(): array
+    {
+        $sql = "
+        SELECT 
+            stamping_hyd,
+            stamping_mech,
+            stamping_small,
+            stamping_muffler,
+            stamping_spotwelding,
+            stamping_finishing
+        FROM material_inventory
+        LIMIT 1
+    ";
+
+        return $this->db->SelectOne($sql) ?? [];
+    }
+    public function getComponentStages(): array
+    {
+        $sql = "SELECT components_name, stage_name FROM components_inventory";
+        return $this->db->Select($sql);
+    }
 }

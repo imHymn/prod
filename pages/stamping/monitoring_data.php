@@ -52,13 +52,17 @@ $production_location = $_SESSION['production_location'];
             <thead>
               <tr>
                 <th style="width: 7%; text-align: center;">Date <span class="sort-icon"></span></th>
-                <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Component Name <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Section <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Process <span class="sort-icon"></span></th>
                 <th style="width: 7%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+                <!-- 
                 <th style="width: 7%; text-align: center;">Time In <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th>
-                <th style="width: 15%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th> -->
+                <th style="width: 7%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
               </tr>
             </thead>
             <tbody id="data-body"></tbody>
@@ -74,6 +78,7 @@ $production_location = $_SESSION['production_location'];
     let fullData = [];
     let paginator;
     let cycleTimes = {};
+
     const sessionRole = "<?php echo $role; ?>";
     const sessionProduction = "<?php echo $production; ?>";
     const sessionLocation = "<?php echo $production_location; ?>";
@@ -81,24 +86,94 @@ $production_location = $_SESSION['production_location'];
     const dataBody = document.getElementById('data-body');
     const filterColumn = document.getElementById('filter-column');
     const filterInput = document.getElementById('filter-input');
+    const rawSectionCycleMap = {
+      'BIG-HYD': 'stamping_hyd',
+      'BIG-MECH': 'stamping_mech',
+      'OEM-SMALL': 'stamping_small',
+      'MUFFLER COMPS': 'stamping_muffler',
+      'SPOT WELDING': 'stamping_spotwelding',
+      'FINISHING': 'stamping_finishing'
+    };
 
-    // Fetch cycle times and manpower data
+    function normalize(str) {
+      return str?.toLowerCase().replace(/[\s-]/g, '') || '';
+    }
+
+    // Create normalized mapping
+    const sectionCycleMap = {};
+    for (const [key, value] of Object.entries(rawSectionCycleMap)) {
+      sectionCycleMap[normalize(key)] = value;
+    }
+
+
     Promise.all([
-        fetch('api/mpeff_cycle/stamping.php').then(res => res.json()),
+        fetch('api/mpeff_cycle/stamping_cycletime.php').then(res => res.json()),
         fetch('api/stamping/getManpowerData.php').then(res => res.json())
       ])
       .then(([cycleTimeData, manpowerData]) => {
-        cycleTimes = cycleTimeData;
+        console.log(cycleTimeData);
+        console.log(manpowerData);
+
+        if (!Array.isArray(cycleTimeData)) {
+          console.error("❌ Invalid cycleTimeData format:", cycleTimeData);
+          return;
+        }
+
+        cycleTimes = cycleTimeData[0] || {};
+
         fullData = manpowerData;
 
         const grouped = {};
         manpowerData.forEach(item => {
-          if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
-          grouped[item.reference_no].push(item);
+          if (!item.person_incharge || !item.created_at) return;
+
+          const createdDate = item.created_at.split(' ')[0];
+          const key = `${item.section}_${item.person_incharge}_${createdDate}`;
+
+          if (!grouped[key]) {
+            grouped[key] = {
+              person: item.person_incharge,
+              section: item.section,
+              date: createdDate,
+              totalFinished: 0,
+              totalQuantity: 0,
+              pendingQuantity: 0,
+              timeIns: [],
+              timeOuts: [],
+              totalWorkMinutes: 0,
+              references: new Set()
+            };
+          }
+
+          const group = grouped[key];
+          const finishedQty = parseInt(item.quantity) || 0;
+          group.totalFinished += finishedQty;
+
+          const totalQty = parseInt(item.quantity) || 0;
+          group.totalQuantity += totalQty;
+
+          const pendingQty = parseInt(item.pending_quantity) || 0;
+          group.pendingQuantity += pendingQty;
+
+          const timeIn = item.time_in ? new Date(item.time_in) : null;
+          const timeOut = item.time_out ? new Date(item.time_out) : null;
+          group.component_name = item.components_name || '';
+          group.process = item.stage_name || '';
+          group.section = item.section || '';
+
+          if (timeIn && timeOut && timeOut > timeIn && finishedQty > 0) {
+            const workedMinutes = (timeOut - timeIn) / (1000 * 60);
+            group.totalWorkMinutes += workedMinutes;
+            group.timeIns.push(timeIn);
+            group.timeOuts.push(timeOut);
+          }
+
+          group.references.add(item.reference_no);
         });
 
         const sorted = Object.values(grouped)
-          .flatMap(group => group.sort((a, b) => parseInt(a.stage || 0) - parseInt(b.stage || 0)));
+          .flatMap(group => group)
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
 
         fullData = sorted;
 
@@ -113,85 +188,36 @@ $production_location = $_SESSION['production_location'];
       });
 
     function renderTable(data, page = 1) {
-      const merged = {};
-
-      data.forEach(item => {
-        if (!item.person_incharge || !item.created_at) return;
-
-        const createdDate = item.created_at.split(' ')[0];
-        const key = `${item.section}_${item.person_incharge}_${createdDate}`;
-
-        if (!merged[key]) {
-          merged[key] = {
-            person: item.person_incharge,
-            section: item.section,
-            date: createdDate,
-            material_no: item.material_no,
-            totalFinished: 0,
-            totalQuantity: 0,
-            pendingQuantity: 0,
-            timeIns: [],
-            timeOuts: [],
-            totalWorkMinutes: 0,
-            references: new Set()
-          };
-        }
-
-        const group = merged[key];
-        const finishedQty = parseInt(item.process_quantity) || 0;
-        group.totalFinished += finishedQty;
-
-        const totalQty = parseInt(item.quantity) || 0;
-        group.totalQuantity += totalQty;
-
-        const pendingQty = parseInt(item.pending_quantity) || 0;
-        group.pendingQuantity += pendingQty;
-
-        const timeIn = item.time_in ? new Date(item.time_in) : null;
-        const timeOut = item.time_out ? new Date(item.time_out) : null;
-
-        if (timeIn && timeOut && timeOut > timeIn && finishedQty > 0) {
-          const workedMinutes = (timeOut - timeIn) / (1000 * 60);
-          group.totalWorkMinutes += workedMinutes;
-          group.timeIns.push(timeIn);
-          group.timeOuts.push(timeOut);
-        }
-
-        group.references.add(item.reference_no);
-      });
-
-      // Clear table
       dataBody.innerHTML = '';
 
-      const groupedBySection = {};
-      Object.values(merged).forEach(group => {
-        const normalize = str => str?.toLowerCase().replace(/[\s-]/g, '') || '';
-        const sectionNormalized = normalize(group.section);
-        const sessionLocationNormalized = normalize(sessionLocation);
+      const mergedBySection = {};
+      const normalize = str => str?.toLowerCase().replace(/[\s-]/g, '') || '';
+
+      data.forEach(group => {
+        const sectionKey = normalize(group.section);
+        const sessionLocationKey = normalize(sessionLocation);
 
         const canAccess =
           sessionRole === 'administrator' ||
           (sessionProduction.toLowerCase() === 'stamping' &&
-            sectionNormalized === sessionLocationNormalized);
+            sectionKey === sessionLocationKey);
 
         if (!canAccess) return;
 
-        if (!groupedBySection[group.section]) {
-          groupedBySection[group.section] = [];
+        if (!mergedBySection[group.section]) {
+          mergedBySection[group.section] = [];
         }
-        groupedBySection[group.section].push(group);
+
+        mergedBySection[group.section].push(group);
       });
 
-      // Render each section
-      Object.keys(groupedBySection).forEach(section => {
-        const groups = groupedBySection[section];
-
+      Object.entries(mergedBySection).forEach(([section, groups]) => {
         const sectionRow = document.createElement('tr');
         sectionRow.innerHTML = `
-      <td colspan="8" style="background: #f0f0f0; font-weight: bold; text-align: left; padding: 8px;">
-        Section: ${section}
-      </td>
-    `;
+        <td colspan="8" style="background: #f0f0f0; font-weight: bold; text-align: left; padding: 8px;">
+          Section: ${section}
+        </td>
+      `;
         dataBody.appendChild(sectionRow);
 
         groups.forEach(group => {
@@ -205,79 +231,17 @@ $production_location = $_SESSION['production_location'];
           const totalWorkSeconds = group.totalWorkMinutes * 60;
           const standbySeconds = standbyMinutes * 60;
 
-          // START: Revised targetCycleTime logic with validation
+          // ✅ Directly use cycle time for this section
           let targetCycleTime = 0;
-          const normalize = str => (typeof str === 'string' ? str.toLowerCase().replace(/[\s-]/g, '') : '');
+          const cycleField = sectionCycleMap[normalize(group.section)];
 
-          const sampleRow = fullData.find(row =>
-            normalize(row.person_incharge) === normalize(group.person) &&
-            row.material_no === group.material_no &&
-            normalize(row.section) === normalize(group.section)
-          );
-
-          if (!sampleRow) {
-            console.warn(`⚠️ No matching sampleRow found`, {
-              person: group.person,
-              section: group.section,
-              material_no: group.material_no
-            });
+          if (cycleField && cycleTimes[cycleField]) {
+            targetCycleTime = parseFloat(cycleTimes[cycleField]);
           }
 
-          const groupStageName = sampleRow?.stage_name || '';
-          if (!groupStageName) {
-            console.warn(`⚠️ Missing stage_name for person "${group.person}" and material "${group.material_no}"`);
-          }
-
-          let matchFound = false;
-
-          for (const cycle of cycleTimes) {
-            if (cycle.material_no !== group.material_no) continue;
-
-            let parsedStages;
-            try {
-              parsedStages = JSON.parse(cycle.stage_name);
-            } catch (e) {
-              console.warn("❌ Invalid JSON in cycle.stage_name:", cycle.stage_name, e);
-              continue;
-            }
-
-            const groupSection = normalize(group.section);
-            const groupStage = normalize(groupStageName);
-
-            for (const [sectionKey, stageData] of Object.entries(parsedStages)) {
-              if (normalize(sectionKey) !== groupSection) continue;
-
-              if (stageData?.stages) {
-                for (const [stageKey, cycleValue] of Object.entries(stageData.stages)) {
-                  console.log(`🔍 Checking stage "${normalize(stageKey)}" against "${groupStage}"`);
-                  if (normalize(stageKey) === groupStage) {
-                    targetCycleTime = cycleValue;
-                    matchFound = true;
-                    break;
-                  }
-                }
-              }
-
-              if (matchFound) break;
-            }
-
-            if (matchFound) break;
-          }
-
-          if (!matchFound) {
-            const sampleId = sampleRow?.id || 'N/A';
-            const references = Array.from(group.references).join(', ') || 'None';
-            console.warn(`❗ No cycle time match for stage "${groupStageName}" in section "${group.section}"`, {
-              id: sampleId,
-              material_no: group.material_no,
-              person: group.person,
-              references: references
-            });
-          }
-
-          // END: Revised targetCycleTime logic with validation
-
-          const timePerUnitSeconds = group.totalQuantity > 0 ? totalWorkSeconds / group.totalQuantity : 0;
+          const timePerUnitSeconds = group.totalQuantity > 0 ?
+            totalWorkSeconds / group.totalQuantity :
+            0;
 
           const mpeff = (targetCycleTime && timePerUnitSeconds > 0) ?
             (targetCycleTime / timePerUnitSeconds) * 100 :
@@ -285,18 +249,21 @@ $production_location = $_SESSION['production_location'];
 
           const row = document.createElement('tr');
           row.innerHTML = `
-        <td style="text-align: center;">${group.date}</td>
-        <td style="text-align: center;">${group.person}</td>
-        <td style="text-align: center;">${group.totalQuantity || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
-        <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>
-        <td style="text-align: center;">
-          ${Math.round(totalWorkSeconds)}s  
-          (${Math.round(standbySeconds)}s)
-        </td>
-        <td style="text-align: center;">${targetCycleTime}s</td>
-        <td style="text-align: center;">${mpeff ? mpeff.toFixed(2) + '%' : '-'}</td>
-      `;
+  <td style="text-align: center;">${group.date}</td>
+  <td style="text-align: center;white-space: normal; word-wrap: break-word;">${group.component_name || '-'}</td>
+  <td style="text-align: center;">${group.section || '-'}</td>
+  <td style="text-align: center;">${group.process || '-'}</td>
+  <td style="text-align: center;">${group.totalFinished}</td>
+  <td style="text-align: center;white-space: normal; word-wrap: break-word;">${group.person}</td>
+ <!-- <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
+  <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>-->
+  <td style="text-align: center;">
+    ${Math.round(totalWorkSeconds)}s  
+    (${Math.round(standbySeconds)}s)
+  </td>
+  <td style="text-align: center;">${targetCycleTime}s</td>
+  <td style="text-align: center;">${mpeff ? mpeff.toFixed(2) + '%' : '-'}</td>
+`;
 
           if (targetCycleTime === 0) {
             row.style.backgroundColor = '#ffe6e6';
@@ -307,7 +274,6 @@ $production_location = $_SESSION['production_location'];
         });
       });
 
-      // Update timestamp
       const now = new Date();
       document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
     }

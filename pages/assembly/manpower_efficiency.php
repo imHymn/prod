@@ -1,5 +1,7 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
+
 <div class="page-content">
   <nav class="page-breadcrumb">
     <ol class="breadcrumb">
@@ -12,22 +14,24 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-
-
           <div class="d-flex align-items-center justify-content-between mb-2">
             <h6 class="card-title">Manpower Efficiency</h6>
             <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
           </div>
+
           <div class="row mb-3">
             <div class="col-md-3">
               <select id="filter-column" class="form-select">
-                <option value="" disabled selected>Filter by column</option>
+                <option value="" disabled selected>Select Column</option>
+                <option value="date">Date</option>
                 <option value="person">Person Incharge</option>
                 <option value="totalFinished">Quantity</option>
-                <option value="date">Date</option>
+
                 <option value="timeIn">Time In</option>
                 <option value="timeOut">Time Out</option>
-                <option value="timePerUnit">Time per Unit</option>
+                <option value="spent">Total Working Time</option>
+                <option value="standby">Target Cycle Time</option>
+                <option value="span">Mpeff</option>
               </select>
             </div>
             <div class="col-md-4">
@@ -48,18 +52,19 @@
                 <th style="width: 10%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
               </tr>
             </thead>
+
             <tbody id="data-body"></tbody>
           </table>
+          <div id="pagination" class="mt-3 d-flex justify-content-center"></div>
 
-          <nav>
-            <ul id="pagination" class="pagination justify-content-center"></ul>
-          </nav>
 
 
         </div>
       </div>
     </div>
   </div>
+
+
   <script>
     function formatHoursMinutes(decimalHours) {
       const hours = Math.floor(decimalHours);
@@ -95,48 +100,39 @@
 
         const materialNo = entry.material_no?.toString?.().trim() || '';
         const targetCycleTime = parseFloat(cycleData?.[materialNo] || 0);
-
+        const timeInStr = firstIn.toTimeString().slice(0, 5);
+        const timeOutStr = lastOut.toTimeString().slice(0, 5);
         const mpeff = targetCycleTime && workSeconds > 0 ?
           ((targetCycleTime * totalQty) / workSeconds) * 100 :
           0;
 
-        const timeInStr = firstIn.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        const timeOutStr = lastOut.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-
-        const totalWorkTimeFormatted = (() => {
-          const totalSeconds = Math.round(workSeconds);
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const seconds = totalSeconds % 60;
-          return `${hours > 0 ? hours + 'h ' : ''}${minutes}m ${seconds}s`;
-        })();
         const row = document.createElement('tr');
         row.innerHTML = `
         <td style="text-align: center;">${entry.date}</td>
-        <td style="text-align: center;">${entry.person}</td>
+        <td style="text-align: center; white-space: normal; word-wrap: break-word;">${entry.person || '-'}</td>
         <td style="text-align: center;">${totalQty}</td>
-        <td style="text-align: center;">${timeInStr}</td>
-        <td style="text-align: center;">${timeOutStr}</td>
-        <td style="text-align: center;">${totalWorkTimeFormatted}</td>
-        <td style="text-align: center;">${targetCycleTime ? targetCycleTime + ' sec' : '-'}</td>
+     <td style="text-align: center;">${timeInStr}</td>
+  <td style="text-align: center;">${timeOutStr}</td>
+      
+        <td style="text-align: center;">
+          ${workSeconds.toFixed(0)} sec
+          ${standbySeconds > 0 ? ` (${standbySeconds.toFixed(0)} sec)` : ''}
+        </td>
+        <td style="text-align: center;">${targetCycleTime} sec</td>
         <td style="text-align: center;">${mpeff ? mpeff.toFixed(1) + '%' : '-'}</td>
       `;
+
         tbody.appendChild(row);
       });
+
       document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
     }
 
 
     Promise.all([
-        fetch('api/qc/getQCData.php').then(res => res.json()),
-        fetch('api/qc/getManpowerRework.php').then(res => res.json()),
-        fetch('api/mpeff_cycle/assembly.php').then(res => res.json())
+        fetch('api/assembly/getAssemblyData.php').then(res => res.json()),
+        fetch('api/assembly/getManpowerRework.php').then(res => res.json()),
+        fetch('api/mpeff_cycle/assembly_cycletime.php').then(res => res.json())
       ])
       .then(([qcData, reworkData, cycleData]) => {
         const mergedData = {};
@@ -181,6 +177,8 @@
           }
         }
 
+
+
         // For QC data
         qcData.forEach(item => {
           if (!item.time_in || !item.time_out || !item.person_incharge || !item.reference_no || !item.created_at) return;
@@ -195,6 +193,7 @@
           const model = item.model || '';
 
           addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, finishedQty, 'qc', material_no, material_description, good, no_good, lot, model);
+
         });
 
         // For Rework data
@@ -211,6 +210,7 @@
           const model = item.model || '';
 
           addEntry(item.qc_person_incharge, day, item.reference_no, item.qc_timein, item.qc_timeout, finishedQty, 'rework', material_no, material_description, good, no_good, lot, model);
+
         });
 
         mergedDataArray = Object.values(mergedData);
@@ -224,56 +224,57 @@
         });
 
         paginator.render();
-      })
-      .catch(console.error);
 
-    function filterAndRender() {
-      const col = filterColumn.value;
-      const val = filterInput.value.toLowerCase();
-
-      if (!col || !val) {
-        filteredData = mergedDataArray.slice();
-      } else {
-        filteredData = mergedDataArray.filter(entry => {
-          let field = '';
-          switch (col) {
-            case 'person':
-              field = entry.person;
-              break;
-            case 'totalFinished':
-              field = `${entry.totalFinished}`;
-              break;
-            case 'date':
-              field = entry.date;
-              break;
-            case 'timeIn':
-              field = entry.timeIns.map(d => d.toTimeString().slice(0, 5)).join(', ');
-              break;
-            case 'timeOut':
-              field = entry.timeOuts.map(d => d.toTimeString().slice(0, 5)).join(', ');
-              break;
-            case 'timePerUnit': {
-              const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
-              field = timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-';
-              break;
+        setupSearchFilter({
+          filterColumnSelector: '#filter-column',
+          filterInputSelector: '#filter-input',
+          data: mergedDataArray,
+          onFilter: filtered => {
+            filteredData = filtered;
+            paginator.setData(filtered);
+          },
+          customValueResolver: (item, column) => {
+            switch (column) {
+              case 'date':
+                return item.date;
+              case 'person':
+                return item.person;
+              case 'totalFinished':
+                return item.totalFinished;
+              case 'timeIn':
+                return item.timeIns?.length ? new Date(Math.min(...item.timeIns.map(t => new Date(t).getTime()))).toISOString() : '';
+              case 'timeOut':
+                return item.timeOuts?.length ? new Date(Math.max(...item.timeOuts.map(t => new Date(t).getTime()))).toISOString() : '';
+              case 'spent': {
+                const spanSeconds = item.timeOuts && item.timeIns ?
+                  (Math.max(...item.timeOuts.map(t => new Date(t).getTime())) -
+                    Math.min(...item.timeIns.map(t => new Date(t).getTime()))) / 1000 :
+                  0;
+                return spanSeconds;
+              }
+              case 'standby': {
+                const targetCycleTime = parseFloat(cycleData?.[item.material_no?.toString().trim()] || 0);
+                return targetCycleTime;
+              }
+              case 'span': {
+                const totalQty = item.totalFinished;
+                const workSeconds = item.totalWorkMinutes * 60;
+                const targetCycleTime = parseFloat(cycleData?.[item.material_no?.toString().trim()] || 0);
+                const mpeff = targetCycleTime && workSeconds > 0 ?
+                  ((targetCycleTime * totalQty) / workSeconds) * 100 :
+                  0;
+                return mpeff;
+              }
+              default:
+                return item[column] || '';
             }
           }
-          return field.toString().toLowerCase().includes(val);
         });
-      }
 
-      paginator.setData(filteredData);
-    }
+      })
 
-    filterColumn.addEventListener('change', () => {
-      filterInput.disabled = !filterColumn.value;
-      filterInput.value = '';
-      filterAndRender();
-    });
+      .catch(console.error);
 
-    filterInput.addEventListener('input', () => {
-      filterAndRender();
-    });
-
+    // Optional: initialize sorting
     enableTableSorting(".table");
   </script>

@@ -45,14 +45,12 @@ try {
             'reference_no' => $rmReferenceNo
         ]);
 
-
-        // 4. Get last batch number for this material/component
         $nextBatch = $rmModel->getNextStampingBatch($material_no, $component_name);
 
-        $decodedStageGroup = json_decode($stage_name, true);
+        $decodedStageGroup = json_decode($stage_name, true); // Make sure this is a JSON array of objects
 
         if (!is_array($decodedStageGroup)) {
-            throw new Exception("Invalid JSON format in stage_name.");
+            return 'Invalid stage_name JSON structure';
         }
 
         $flattenedStages = RM_WarehouseValidator::flattenStages($decodedStageGroup);
@@ -65,8 +63,9 @@ try {
             'quantity' => $quantity,
             'created_at' => $created_at
         ], $flattenedStages, $existingCount, $dateToday, $nextBatch);
-
-        // 6. Commit or rollback
+        if ($result3 !== true) {
+            throw new Exception($result3);
+        }
         if ($result2 && $result3) {
             $db->commit();
             echo json_encode([
@@ -76,7 +75,16 @@ try {
             ]);
         } else {
             $db->rollBack();
-            throw new Exception("One or more database operations failed");
+
+            $errorDetail = [
+                'status' => 'error',
+                'message' => 'One or more database operations failed',
+                'result2' => $result2,
+                'result3' => $result3,
+                'errorInfo2' => $stmt2?->errorInfo(),
+                'errorInfo3' => $stmt3?->errorInfo(),
+            ];
+            echo json_encode($errorDetail);
         }
     } catch (Exception $e) {
         $db->rollBack();

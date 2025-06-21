@@ -71,25 +71,42 @@ class RM_WarehouseModel
         return ($result && $result['last_batch']) ? ((int)$result['last_batch'] + 1) : 1;
     }
 
-    public function insertStampingStages(array $data, array $flattenedStages, int $existingCount, string $dateToday, int $nextBatch): bool
+    public function getNextBatchNumber(): int
+    {
+        $sql = "SELECT MAX(batch) as max_batch 
+            FROM stamping ";
+
+
+
+        $result = $this->db->SelectOne($sql);
+
+        return $result && $result['max_batch'] !== null ? (int)$result['max_batch'] : 0;
+    }
+
+    public function insertStampingStages(array $data, array $flattenedStages, int $existingCount, string $dateToday): bool|string
     {
         $sql = "INSERT INTO `stamping` 
         (`material_no`, `components_name`, `process_quantity`, `stage`, `stage_name`, `section`, 
-         `total_quantity`, `pending_quantity`, `status`, `reference_no`, `created_at`, `batch`)
+        `total_quantity`, `pending_quantity`, `status`, `reference_no`, `created_at`, `batch`)
         VALUES 
         (:material_no, :components_name, :process_quantity, :stage, :stage_name, :section, 
-         :total_quantity, :pending_quantity, :status, :reference_no, :created_at, :batch)";
+        :total_quantity, :pending_quantity, :status, :reference_no, :created_at, :batch)";
 
+        // Extract these first
         $processQty = (int) $data['process_quantity'];
         $totalQty   = $data['quantity'];
         $materialNo = $data['material_no'];
         $componentName = $data['component_name'];
         $createdAt = $data['created_at'];
 
+        // Then get the batch
+        $nextBatch = $this->getNextBatchNumber() + 1;
+
+        error_log(print_r($flattenedStages, true));
+
         for ($i = 0; $i < $processQty; $i++) {
-            // Prevent index error if stages are fewer than expected
             if (!isset($flattenedStages[$i])) {
-                return false;
+                return "Flattened stage index $i is missing";
             }
 
             $stageIndex = $i + 1;
