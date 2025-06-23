@@ -72,8 +72,6 @@ class QCValidator
             $errors[] = 'Invalid or missing date needed.';
         }
 
-
-
         return $errors;
     }
 }

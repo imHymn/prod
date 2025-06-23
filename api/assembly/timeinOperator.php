@@ -38,7 +38,7 @@ try {
 
     $assemblyData['pending_quantity'] = $pending_quantity;
     $assemblyModel->insertAssemblyRecord($assemblyData);
-    $assemblyModel->deductComponentInventory($assemblyData['material_no'], $assemblyData['total_qty']);
+    $assemblyModel->deductComponentInventory($assemblyData['material_no'], $assemblyData['reference_no'], $assemblyData['total_qty'], $assemblyData['time_in']);
 
     $db->commit();
     echo json_encode([

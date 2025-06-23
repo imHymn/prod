@@ -2,10 +2,8 @@
 require_once __DIR__ . '/../header.php';
 
 use Model\AccountModel;
-use Validation\AccountValidator;
 
 $model = new AccountModel($db);
-
 
 try {
     $users = $model->getAllUsers();

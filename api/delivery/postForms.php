@@ -9,7 +9,6 @@ $currentDateTime = date('Y-m-d H:i:s');
 $model_name = $input[0]['model_name'] ?? null;
 $today = date('Ymd');
 
-// 1. Validate input
 $validate = DeliveryValidator::validatePostForms($input);
 if (!empty($validate)) {
     echo json_encode([
@@ -79,10 +78,14 @@ try {
 
 // 6. Process and return one final response
 try {
+    $db->beginTransaction();
     $response = $model->processDeliveryForm($input, $lot_value, $today, $currentDateTime);
+    $db->commit();
     echo json_encode($response);
+
     exit;
 } catch (Exception $e) {
+    $db->rollback();
     echo json_encode([
         'status' => 'error',
         'message' => 'An error occurred while processing the delivery form.',

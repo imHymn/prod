@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\AssemblyModel;
 
 $id = $input['id'] ?? null;
 $full_name = $input['full_name'] ?? null;
@@ -12,11 +12,11 @@ $rework = $input['rework'] ?? null;
 $reference_no = $input['reference_no'] ?? null;
 $quantity = $input['quantity'] ?? null;
 
-$assembly_pending_quantity= $input['assembly_pending_quantity'] ?? null;
-if($assembly_pending_quantity===null){
+$assembly_pending_quantity = $input['assembly_pending_quantity'] ?? null;
+if ($assembly_pending_quantity === null) {
     $assembly_pending_quantity = $quantity - $inputQty;
-}else{
-$assembly_pending_quantity = $assembly_pending_quantity - $inputQty;
+} else {
+    $assembly_pending_quantity = $assembly_pending_quantity - $inputQty;
 }
 
 
@@ -29,44 +29,21 @@ if (!$id || !$full_name) {
 try {
     $db->beginTransaction();
 
-    $sqlUpdate = "UPDATE rework_assembly 
-        SET assembly_person_incharge = :full_name, 
-            `replace` = :replace, rework = :rework,
-            assembly_pending_quantity = :assembly_pending_quantity,
-            assembly_timeout = :time_out 
-        WHERE id = :id";
+    $assemblyModel = new AssemblyModel($db);
 
-    $paramsUpdate = [
-        ':full_name' => $full_name,
-        ':id' => $id,
-        ':time_out' => $time_out,
-        ':replace' => $replace,
-        ':rework' => $rework,
-        ':assembly_pending_quantity' => $assembly_pending_quantity
-    ];
+    $updated = $assemblyModel->updateReworkAssemblyTimeout([
+        'id' => $id,
+        'full_name' => $full_name,
+        'time_out' => $time_out,
+        'replace' => $replace,
+        'rework' => $rework,
+        'assembly_pending_quantity' => $assembly_pending_quantity
+    ]);
 
-    $updated = $db->Update($sqlUpdate, $paramsUpdate);
-
-    $insertedCount = 0; // Default in case no duplication occurs
+    $insertedCount = 0;
 
     if ($reference_no) {
-        $sqlSum = "SELECT 
-            model,
-            material_no,
-            material_description,
-            shift,
-            lot_no,
-            date_needed,
-            SUM(`replace`) AS total_replace,
-            SUM(`rework`) AS total_rework,
-            SUM(`assembly_pending_quantity`) AS total_assembly_pending_quantity,
-            MAX(quantity) AS total_quantity
-            FROM rework_assembly
-            WHERE reference_no = :reference_no
-            GROUP BY reference_no, model, material_no, material_description, shift, lot_no, date_needed";
-
-        $paramsSum = [':reference_no' => $reference_no];
-        $result = $db->SelectOne($sqlSum, $paramsSum);
+        $result = $assemblyModel->getGroupedAssemblyByReference($reference_no);
 
         if ($result) {
             $total_rework = (int)$result['total_rework'];
@@ -76,136 +53,13 @@ try {
             $material_no = $result['material_no'];
             if ($total === $total_quantity) {
 
-                if ($material_no && $total_replace >0) {
-                    $sqlComponents = "SELECT components_name, usage_type, actual_inventory 
-                                    FROM components_inventory 
-                                    WHERE material_no = :material_no";
-                    $components = $db->Select($sqlComponents, [':material_no' => $material_no]);
-
-                    if (!$components) {
-                        throw new Exception("No components found for material_no: $material_no");
-                    }
-
-                    foreach ($components as $component) {
-                        $componentsName = $component['components_name'];
-                        $usageType = (int)$component['usage_type'];
-                        $currentInventory = (int)$component['actual_inventory'];
-
-                        // Calculate amount to add back
-                        $returnQty = $total_replace * $usageType;
-                        $newInventory = $currentInventory - $returnQty;
-
-                        // Update inventory by adding back rework quantity
-                        $sqlUpdateInventory = "UPDATE components_inventory 
-                                            SET actual_inventory = :new_inventory 
-                                            WHERE material_no = :material_no AND components_name = :components_name";
-
-                        $paramsUpdateInventory = [
-                            ':new_inventory' => $newInventory,
-                            ':material_no' => $material_no,
-                            ':components_name' => $componentsName,
-                        ];
-
-                        $db->Update($sqlUpdateInventory, $paramsUpdateInventory);
-                    }
+                if ($material_no && $total_replace > 0) {
+                    $assemblyModel->updateComponentInventoryAfterReplace($material_no,  $total_replace, $time_out, $reference_no,);
                 }
-
-
-                 $updateAssembly = "UPDATE rework_assembly 
-                    SET status='done' 
-                    WHERE reference_no =:reference_no";
-
-                $paramsUpdateAssembly = [
-                    ':reference_no' => $reference_no,
-             
-                ];
-
-                $updatedAssembly = $db->Update($updateAssembly,$paramsUpdateAssembly);
-
-                $insertReworkQC = "INSERT INTO rework_qc (
-                    reference_no, model, material_no, material_description,
-                    shift, lot_no, quantity,
-                    qc_quantity,  qc_person_incharge,
-                    qc_timein, qc_timeout,
-                    status, section, date_needed, created_at
-                ) VALUES (
-                    :reference_no, :model, :material_no, :material_description,
-                    :shift, :lot_no, :quantity,
-                    :qc_quantity,  :qc_person_incharge,
-                    :qc_timein, :qc_timeout,
-                    :status, :section, :date_needed, :created_at
-                )";
-
-                $paramsReworkQC = [
-                    ':reference_no' => $reference_no,
-                    ':model' => $result['model'],
-                    ':material_no' => $result['material_no'],
-                    ':material_description' => $result['material_description'],
-                    ':shift' => $result['shift'],
-                    ':lot_no' => $result['lot_no'],
-                    ':quantity' => $total,
-                    ':qc_quantity' => $total,
-                    ':qc_person_incharge' => null,
-                    ':qc_timein' => null,
-                    ':qc_timeout' => null,
-                    ':status' => 'pending',
-                    ':section' => 'qc',
-                    ':date_needed' => $result['date_needed'],
-                    ':created_at' => $time_out,
-                ];
-
-                $db->Insert($insertReworkQC, $paramsReworkQC);
-
-
-
+                $assemblyModel->markReworkAssemblyAsDone($reference_no);
+                $assemblyModel->insertReworkQC($reference_no, $result, $total, $time_out);
             } else {
-                // Duplicate remaining assembly record
-                $selectSql = "SELECT * FROM rework_assembly WHERE id = :id";
-                $selectParams = [':id' => $id];
-
-                $modifyCallback = function($row) use ($id, $replace, $rework, $inputQty, $time_out) {
-                    return [
-                        'itemID' => $id,
-                        'reference_no' => $row['reference_no'],
-                        'model' => $row['model'],
-                        'material_no' => $row['material_no'],
-                        'material_description' => $row['material_description'],
-                        'shift' => $row['shift'],
-                        'lot_no' => $row['lot_no'],
-                        'replace' => null,
-                        'rework' => null,
-                        'quantity' => $row['quantity'],
-                        'assembly_quantity' => $row['assembly_pending_quantity'],
-                        'assembly_pending_quantity' => $row['assembly_pending_quantity'],
-                        'assembly_person_incharge' => null,
-                        'assembly_timein' => null,
-                        'assembly_timeout' => null,
-    
-                        'status' => 'continue',
-                        'section' => 'assembly',
-                        'date_needed' => $row['date_needed'],
-                        'created_at' => $time_out,
-                    ];
-                };
-
-                $insertSql = "INSERT INTO rework_assembly (
-                    itemID,
-                    reference_no, model, material_no, material_description,
-                    shift, lot_no, `replace`, rework, quantity,
-                    assembly_quantity, assembly_pending_quantity, assembly_person_incharge,
-                    assembly_timein, assembly_timeout,
-                
-                    status, section, date_needed, created_at
-                ) VALUES (
-                    :itemID, :reference_no, :model, :material_no, :material_description,
-                    :shift, :lot_no, :replace, :rework, :quantity,
-                    :assembly_quantity, :assembly_pending_quantity, :assembly_person_incharge,
-                    :assembly_timein, :assembly_timeout,
-               
-                    :status, :section, :date_needed, :created_at
-                )";
-
-                $insertedCount = $db->DuplicateAndModify($selectSql, $selectParams, $modifyCallback, $insertSql);
+                $insertedCount = $assemblyModel->duplicateReworkAssembly($id, $replace, $rework, $inputQty, $time_out);
             }
         } else {
             echo json_encode(['success' => false, 'message' => 'No data found for that reference number.']);

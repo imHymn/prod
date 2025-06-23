@@ -72,74 +72,67 @@
 </div> <!-- end modal -->
 
 <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('update-user-form');
 
-document.getElementById('update-user-form').addEventListener('submit', function(event) {
-  event.preventDefault(); // prevent form from submitting normally
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
 
-  const id = document.getElementById('modal-edit-id').value.trim();
-  const name = document.getElementById('modal-edit-name').value.trim();
-  const password = document.getElementById('modal-edit-password').value;
-  const userId = document.getElementById('modal-edit-user-id').value.trim();
-  const role = document.getElementById('modal-edit-role').value.trim();
-  const production = document.getElementById('modal-edit-production').value.trim();
-  const productionLocation = document.getElementById('modal-edit-production-location').value.trim();
+      const id = document.getElementById('modal-edit-id').value.trim();
+      const name = document.getElementById('modal-edit-name').value.trim();
+      const password = document.getElementById('modal-edit-password').value;
+      const userId = document.getElementById('modal-edit-user-id').value.trim();
+      const role = document.getElementById('modal-edit-role').value.trim();
+      const production = document.getElementById('modal-edit-production').value.trim();
+      const productionLocation = document.getElementById('modal-edit-production-location').value.trim();
 
-  // Prepare data payload
-  const payload = {
-    id: id,
-    user_id: userId,
-    name: name || null,
-    password: password || null,
-    role: role || null,
-    production: production || null,
-    production_location: productionLocation || null,
-  };
+      const payload = {
+        id,
+        user_id: userId,
+        name: name || null,
+        password: password || null,
+        role: role || null,
+        production: production || null,
+        production_location: productionLocation || null,
+      };
 
-  // Remove null or empty fields
-  Object.keys(payload).forEach(key => {
-    if (payload[key] === null || payload[key] === '') {
-      delete payload[key];
-    }
-  });
-
-  fetch('/mes/api/accounts/updateAccount.php', { // your PHP endpoint
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: data.message || 'User updated successfully.',
-        confirmButtonText: 'OK'
-      }).then(() => {
-        // Optionally close modal and refresh UI
-        const modalElement = document.getElementById('updateUserModal');
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        modal.hide();
-
-        // Refresh or reload your user list here, e.g., call your renderTable(users) function
+      Object.keys(payload).forEach(key => {
+        if (!payload[key]) delete payload[key];
       });
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Update Failed',
-        text: data.message || 'An error occurred during update.',
-      });
-    }
-  })
-  .catch(error => {
-    console.error('Fetch error:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'An unexpected error occurred. Please try again later.',
+
+      fetch('/mes/api/accounts/updateAccount.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: data.message || 'User updated successfully.'
+            }).then(() => {
+              const modalElement = document.getElementById('updateUserModal');
+              const modal = bootstrap.Modal.getInstance(modalElement);
+              modal.hide();
+
+              if (typeof loadAccounts === 'function') loadAccounts();
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Update Failed',
+              text: data.message || 'An error occurred during update.'
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+          Swal.fire('Error', 'An unexpected error occurred.', 'error');
+        });
     });
   });
-});
 </script>

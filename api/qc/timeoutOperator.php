@@ -62,10 +62,16 @@ try {
 
                 if ($totalDone === $totalQuantity) {
                     if ($total_no_good > 0) {
+                        // Add missing fields to $data so insertReworkAssembly works
+                        $data['total_replace'] = $total_replace;
+                        $data['total_rework'] = $total_rework;
+                        $data['total_no_good'] = $total_no_good;
+
                         $qcModel->insertReworkAssembly($data);
                         $newStatus = 'pending';
                         $newSection = 'rework';
                     }
+
 
                     $warehouseData = [
                         'reference_no' => $data['reference_no'],
@@ -81,7 +87,7 @@ try {
                         'new_section' => 'warehouse',
                         'new_status' => 'done',
                     ];
-                    $qc->moveToFGWarehouse($warehouseData);
+                    $qcModel->moveToFGWarehouse($warehouseData);
 
                     if ($data['no_good'] > 0) {
                         $newStatus = 'pending';

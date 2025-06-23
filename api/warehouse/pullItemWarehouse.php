@@ -23,7 +23,6 @@ if (!empty($errors)) {
     ]);
     exit;
 }
-
 try {
     $db->beginTransaction();
     $warehouseModel = new WarehouseModel($db);
@@ -33,14 +32,23 @@ try {
     $updatedAssembly  = $warehouseModel->markAssemblyListAsDone($data['reference_no']);
     $updatedInventory = $warehouseModel->updateMaterialInventory($data['material_no'], $data['material_description'], $data['total_quantity']);
 
-    $db->commit();
-
-    if ($updatedWarehouse && $updatedAssembly && $updatedInventory) {
-        echo json_encode(['success' => true, 'message' => 'Item marked as PULLED OUT']);
+    if ($updatedWarehouse && $updatedAssembly && $updatedInventory && $updatedDelivery) {
+        $db->commit();
+        echo json_encode([
+            'success' => true,
+            'message' => 'Item marked as PULLED OUT'
+        ]);
     } else {
+        $db->rollBack();
         echo json_encode([
             'success' => false,
-            'message' => 'No records were updated'
+            'message' => '❌ Not all records were updated',
+            'debug' => [
+                'warehouse_updated' => $updatedWarehouse,
+                'assembly_updated' => $updatedAssembly,
+                'inventory_updated' => $updatedInventory,
+                'delivery_updated' => $updatedDelivery
+            ]
         ]);
     }
 } catch (Exception $e) {

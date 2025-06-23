@@ -67,13 +67,6 @@ $pageMap = [
         'components_inventory' => 'components_inventory.php',
         'stamping_monitoring_data' => 'monitoring_data.php',
         'stamping_work_logs' => 'work_logs.php',
-        'stamping_oem_small' => 'todo_list.php',
-        'stamping_muffler_comps' => 'section/muffler_comps.php',
-        'stamping_big_hyd' => 'section/big_hyd.php',
-        'stamping_big_mech' => 'section/big_mech.php',
-
-
- 
     ],
     'warehouse' => [
         'materials_inventory' => 'materials_inventory.php',

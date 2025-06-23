@@ -22,6 +22,11 @@ class AssemblyModel
         $sql = "SELECT * FROM assembly_list";
         return $this->db->Select($sql);
     }
+    public function getTodoList()
+    {
+        $sql = "SELECT * FROM assembly_list WHERE  created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
+        return $this->db->Select($sql);
+    }
     public function getManpowerRework()
     {
         $sql = "SELECT * FROM rework_assembly WHERE assembly_timeout IS NOT NULL";
@@ -82,9 +87,10 @@ class AssemblyModel
             ':created_at'          => $data['time_in'], // Reused timestamp
         ]);
     }
-    public function deductComponentInventory(int $material_no, int $total_qty): void
+    public function deductComponentInventory(string $material_no, string $reference_no, int $total_qty, string $time_in): void
     {
-        $sqlSelect = "SELECT components_name, usage_type, actual_inventory 
+        $sqlSelect = "SELECT id, components_name, usage_type, actual_inventory, 
+                         critical, minimum, reorder, normal, maximum_inventory
                   FROM components_inventory 
                   WHERE material_no = :material_no";
 
@@ -95,6 +101,7 @@ class AssemblyModel
         }
 
         foreach ($components as $component) {
+            $componentId = $component['id'];
             $componentName = $component['components_name'];
             $usageType = (int)$component['usage_type'];
             $currentInventory = (int)$component['actual_inventory'];
@@ -102,19 +109,77 @@ class AssemblyModel
             $deductQty = $total_qty * $usageType;
             $newInventory = max(0, $currentInventory - $deductQty);
 
+            // Update actual inventory
             $sqlUpdate = "UPDATE components_inventory 
-                      SET actual_inventory = :new_inventory 
+                      SET actual_inventory = :new_inventory, updated_at = :date 
                       WHERE material_no = :material_no AND components_name = :components_name";
 
             $params = [
                 ':new_inventory'    => $newInventory,
                 ':material_no'      => $material_no,
                 ':components_name'  => $componentName,
+                ':date'             => $time_in
             ];
 
             $this->db->Update($sqlUpdate, $params);
+
+            // ✅ Determine status after deduction
+            $critical = (int)$component['critical'];
+            $minimum = (int)$component['minimum'];
+            $reorder = (int)$component['reorder'];
+            $normal = (int)$component['normal'];
+            $maximum = (int)$component['maximum_inventory'];
+
+            if ($newInventory > $maximum) {
+                $status = 'Maximum';
+            } elseif ($newInventory >= $normal && $newInventory <= $maximum) {
+                $status = 'Normal';
+            } elseif ($newInventory >= $reorder && $newInventory < $normal) {
+                $status = 'Reorder';
+            } elseif ($newInventory >= $minimum && $newInventory < $reorder) {
+                $status = 'Minimum';
+            } elseif ($newInventory < $minimum) {
+                $status = 'Critical';
+            }
+
+
+            // 🚨 Only insert if status is Critical, Minimum, or Reorder
+            if (in_array($status, ['Critical', 'Minimum', 'Reorder'])) {
+                // Check if an issue for today already exists
+                $checkSql = "SELECT COUNT(*) as count FROM issued_rawmaterials
+                         WHERE material_no = :material_no
+                         AND component_name = :component_name
+                         AND DATE(issued_at) = CURDATE()";
+
+                $checkParams = [
+                    ':material_no'     => $material_no,
+                    ':component_name'  => $componentName
+                ];
+
+                $existing = $this->db->SelectOne($checkSql, $checkParams);
+                if (!$existing || (int)$existing['count'] === 0) {
+                    // Insert issued_rawmaterials record using provided reference_no
+                    $insertSql = "INSERT INTO issued_rawmaterials (
+                    material_no, component_name, quantity, status, reference_no, issued_at
+                  ) VALUES (
+                     :material_no, :component_name, :quantity, :status, :reference_no, NOW()
+                  )";
+
+                    $insertParams = [
+
+                        ':material_no'    => $material_no,
+                        ':component_name' => $componentName,
+                        ':quantity'       => $newInventory,
+                        ':status'         => $status,
+                        ':reference_no'   => $reference_no // 👈 using the one passed in
+                    ];
+
+                    $this->db->Insert($insertSql, $insertParams);
+                }
+            }
         }
     }
+
 
     public function updateAssemblyListTimeout(
         int $done_quantity,
@@ -247,5 +312,248 @@ class AssemblyModel
     )";
 
         return $this->db->Insert($insertSql, $newRow) !== false;
+    }
+    public function markReworkAssemblyTimeIn(int $id, string $full_name, string $time_in)
+    {
+        if (empty($id) || empty($full_name)) {
+            return "Missing ID or Full Name.";
+        }
+
+        $sql = "UPDATE rework_assembly 
+                SET assembly_person_incharge = :full_name, 
+                    assembly_timein = :time_in 
+                WHERE id = :id";
+
+        $params = [
+            ':id' => $id,
+            ':full_name' => $full_name,
+            ':time_in' => $time_in
+        ];
+
+        $updated = $this->db->Update($sql, $params);
+
+        return $updated ? true : "Failed to update rework_assembly.";
+    }
+    public function updateReworkAssemblyTimeout(array $data): bool
+    {
+        $sql = "UPDATE rework_assembly 
+        SET assembly_person_incharge = :full_name, 
+            `replace` = :replace, 
+            rework = :rework,
+            assembly_pending_quantity = :assembly_pending_quantity,
+            assembly_timeout = :time_out 
+        WHERE id = :id";
+
+        $params = [
+            ':full_name' => $data['full_name'],
+            ':id' => $data['id'],
+            ':time_out' => $data['time_out'],
+            ':replace' => $data['replace'],
+            ':rework' => $data['rework'],
+            ':assembly_pending_quantity' => $data['assembly_pending_quantity']
+        ];
+
+        return $this->db->Update($sql, $params);
+    }
+    public function getGroupedAssemblyByReference(string $reference_no): ?array
+    {
+        $sql = "SELECT 
+                model,
+                material_no,
+                material_description,
+                shift,
+                lot_no,
+                date_needed,
+                SUM(`replace`) AS total_replace,
+                SUM(`rework`) AS total_rework,
+                SUM(`assembly_pending_quantity`) AS total_assembly_pending_quantity,
+                MAX(quantity) AS total_quantity
+            FROM rework_assembly
+            WHERE reference_no = :reference_no
+            GROUP BY reference_no, model, material_no, material_description, shift, lot_no, date_needed";
+
+        $params = [':reference_no' => $reference_no];
+
+        return $this->db->SelectOne($sql, $params);
+    }
+    public function updateComponentInventoryAfterReplace(string $material_no, int $total_replace, string $time_out, string $reference_no): void
+    {
+        // Step 1: Get components
+        $sqlComponents = "SELECT id, components_name, usage_type, actual_inventory,
+                             critical, minimum, reorder, normal, maximum_inventory
+                      FROM components_inventory 
+                      WHERE material_no = :material_no";
+
+        $components = $this->db->Select($sqlComponents, [':material_no' => $material_no]);
+
+        if (!$components) {
+            throw new \Exception("No components found for material_no: $material_no");
+        }
+
+        // Step 2: Check if reference_no already exists in issued_rawmaterials
+        $existsSql = "SELECT COUNT(*) as count FROM issued_rawmaterials WHERE reference_no = :reference_no";
+        $existsResult = $this->db->SelectOne($existsSql, [':reference_no' => $reference_no]);
+
+        $referenceExists = $existsResult && (int)$existsResult['count'] > 0;
+
+        // Step 3: Update each component's inventory
+        foreach ($components as $component) {
+            $componentId = $component['id'];
+            $componentsName = $component['components_name'];
+            $usageType = (int)$component['usage_type'];
+            $currentInventory = (int)$component['actual_inventory'];
+
+            $returnQty = $total_replace * $usageType;
+            $newInventory = $currentInventory - $returnQty;
+
+            // Update inventory
+            $sqlUpdateInventory = "UPDATE components_inventory 
+                               SET actual_inventory = :new_inventory, updated_at = :date
+                               WHERE material_no = :material_no AND components_name = :components_name";
+
+            $paramsUpdateInventory = [
+                ':new_inventory' => $newInventory,
+                ':material_no' => $material_no,
+                ':components_name' => $componentsName,
+                ':date' => $time_out
+            ];
+
+            $this->db->Update($sqlUpdateInventory, $paramsUpdateInventory);
+
+            // ✅ Determine new status
+            $critical = (int)$component['critical'];
+            $minimum = (int)$component['minimum'];
+            $reorder = (int)$component['reorder'];
+            $normal = (int)$component['normal'];
+            $maximum = (int)$component['maximum_inventory'];
+
+            if ($newInventory > $maximum) {
+                $status = 'Maximum';
+            } elseif ($newInventory >= $normal && $newInventory <= $maximum) {
+                $status = 'Normal';
+            } elseif ($newInventory >= $reorder && $newInventory < $normal) {
+                $status = 'Reorder';
+            } elseif ($newInventory >= $minimum && $newInventory < $reorder) {
+                $status = 'Minimum';
+            } elseif ($newInventory < $minimum) {
+                $status = 'Critical';
+            }
+
+            // 🚨 Only insert if not existing AND status is Critical, Minimum, or Reorder
+            if (!$referenceExists && in_array($status, ['Critical', 'Minimum', 'Reorder'])) {
+                $insertSql = "INSERT INTO issued_rawmaterials (
+                            material_no, component_name, quantity, status, reference_no, issued_at
+                          ) VALUES (
+                             :material_no, :component_name, :quantity, :status, :reference_no, NOW()
+                          )";
+
+                $insertParams = [
+
+                    ':material_no' => $material_no,
+                    ':component_name' => $componentsName,
+                    ':quantity' => $newInventory,
+                    ':status' => $status,
+                    ':reference_no' => $reference_no
+                ];
+
+                $this->db->Insert($insertSql, $insertParams);
+            }
+        }
+    }
+
+    public function markReworkAssemblyAsDone(string $reference_no): void
+    {
+        $sql = "UPDATE rework_assembly 
+            SET status = 'done' 
+            WHERE reference_no = :reference_no";
+
+        $this->db->Update($sql, [':reference_no' => $reference_no]);
+    }
+
+    public function insertReworkQC(string $reference_no, array $result, int $total, string $time_out): void
+    {
+        $sql = "INSERT INTO rework_qc (
+                reference_no, model, material_no, material_description,
+                shift, lot_no, quantity,
+                qc_quantity, qc_person_incharge,
+                qc_timein, qc_timeout,
+                status, section, date_needed, created_at
+            ) VALUES (
+                :reference_no, :model, :material_no, :material_description,
+                :shift, :lot_no, :quantity,
+                :qc_quantity, :qc_person_incharge,
+                :qc_timein, :qc_timeout,
+                :status, :section, :date_needed, :created_at
+            )";
+
+        $params = [
+            ':reference_no' => $reference_no,
+            ':model' => $result['model'],
+            ':material_no' => $result['material_no'],
+            ':material_description' => $result['material_description'],
+            ':shift' => $result['shift'],
+            ':lot_no' => $result['lot_no'],
+            ':quantity' => $total,
+            ':qc_quantity' => $total,
+            ':qc_person_incharge' => null,
+            ':qc_timein' => null,
+            ':qc_timeout' => null,
+            ':status' => 'pending',
+            ':section' => 'qc',
+            ':date_needed' => $result['date_needed'],
+            ':created_at' => $time_out,
+        ];
+
+        $this->db->Insert($sql, $params);
+    }
+    public function duplicateReworkAssembly(int $id, int $replace, int $rework, int $inputQty, string $time_out): int
+    {
+        $selectSql = "SELECT * FROM rework_assembly WHERE id = :id";
+        $selectParams = [':id' => $id];
+
+        $row = $this->db->SelectOne($selectSql, $selectParams);
+
+        if (!$row) {
+            throw new \Exception("No record found to duplicate for ID: $id");
+        }
+
+        $newData = [
+            ':itemID' => $id,
+            ':reference_no' => $row['reference_no'],
+            ':model' => $row['model'],
+            ':material_no' => $row['material_no'],
+            ':material_description' => $row['material_description'],
+            ':shift' => $row['shift'],
+            ':lot_no' => $row['lot_no'],
+            ':replace' => null,
+            ':rework' => null,
+            ':quantity' => $row['quantity'],
+            ':assembly_quantity' => $row['assembly_pending_quantity'],
+            ':assembly_pending_quantity' => $row['assembly_pending_quantity'],
+            ':assembly_person_incharge' => null,
+            ':assembly_timein' => null,
+            ':assembly_timeout' => null,
+            ':status' => 'continue',
+            ':section' => 'assembly',
+            ':date_needed' => $row['date_needed'],
+            ':created_at' => $time_out,
+        ];
+
+        $insertSql = "INSERT INTO rework_assembly (
+        itemID,
+        reference_no, model, material_no, material_description,
+        shift, lot_no, `replace`, rework, quantity,
+        assembly_quantity, assembly_pending_quantity, assembly_person_incharge,
+        assembly_timein, assembly_timeout,
+        status, section, date_needed, created_at
+    ) VALUES (
+        :itemID, :reference_no, :model, :material_no, :material_description,
+        :shift, :lot_no, :replace, :rework, :quantity,
+        :assembly_quantity, :assembly_pending_quantity, :assembly_person_incharge,
+        :assembly_timein, :assembly_timeout,
+        :status, :section, :date_needed, :created_at
+    )";
+
+        return $this->db->Insert($insertSql, $newData); // returns inserted row count
     }
 }

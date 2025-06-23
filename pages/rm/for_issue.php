@@ -2,6 +2,7 @@
 <script src="assets/js/sweetalert2@11.js"></script>
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -16,272 +17,301 @@
       <div class="card">
         <div class="card-body">
 
-      <div class="d-flex align-items-center justify-content-between mb-2">
-  <h6 class="card-title mb-0">Request Orders</h6>
-  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
-</div>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="card-title mb-0">Request Orders</h6>
+            <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+          </div>
 
- <div class="row mb-3">
-    <div class="col-md-3">
-      <select id="filter-column" class="form-select">
-        <option value="" disabled selected>Select Column to Filter</option>
-        <option value="material_no">Material No</option>
-        <option value="components_name">Component Name</option>
-        <option value="actual_inventory">Quantity</option>
-        <option value="status">Status</option>
-      </select>
-    </div>
-    <div class="col-md-4">
-      <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
-    </div>
-  </div>
-<table class="table" style="table-layout: fixed; width: 100%;">
-  <thead>
-    <tr>
-      <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
-      <th style="width: 18%; text-align: center;">Component Name <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Quantity <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Status <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Action</th> <!-- No sort icon for action -->
-    </tr>
-  </thead>
-  <tbody id="data-body"></tbody>
-</table>
-<div id="pagination" class="mt-3 d-flex justify-content-center"></div>
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <select id="filter-column" class="form-select">
+                <option value="" disabled selected>Select Column</option>
+                <option value="material_no">Material No</option>
+                <option value="components_name">Component Name</option>
+                <option value="actual_inventory">Inventory</option>
+                <option value="statusLabel">Status</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." />
+            </div>
+          </div>
+
+          <table class="table" style="table-layout: fixed; width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Component Name <span class="sort-icon"></span></th>
+                <th style="width: 5%; text-align: center;">Issued Quantity <span class="sort-icon"></span></th>
+                <th style="width: 5%; text-align: center;">Status <span class="sort-icon"></span></th>
+                <th style="width: 5%; text-align: center;">Action</th> <!-- No sort icon for action -->
+
+              </tr>
+            </thead>
+            <tbody id="data-body"></tbody>
+          </table>
+          <div id="pagination" class="mt-3 d-flex justify-content-center"></div>
 
 
 
-      
+
+        </div>
       </div>
     </div>
   </div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  let inventoryData = []; // All inventory records
-  let inventoryPaginator = null;
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
 
-  fetch('api/rm/getIssued.php')
-    .then(response => response.json())
-    .then(issuedResponse => {
-      const pendingIssuedSet = new Set(
-        issuedResponse.data
-          .filter(entry => entry.status === 'pending')
-          .map(entry => `${entry.material_no}|${entry.component_name}`)
-      );
-
-      fetch('api/rm/getComponents.php')
+      fetch('/mes/api/rm/getIssuedComponents.php')
         .then(response => response.json())
-        .then(components => {
-          // Preprocess inventory data for pagination
-          inventoryData = components.map(item => {
-            const inventory = item.actual_inventory;
-            const reorder = item.reorder;
-            const critical = item.critical;
-            const minimum = item.minimum;
-            const normal = item.normal;
-            const maximum = item.maximum_inventory;
-            const uniqueKey = `${item.material_no}|${item.components_name}`;
-            const alreadyIssued = pendingIssuedSet.has(uniqueKey);
-            let statusLabel = '';
-            let statusColor = '';
-            let showRequestButton = false;
-
-            if (inventory >= maximum) {
-              statusLabel = "Maximum";
-              statusColor = "green";
-              showRequestButton = true;
-            } else if (inventory <= critical && inventory < minimum) {
-              statusLabel = "Critical";
-              statusColor = "red";
-              showRequestButton = true;
-
-              if (!alreadyIssued) {
-                const calculatedQty = 300 * parseInt(item.usage_type || 0);
-                if (calculatedQty > 0) {
-                  sendIssueRequest({
-                    id: item.id,
-                    material_no: item.material_no,
-                    component_name: item.components_name,
-                    process_quantity: parseInt(item.process_quantity || 1),
-                    quantity: calculatedQty,
-                    stage_name: item.stage_name
-                  });
-                }
-              }
-            } else if (inventory <= minimum && inventory > critical) {
-              statusLabel = "Minimum";
-              statusColor = "orange";
-              showRequestButton = true;
-            } else if (inventory <= reorder && inventory < normal) {
-              statusLabel = "Reorder";
-              statusColor = "yellow";
-              showRequestButton = true;
-            } else if (inventory >= normal) {
-              statusLabel = "Normal";
-              statusColor = "green";
-            } else {
-              statusLabel = "Reorder";
-              statusColor = "yellow";
-              showRequestButton = true;
-            }
-
-            const actionContent = alreadyIssued
-              ? `<button class="btn btn-sm btn-secondary" disabled>Issued</button>`
-              : showRequestButton
-                ? `<button class="btn btn-sm btn-primary send-request-btn"
-                      data-id="${item.id}" 
-                      data-material="${item.material_no}" 
-                      data-component="${item.components_name}" 
-                      data-quantity="${item.actual_inventory}"
-                      data-usage_type="${item.usage_type}"
-                      data-process_quantity="${item.process_quantity}"
-                      data-stage_name='${JSON.stringify(item.stage_name)}'>
-                    Issue
-                  </button>`
-                : `<span class="text-muted">-</span>`;
-
-            return {
-              ...item,
-              statusLabel,
-              statusColor,
-              actionContent
-            };
-          });
-
-          // Initialize paginator
-          inventoryPaginator = createPaginator({
-            data: inventoryData,
-            rowsPerPage: 10,
-            paginationContainerId: 'pagination',
-            renderPageCallback: renderInventoryTable
-          });
-
-          inventoryPaginator.render();
-
-          // Table button events
-          document.getElementById('data-body').addEventListener('click', function (e) {
-            if (e.target.classList.contains('send-request-btn')) {
-              const btn = e.target;
-              const id = btn.dataset.id;
-              const materialNo = btn.dataset.material;
-              const componentName = btn.dataset.component;
-              const quantity = parseInt(btn.dataset.quantity) || 0;
-              const usageType = parseInt(btn.dataset.usage_type) || 0;
-              const process_quantity = parseInt(btn.dataset.process_quantity) || 1;
-              const stage_name = JSON.parse(btn.dataset.stage_name);
-              const calculatedQty = 300 * usageType;
-
-              Swal.fire({
-                title: 'Confirm Issue',
-                html: `Are you sure you want to issue <strong>${calculatedQty}</strong> items for <strong>${componentName}</strong>?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, Issue it',
-                cancelButtonText: 'Change Quantity'
-              }).then(result => {
-                if (result.isConfirmed) {
-                  sendIssueRequest({
-                    id, material_no: materialNo, component_name: componentName,
-                    quantity: calculatedQty, process_quantity, stage_name
-                  });
-                } else if (result.dismiss === Swal.DismissReason.cancel) {
-                  Swal.fire({
-                    title: 'Custom Quantity',
-                    input: 'number',
-                    inputValue: calculatedQty,
-                    inputLabel: `Enter quantity for ${componentName}:`,
-                    inputAttributes: { min: 1, max: calculatedQty },
-                    showCancelButton: true
-                  }).then(inputRes => {
-                    if (inputRes.isConfirmed) {
-                      sendIssueRequest({
-                        id, material_no: materialNo, component_name: componentName,
-                        quantity: parseInt(inputRes.value), process_quantity, stage_name
-                      });
-                    }
-                  });
-                }
-              });
-            }
-          });
-
-          const now = new Date();
-          document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
+        .then(responseData => {
+          if (Array.isArray(responseData.data)) {
+            renderIssuedComponentsTable(responseData.data);
+          } else {
+            console.warn('Unexpected response:', responseData);
+          }
         });
-    });
 
-  function renderInventoryTable(items) {
-    const dataBody = document.getElementById('data-body');
-    dataBody.innerHTML = '';
-    items.forEach(item => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td style="text-align: center;">${item.material_no}</td>
-        <td style="text-align: center;">${item.components_name}</td>
-        <td style="text-align: center;">${item.actual_inventory}</td>
-        <td style="text-align: center;">
-          <span style="color: ${item.statusColor};">${item.statusLabel}</span>
-        </td>
-        <td style="text-align: center;">${item.actionContent}</td>`;
-      dataBody.appendChild(row);
-    });
-  }
 
-  // Filtering logic
-  const filterColumn = document.getElementById('filter-column');
-  const filterInput = document.getElementById('filter-input');
 
-  filterColumn.addEventListener('change', () => {
-    filterInput.disabled = false;
-    filterInput.value = '';
-    applyFilter();
-  });
+      function renderIssuedComponentsTable(data) {
 
-  filterInput.addEventListener('input', applyFilter);
+        console.log(data);
+        const tbody = document.getElementById('data-body');
+        tbody.innerHTML = '';
 
-  function applyFilter() {
-    const column = filterColumn.value;
-    const query = filterInput.value.toLowerCase();
-
-    if (!column || !query) {
-      inventoryPaginator.setData(inventoryData);
-      return;
-    }
-
-    const filtered = inventoryData.filter(item => {
-      const cell = {
-        material_no: item.material_no.toLowerCase(),
-        components_name: item.components_name.toLowerCase(),
-        actual_inventory: String(item.actual_inventory).toLowerCase(),
-        status: item.statusLabel.toLowerCase()
-      }[column];
-      return cell?.includes(query);
-    });
-
-    inventoryPaginator.setData(filtered);
-  }
-
-  function sendIssueRequest(data) {
-    fetch('api/rm/postIssuedComponent.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-      .then(response => response.json())
-      .then(result => {
-        if (result.status === 'success') {
-          Swal.fire('Success', 'Component issued successfully.', 'success');
-        } else {
-          Swal.fire('Error', result.message || 'Failed to issue component.', 'error');
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center">No pending requests found.</td></tr>`;
+          return;
         }
-      })
-      .catch(error => {
-        console.error('Issue Request Error:', error);
-        Swal.fire('Error', 'Something went wrong while issuing the component.', 'error');
-      });
-  }
 
-  enableTableSorting(".table"); // Optional, if your sorter handles paginated content
-});
-</script>
+        // Define status priority (lower = higher priority)
+        const statusPriority = {
+          'Critical': 1,
+          'Minimum': 2,
+          'Reorder': 3,
+
+        };
+
+        // Sort the data array by status priority
+        data.sort((a, b) => {
+          // Determine effective status for a and b considering the 1-day "Critical" override:
+          function effectiveStatus(item) {
+            let s = item.status || 'Pending';
+            if (!item.delivered_at && item.issued_at) {
+              const issuedDate = new Date(item.issued_at);
+              const now = new Date();
+              const diffInDays = (now - issuedDate) / (1000 * 60 * 60 * 24);
+              if (diffInDays >= 1) {
+                s = 'Critical';
+              }
+            }
+            return s;
+          }
+
+          const statusA = effectiveStatus(a);
+          const statusB = effectiveStatus(b);
+
+          const priorityA = statusPriority[statusA] ?? 99;
+          const priorityB = statusPriority[statusB] ?? 99;
+
+          return priorityA - priorityB;
+        });
+
+        const statusStyleMap = {
+          'Maximum': 'color: green; font-weight: bold; text-shadow: -1px -1px 0 #004d00, 1px -1px 0 #004d00, -1px 1px 0 #004d00, 1px 1px 0 #004d00;',
+          'Critical': 'color: red; font-weight: bold; text-shadow: -1px -1px 0 #800000, 1px -1px 0 #800000, -1px 1px 0 #800000, 1px 1px 0 #800000;',
+          'Minimum': 'color: orange; font-weight: bold; text-shadow: -1px -1px 0 #cc6600, 1px -1px 0 #cc6600, -1px 1px 0 #cc6600, 1px 1px 0 #cc6600;',
+          'Reorder': 'color: yellow; font-weight: bold; text-shadow: -1px -1px 0 #999900, 1px -1px 0 #999900, -1px 1px 0 #999900, 1px 1px 0 #999900;'
+        };
+
+        data.forEach(item => {
+          let status = item.status || 'Pending';
+
+          if (!item.delivered_at && item.issued_at) {
+            const issuedDate = new Date(item.issued_at);
+            const now = new Date();
+            const diffInDays = (now - issuedDate) / (1000 * 60 * 60 * 24);
+            if (diffInDays >= 1) {
+              status = 'Critical';
+            }
+          }
+
+          const style = statusStyleMap[status] || '';
+
+          const info = {
+            id: item.id,
+            material_no: item.material_no,
+            component_name: item.component_name,
+            quantity: item.quantity ?? 300,
+            process_quantity: item.process_quantity ?? 300,
+            stage_name: item.stage_name,
+            raw_materials: item.raw_materials,
+            usage: item.usage_type
+          };
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+      <td class="text-center">${item.material_no || '-'}</td>
+      <td class="text-center">${item.component_name || '-'}</td>
+      <td class="text-center">${item.quantity || '-'}</td>
+      <td class="text-center" style="${style}">${status.toUpperCase()}</td>
+      <td class="text-center align-middle">
+        <button class="btn btn-sm btn-success deliver-btn"
+          data-info="${encodeURIComponent(JSON.stringify(info))}">
+          Deliver
+        </button>
+      </td>
+    `;
+
+          tbody.appendChild(row);
+        });
+
+        attachDeliverButtonEvents();
+      }
+
+
+
+      function attachDeliverButtonEvents() {
+        document.querySelectorAll('.deliver-btn').forEach(button => {
+          button.addEventListener('click', function() {
+            const info = JSON.parse(decodeURIComponent(this.dataset.info || '{}'));
+
+            const {
+              id,
+              material_no,
+              component_name,
+              quantity,
+              process_quantity,
+              stage_name,
+              raw_materials,
+              usage
+            } = info;
+
+            const rawMaterials = JSON.parse(raw_materials || '[]');
+            const baseInput = 300 * usage;
+
+            function buildRawMaterialList(qty) {
+              if (!rawMaterials.length) return '<em>No raw materials listed.</em>';
+              return `
+          <table class="table table-sm table-bordered mt-2">
+            <thead>
+              <tr>
+                <th style="font-size:12px;">Material No</th>
+                <th style="font-size:12px;">Description</th>
+                <th style="font-size:12px;">Usage</th>
+                <th style="font-size:12px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rawMaterials.map(rm => `
+                <tr>
+                  <td style="font-size:12px;">${rm.material_no}</td>
+                  <td style="font-size:12px;">${rm.material_description}</td>
+                  <td style="font-size:12px;">${rm.usage}</td>
+                  <td style="font-size:12px;">${parseInt(rm.usage) * qty}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+            }
+
+            Swal.fire({
+              title: 'Confirm Issue',
+              html: `
+          <p>Are you sure you want to issue <strong>${baseInput}</strong> items for <strong>${component_name}</strong>?</p>
+          <hr/>
+          ${buildRawMaterialList(baseInput)}
+        `,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, Issue it',
+              cancelButtonText: 'Change Quantity'
+            }).then(result => {
+              if (result.isConfirmed) {
+                sendIssueRequest({
+                  id,
+                  material_no,
+                  component_name,
+                  quantity: baseInput,
+                  process_quantity,
+                  stage_name
+                });
+              } else if (result.dismiss === Swal.DismissReason.cancel) {
+                Swal.fire({
+                  title: 'Custom Quantity',
+                  input: 'number',
+                  inputValue: baseInput,
+                  inputLabel: `Enter base quantity for ${component_name}:`,
+                  inputAttributes: {
+                    min: 1,
+                    max: baseInput,
+                    step: 1
+                  },
+                  showCancelButton: true,
+                  preConfirm: (inputVal) => {
+                    const customQty = parseInt(inputVal);
+                    if (isNaN(customQty) || customQty <= 0) {
+                      Swal.showValidationMessage('Please enter a valid positive number');
+                      return false;
+                    }
+                    return Swal.fire({
+                      title: 'Confirm Custom Quantity',
+                      html: `
+                  <p>You will issue <strong>${customQty}</strong> items for <strong>${component_name}</strong>.</p>
+                  <hr/>
+                  ${buildRawMaterialList(customQty)}
+                `,
+                      icon: 'info',
+                      showCancelButton: true,
+                      confirmButtonText: 'Proceed',
+                      cancelButtonText: 'Cancel'
+                    }).then(confirmRes => {
+                      if (confirmRes.isConfirmed) {
+                        sendIssueRequest({
+                          id,
+                          material_no,
+                          component_name,
+                          quantity: customQty,
+                          process_quantity,
+                          stage_name
+                        });
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          });
+        });
+      }
+
+
+
+      function sendIssueRequest(data) {
+        console.log(data)
+        fetch('/mes/api/rm/postIssuedComponent.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          })
+          .then(res => res.json())
+          .then(response => {
+            if (response.status === 'success') {
+              Swal.fire('Success', response.message || 'Issued successfully.', 'success').then(() => {
+
+              });
+            } else {
+              Swal.fire('Error', response.message || 'Issue failed.', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', 'Something went wrong.', 'error');
+          });
+      }
+    });
+  </script>

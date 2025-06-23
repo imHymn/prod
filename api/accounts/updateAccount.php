@@ -6,8 +6,6 @@ use Validation\AccountValidator;
 
 $model = new AccountModel($db);
 
-
-
 function trimOrNull($value)
 {
     $trimmed = trim($value ?? '');
@@ -44,7 +42,7 @@ if (!empty($data['password'])) {
     unset($data['password']);
 }
 
-$errors = UserValidator::validateUpdate(array_merge($user, $data));
+$errors = AccountValidator::validateUpdate(array_merge($user, $data));
 if (!empty($errors)) {
     echo json_encode(['success' => false, 'message' => implode(' ', $errors)]);
     exit;

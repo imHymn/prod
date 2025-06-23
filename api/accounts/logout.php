@@ -1,13 +1,8 @@
 <?php
 session_start();
-
-// Unset all session variables
 $_SESSION = [];
-
-// Destroy the session
 session_destroy();
 
-// Optional: Clear the session cookie manually
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(session_name(), '', time() - 42000,
@@ -16,7 +11,6 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// Redirect
 header("Location: /mes/auth/login.php");
 exit();
 ?>

@@ -1,34 +1,17 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
-
+use Model\QCModel;
 
 $id = $input['id'] ?? null;
 $full_name = $input['full_name'] ?? null;
 $time_in = date('Y-m-d H:i:s');
 
-// ✅ Validate required input
-if (!$id || !$full_name) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Missing required data.']);
-    exit;
-}
-
 try {
     $db->beginTransaction();
 
-    $sqlUpdate = "UPDATE rework_qc
-                  SET qc_person_incharge = :full_name, 
-                      qc_timein = :time_in 
-                  WHERE id = :id";
-
-    $paramsUpdate = [
-        ':full_name' => $full_name,
-        ':id' => $id,
-        ':time_in' => $time_in
-    ];
-
-    $updated = $db->Update($sqlUpdate, $paramsUpdate);
+    $qcModel = new QCModel($db);
+    $updated = $qcModel->updateReworkQCTimeIn((int)$id, $full_name, $time_in);
 
     $db->commit();
 

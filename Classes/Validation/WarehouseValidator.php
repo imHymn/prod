@@ -20,8 +20,10 @@ class WarehouseValidator
             $errors['material_description'] = 'Material description is required.';
         }
 
-        if (!isset($data['total_quantity']) || !is_numeric($data['total_quantity']) || $data['total_quantity'] <= 0) {
-            $errors['total_quantity'] = 'Total quantity must be a positive number.';
+        if (empty($data['total_quantity'])) {
+            $errors['total_quantity'] = 'Total quantity is required.';
+        } elseif (!is_numeric($data['total_quantity'])) {
+            $errors['total_quantity'] = 'Total quantity must be a number.';
         }
 
         if (empty($data['reference_no'])) {

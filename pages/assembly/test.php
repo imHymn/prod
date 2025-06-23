@@ -1,3 +1,5 @@
+<?php include './components/reusable/tablesorting.php'; ?>
+<?php include './components/reusable/tablepagination.php'; ?>
 <div class="page-content">
   <nav class="page-breadcrumb">
     <ol class="breadcrumb">
@@ -10,101 +12,256 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-          <h6 class="card-title">Manpower Efficiency</h6>
-
-<table class="table table" style="table-layout: fixed; width: 100%;">
-<thead>
-  <tr>
-    <th style="width: 20%; text-align: center;">Person Incharge</th>
-    <th style="width: 8%; text-align: center;">Total Qty</th>
-    <th style="width: 15%; text-align: center;">Time In</th>
-    <th style="width: 15%; text-align: center;">Time Out</th>
-    <th style="width: 15%; text-align: center;">Time per Unit (min)</th>
-
-  </tr>
-</thead>
 
 
-  <tbody id="data-body"></tbody>
-</table>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="card-title">Manpower Efficiency</h6>
+            <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <select id="filter-column" class="form-select">
+                <option value="" disabled selected>Filter by column</option>
+                <option value="person">Person Incharge</option>
+                <option value="totalFinished">Quantity</option>
+                <option value="date">Date</option>
+                <option value="timeIn">Time In</option>
+                <option value="timeOut">Time Out</option>
+                <option value="timePerUnit">Time per Unit</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <input type="text" id="filter-input" class="form-control" placeholder="Type to filter..." disabled />
+            </div>
+          </div>
 
-      
+          <table class="table" style="table-layout: fixed; width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 7%; text-align: center;">Date <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Time In <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
+              </tr>
+            </thead>
+            <tbody id="data-body"></tbody>
+          </table>
+
+          <nav>
+            <ul id="pagination" class="pagination justify-content-center"></ul>
+          </nav>
+
+
+        </div>
       </div>
     </div>
   </div>
-</div>
-<script>
-fetch('api/assembly/getAssemblyData.php')
-  .then(response => response.json())
-  .then(data => {
-    console.log(data);
-    const tbody = document.getElementById('data-body');
-    tbody.innerHTML = ''; // Clear existing rows
+  <script>
+    function formatHoursMinutes(decimalHours) {
+      const hours = Math.floor(decimalHours);
+      const minutes = Math.round((decimalHours - hours) * 60);
+      return `${hours} hrs${minutes > 0 ? ' ' + minutes + ' mins' : ''}`;
+    }
 
-    // Render assembly data
-    data.forEach(item => {
-      if (item.time_out === null) return;
-
-      let timeIn = item.time_in ? new Date(item.time_in) : null;
-      let timeOut = item.time_out ? new Date(item.time_out) : null;
-
-      let timeWorkedMin = 0;
-      let timePerUnitMin = 0;
-      const finishedQty = parseInt(item.done_quantity) || 0;
-      const totalQty = parseInt(item.total_quantity) || 0;
-
-      if (timeIn && timeOut && timeOut > timeIn && finishedQty > 0) {
-        timeWorkedMin = (timeOut - timeIn) / (1000 * 60);
-        timePerUnitMin = timeWorkedMin / finishedQty;
-      }
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td style="text-align: center;">${item.person_incharge || '<i>NONE</i>'}</td>
-        <td style="text-align: center;">${finishedQty}/${totalQty}</td>
-        <td style="text-align: center;">${item.time_in || ''}</td>
-        <td style="text-align: center;">${item.time_out || ''}</td>
-        <td style="text-align: center;">${timePerUnitMin ? timePerUnitMin.toFixed(2) : '-'}</td>
-      `;
-      tbody.appendChild(row);
-    });
-
-    // After assembly data, fetch and render rework data
-    return fetch('api/assembly/getManpowerRework.php');
-  })
-  .then(response => response.json())
-  .then(reworkData => {
-    console.log(reworkData);
+    const filterColumn = document.getElementById('filter-column');
+    const filterInput = document.getElementById('filter-input');
     const tbody = document.getElementById('data-body');
 
-    // Render rework data rows
-    reworkData.forEach(item => {
-      let timeIn = item.assembly_timein ? new Date(item.assembly_timein) : null;
-      let timeOut = item.assembly_timeout ? new Date(item.assembly_timeout) : null;
+    let mergedDataArray = [];
+    let filteredData = [];
+    let paginator;
 
-      let timeWorkedMin = 0;
-      let timePerUnitMin = 0;
-      const finishedQty = parseInt(item.rework) + parseInt(item.replace) ;
-      const totalQty = parseInt(item.quantity) || 0;
+    function extractDateOnly(datetimeStr) {
+      return datetimeStr ? datetimeStr.slice(0, 10) : '';
+    }
 
-      if (timeIn && timeOut && timeOut > timeIn && finishedQty > 0) {
-        timeWorkedMin = (timeOut - timeIn) / (1000 * 60);
-        timePerUnitMin = timeWorkedMin / finishedQty;
+    function renderPageCallback(pageData, cycleDataList) {
+      tbody.innerHTML = '';
+
+      const cycleMap = {};
+      cycleDataList.forEach(cd => {
+        const mat = cd.material_no;
+        const time = parseFloat(cd.assembly_cycletime || 0);
+        if (mat && !isNaN(time)) {
+          cycleMap[mat] = time;
+        }
+      });
+
+      pageData.forEach(entry => {
+        const firstIn = new Date(Math.min(...entry.timeIns.map(t => t.getTime())));
+        const lastOut = new Date(Math.max(...entry.timeOuts.map(t => t.getTime())));
+
+        const spanSeconds = (lastOut - firstIn) / 1000;
+        const workSeconds = entry.totalWorkMinutes * 60;
+        const standbySeconds = spanSeconds - workSeconds;
+        const totalQty = entry.totalFinished;
+
+        let totalEff = 0;
+        let totalCycleTarget = 0;
+
+        const effList = [];
+        const cycleList = [];
+
+        Object.entries(entry.materialCount).forEach(([material, qty]) => {
+          const cycle = cycleMap[material] || 0;
+          const eff = (cycle && workSeconds > 0) ?
+            ((cycle * qty) / workSeconds) * 100 :
+            0;
+
+          cycleList.push(cycle.toFixed(2));
+          effList.push(eff > 0 ? eff.toFixed(1) + '%' : '-');
+        });
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+        <td style="text-align: center;">${entry.date}</td>
+        <td style="text-align: center;">${entry.person}</td>
+        <td style="text-align: center;">${totalQty}</td>
+        <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
+        <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>
+        <td style="text-align: center;">
+          ${workSeconds.toFixed(0)} sec
+          ${standbySeconds > 0 ? ` (${standbySeconds.toFixed(0)} sec)` : ''}
+        </td>
+        <td style="text-align: center;">${cycleList.join(' / ')} sec</td>
+        <td style="text-align: center;">${effList.join(' / ')}</td>
+      `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById('last-updated').textContent =
+        `Last updated: ${new Date().toLocaleString()}`;
+    }
+
+    Promise.all([
+        fetch('api/assembly/getAssemblyData.php').then(res => res.json()),
+        fetch('api/assembly/getManpowerRework.php').then(res => res.json()),
+        fetch('api/assembly/getAllCycleTime.php').then(res => res.json())
+      ])
+      .then(([assemblyData, reworkData, cycleData]) => {
+        const mergedData = {};
+
+        function addEntry(person, date, reference, timeIn, timeOut, finishedQty, material_no = '') {
+          const key = `${person}_${date}`;
+          if (!mergedData[key]) {
+            mergedData[key] = {
+              person,
+              date,
+              totalFinished: 0,
+              timeIns: [],
+              timeOuts: [],
+              totalWorkMinutes: 0,
+              materialCount: {} // ← Track material_no per group
+            };
+          }
+
+          const group = mergedData[key];
+          const timeInDate = new Date(timeIn);
+          const timeOutDate = new Date(timeOut);
+
+          if (!isNaN(timeInDate) && !isNaN(timeOutDate) && timeOutDate > timeInDate && finishedQty > 0) {
+            const workedMin = (timeOutDate - timeInDate) / (1000 * 60);
+            group.totalWorkMinutes += workedMin;
+            group.timeIns.push(timeInDate);
+            group.timeOuts.push(timeOutDate);
+            group.totalFinished += finishedQty;
+
+            if (material_no) {
+              if (!group.materialCount[material_no]) {
+                group.materialCount[material_no] = 0;
+              }
+              group.materialCount[material_no] += finishedQty;
+            }
+          }
+        }
+
+        assemblyData.forEach(item => {
+          if (!item.time_out || !item.time_in || !item.person_incharge || !item.reference_no || !item.created_at)
+            return;
+
+          const day = extractDateOnly(item.created_at);
+          const qty = parseInt(item.done_quantity) || 0;
+          const mat = item.material_no || '';
+
+          addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, qty, mat);
+        });
+
+        reworkData.forEach(item => {
+          if (!item.assembly_timeout || !item.assembly_timein || !item.assembly_person_incharge || !item.reference_no || !item.created_at)
+            return;
+
+          const day = extractDateOnly(item.created_at);
+          const qty = (parseInt(item.rework) || 0) + (parseInt(item.replace) || 0);
+          const mat = item.material_no || '';
+
+          addEntry(item.assembly_person_incharge, day, item.reference_no, item.assembly_timein, item.assembly_timeout, qty, mat);
+        });
+
+        mergedDataArray = Object.values(mergedData);
+        filteredData = mergedDataArray.slice();
+
+        paginator = createPaginator({
+          data: filteredData,
+          rowsPerPage: 10,
+          renderPageCallback: (page) => renderPageCallback(page, cycleData),
+          paginationContainerId: 'pagination'
+        });
+
+        paginator.render();
+      })
+      .catch(console.error);
+
+    function filterAndRender() {
+      const col = filterColumn.value;
+      const val = filterInput.value.toLowerCase();
+
+      if (!col || !val) {
+        filteredData = mergedDataArray.slice();
+      } else {
+        filteredData = mergedDataArray.filter(entry => {
+          let field = '';
+          switch (col) {
+            case 'person':
+              field = entry.person;
+              break;
+            case 'totalFinished':
+              field = `${entry.totalFinished}`;
+              break;
+            case 'date':
+              field = entry.date;
+              break;
+            case 'timeIn':
+              field = entry.timeIns.map(d => d.toTimeString().slice(0, 5)).join(', ');
+              break;
+            case 'timeOut':
+              field = entry.timeOuts.map(d => d.toTimeString().slice(0, 5)).join(', ');
+              break;
+            case 'timePerUnit': {
+              const timePerUnit = entry.totalFinished > 0 ? (entry.totalWorkMinutes / entry.totalFinished) : 0;
+              field = timePerUnit > 0 ? formatHoursMinutes(timePerUnit / 60) : '-';
+              break;
+            }
+          }
+          return field.toString().toLowerCase().includes(val);
+        });
       }
 
-      const row = document.createElement('tr');
-      
-      row.innerHTML = `
-        <td style="text-align: center;">${item.assembly_person_incharge || '<i>NONE</i>'}<br/>(REWORK)</td>
-        <td style="text-align: center;">${finishedQty}/${totalQty}</td>
-        <td style="text-align: center;">${item.assembly_timein || ''}</td>
-        <td style="text-align: center;">${item.assembly_timeout || ''}</td>
-        <td style="text-align: center;">${timePerUnitMin ? timePerUnitMin.toFixed(2) : '-'}</td>
-      `;
-      tbody.appendChild(row);
+      paginator.setData(filteredData);
+    }
+
+    filterColumn.addEventListener('change', () => {
+      filterInput.disabled = !filterColumn.value;
+      filterInput.value = '';
+      filterAndRender();
     });
-  })
-  .catch(error => {
-    console.error('Error loading data:', error);
-  });
-</script>
+
+    filterInput.addEventListener('input', () => {
+      filterAndRender();
+    });
+
+    enableTableSorting(".table");
+  </script>

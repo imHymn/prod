@@ -14,25 +14,24 @@ class RM_WarehouseValidator
 
         return $errors;
     }
-    public static function flattenStages($stage_name): array
+    public static function flattenStages(array $stageGroup): array
     {
-        if (is_string($stage_name)) {
-            $stage_name = json_decode($stage_name, true);
-        }
-
-        if (!is_array($stage_name)) {
-            throw new \InvalidArgumentException("Invalid stage_name format; expected array or valid JSON string.");
-        }
-
         $flattened = [];
-        foreach ($stage_name as $section => $stages) {
-            foreach ($stages as $stage) {
+
+        foreach ($stageGroup as $entry) {
+            // Each entry must have both 'section' and 'stages'
+            if (!isset($entry['section'], $entry['stages']) || !is_array($entry['stages'])) {
+                continue;
+            }
+
+            foreach ($entry['stages'] as $stageName => $value) {
                 $flattened[] = [
-                    'stage_name' => $stage,
-                    'section' => $section
+                    'stage_name' => is_string($stageName) ? $stageName : $value,
+                    'section'    => $entry['section']
                 ];
             }
         }
+
         return $flattened;
     }
 }

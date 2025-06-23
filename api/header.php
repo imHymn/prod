@@ -15,6 +15,7 @@ date_default_timezone_set('Asia/Manila');
 header('Content-Type: application/json');
 
 $db = new DatabaseClass();
+global $input;
 $input = json_decode(file_get_contents('php://input'), true);
 
 spl_autoload_register(function ($class) {

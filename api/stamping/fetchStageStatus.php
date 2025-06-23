@@ -1,31 +1,18 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\StampingModel;
 
 try {
-    // Get JSON input
-        $material_no = $input['material_no'] ?? null;
-    $components_name = $input['components_name'] ?? null;
-    $batch = $input['batch'] ?? null;
+    $stampingModel = new StampingModel($db);
 
-    if (!$material_no || !$components_name) {
-        throw new Exception("Missing required parameters.");
-    }
-
-    // Fetch stages for the component
-    $sql = "SELECT stage_name,section,stage, status 
-            FROM stamping 
-            WHERE material_no = :material_no 
-              AND components_name = :components_name AND batch=:batch
-            ORDER BY stage ASC";
-
-    $params = [
-        ':material_no' => $material_no,
-        ':components_name' => $components_name,
-        ':batch'=>$batch
+    $data = [
+        'material_no' => $input['material_no'] ?? null,
+        'components_name' => $input['components_name'] ?? null,
+        'batch' => $input['batch'] ?? null
     ];
 
-    $stages = $db->Select($sql, $params);
+    $stages = $stampingModel->fetchStageStatus($data);
 
     if (!$stages) {
         echo json_encode([
@@ -45,4 +32,3 @@ try {
         'message' => $e->getMessage()
     ]);
 }
-?>

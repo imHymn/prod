@@ -277,7 +277,51 @@
 
 
       document.getElementById('delivery_submit_btn').addEventListener('click', function() {
-        const lot_value = document.getElementById('lot').value || +1;
+        const currentQty = parseFloat(document.getElementById('qty').value) || 0;
+        const rows = document.querySelectorAll('#material_components table tr');
+        const results = [];
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const material_no = row.querySelector('.materialNo')?.innerText.trim() || '';
+          const material_description = row.querySelector('.materialDesc')?.innerText.trim() || '';
+          const supplementInput = row.querySelector('input[id^="supplement"]');
+          const supplementVal = parseFloat(supplementInput?.value) || 0;
+          const totalQty = currentQty + supplementVal;
+          const shift = document.getElementById('shifting').value;
+          const lot_no = document.getElementById('lot').value || 0;
+          const model_name = document.getElementById('modelSelect').value || '';
+          const date_needed = document.getElementById('date_needed').value || '';
+
+          if (material_no === '' || material_description === '') continue;
+
+          results.push({
+            material_no,
+            model_name,
+            material_description,
+            quantity: currentQty,
+            supplement_order: supplementInput?.value || '',
+            total_quantity: totalQty,
+            status: 'pending',
+            section: 'DELIVERY',
+            shift,
+            lot_no,
+            date_needed
+          });
+        }
+
+        // ✅ Prioritize checking results before confirmation
+        if (results.length === 0) {
+          Swal.fire({
+            icon: 'error',
+            title: 'No Data',
+            text: 'No valid materials found to submit.',
+            confirmButtonColor: '#d33'
+          });
+          return; // stop execution
+        }
+
+        const lot_value = document.getElementById('lot').value || 1;
 
         Swal.fire({
           title: 'Frozen Lot Warning',
@@ -294,49 +338,6 @@
           buttonsStyling: false
         }).then((result) => {
           if (result.isConfirmed) {
-            const currentQty = parseFloat(document.getElementById('qty').value) || 0;
-            const rows = document.querySelectorAll('#material_components table tr');
-            const results = [];
-
-            for (let i = 1; i < rows.length; i++) {
-              const row = rows[i];
-              const material_no = row.querySelector('.materialNo')?.innerText.trim() || '';
-              const material_description = row.querySelector('.materialDesc')?.innerText.trim() || '';
-              const supplementInput = row.querySelector('input[id^="supplement"]');
-              const supplementVal = parseFloat(supplementInput?.value) || 0;
-              const totalQty = currentQty + supplementVal;
-              const shift = document.getElementById('shifting').value;
-              const lot_no = document.getElementById('lot').value || 0;
-              const model_name = document.getElementById('modelSelect').value || '';
-              const date_needed = document.getElementById('date_needed').value || '';
-
-              if (material_no === '' || material_description === '') continue;
-
-              results.push({
-                material_no,
-                model_name,
-                material_description,
-                quantity: currentQty,
-                supplement_order: supplementInput?.value || '',
-                total_quantity: totalQty,
-                status: 'pending',
-                section: 'DELIVERY',
-                shift,
-                lot_no,
-                date_needed
-              });
-            }
-
-            if (results.length === 0) {
-              Swal.fire({
-                icon: 'error',
-                title: 'No Data',
-                text: 'No valid materials found to submit.',
-                confirmButtonColor: '#d33'
-              });
-              return; // stop execution
-            }
-
             console.log('Compiled values:', results);
 
             fetch('api/delivery/postForms.php', {
@@ -350,11 +351,10 @@
               .then(responseData => {
                 console.log('Server response:', responseData);
 
-                // Handle error response (like insufficient stock)
                 if (responseData.status === 'error') {
                   let itemList = responseData.insufficient_items?.map(item => `
-            <li><strong>${item.material_no}</strong>: ${item.material_description}<br/><small>${item.reason}</small></li>
-        `).join('');
+              <li><strong>${item.material_no}</strong>: ${item.material_description}<br/><small>${item.reason}</small></li>
+            `).join('');
 
                   Swal.fire({
                     icon: 'error',
@@ -362,14 +362,13 @@
                     html: `
                 <p>${responseData.message}</p>
                 <ul style="text-align:left; max-height: 300px; overflow-y: auto;">${itemList}</ul>
-            `,
+              `,
                     confirmButtonColor: '#d33'
                   });
 
-                  return; // Stop further success handling
+                  return;
                 }
 
-                // Success path
                 Swal.fire({
                   icon: 'success',
                   title: 'Success',
@@ -383,22 +382,21 @@
                   document.getElementById('lot').value = parseInt(responseData[0].lot_no) + 1;
                 }
               })
-            // .catch(error => {
-            //     console.error('Error posting data:', error);
-            //     Swal.fire({
-            //         icon: 'error',
-            //         title: 'Network Error',
-            //         text: 'Failed to post data. Please try again.',
-            //         confirmButtonColor: '#d33'
-            //     });
-            // });
-
-
+              .catch(error => {
+                console.error('Error posting data:', error);
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Network Error',
+                  text: 'Failed to post data. Please try again.',
+                  confirmButtonColor: '#d33'
+                });
+              });
           } else {
             console.log('Action canceled.');
           }
         });
       });
+
 
 
 

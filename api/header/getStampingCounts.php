@@ -1,13 +1,18 @@
 <?php
 require_once __DIR__ . '/../header.php';
 
+use Model\HeaderModel;
 
 try {
-    $sql = "SELECT * FROM components_task";
-    $result = $db->Select($sql);  // No parameters needed
+    $model = new HeaderModel($db);
 
-    echo json_encode($result);
+    // Remove usage of $_GET['since']
+    $counts = $model->getStampingCounts();
 
+    echo json_encode([
+        'success' => true,
+        'data' => $counts
+    ]);
 } catch (PDOException $e) {
     echo json_encode(['error' => 'DB Error: ' . $e->getMessage()]);
 } catch (Exception $e) {

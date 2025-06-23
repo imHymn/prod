@@ -1,5 +1,6 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
+<?php include './components/reusable/searchfilter.php'; ?>
 
 <script src="assets/js/html5.qrcode.js"></script>
 
@@ -24,93 +25,111 @@
     <div class="col-md-12 grid-margin stretch-card">
       <div class="card">
         <div class="card-body">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-  <h6 class="card-title mb-0">List of Pulled Out</h6>
-  <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
-</div>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="card-title mb-0">List of Pulled Out</h6>
+            <small id="last-updated" class="text-muted" style="font-size:13px;"></small>
+          </div>
 
-<div class="row mb-3">
-  <div class="col-md-3">
-    <select id="column-select" class="form-select">
-      <option value="" disabled selected>Select Column</option>
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <select id="column-select" class="form-select">
+                <option value="" disabled selected>Select Column</option>
 
-      <option value="material_no">Material No</option>
-      <option value="model_name">Model</option>
-      <option value="quantity">Qty</option>
-      <option value="supplement_order">Supplement</option>
-      <option value="total_quantity">Total Qty</option>
-      <option value="shift">Shift</option>
-      <option value="lot_no">Lot</option>
-      <option value="date_needed">Date Needed</option>
-    </select>
-  </div>
-  <div class="col-md-4">
-    <input type="text" id="search-input" class="form-control" placeholder="Type to filter..." />
-  </div>
-</div>
+                <option value="material_no">Material No</option>
+                <option value="model_name">Model</option>
+                <option value="quantity">Qty</option>
+                <option value="supplement_order">Supplement</option>
+                <option value="total_quantity">Total Qty</option>
+                <option value="shift">Shift</option>
+                <option value="lot_no">Lot</option>
+                <option value="date_needed">Date Needed</option>
+                <option value="date_loaded">Date Loaded</option>
+                <option value="truck">Truck</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <input type="text" id="search-input" class="form-control" placeholder="Type to filter..." />
+            </div>
+          </div>
 
 
 
-<table class="table table" style="table-layout: fixed; width: 100%;">
-  <thead>
-    <tr>
-      <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
-      <!-- <th style="width: 20%; text-align: center;">Description</th> -->
-      <th style="width: 10%; text-align: center;">Model <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Qty <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Supplement <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Total Qty <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Shift <span class="sort-icon"></span></th>
-      <th style="width: 8%; text-align: center;">Lot <span class="sort-icon"></span></th>
-      <th style="width: 25%; text-align: center;">Date Needed <span class="sort-icon"></span></th>
-    </tr>
-  </thead>
-  <tbody id="data-body"></tbody>
-</table>
+          <table class="table table" style="table-layout: fixed; width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
+                <!-- <th style="width: 20%; text-align: center;">Description</th> -->
+                <th style="width: 10%; text-align: center;">Model <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Qty <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Supplement <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Total Qty <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Shift <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Lot <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Date Needed <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Date Loaded <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Truck <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Status <span class="sort-icon"></span></th>
+              </tr>
+            </thead>
+            <tbody id="data-body"></tbody>
+          </table>
 
-<div id="pagination" class="mt-3 d-flex justify-content-center"></div>
+          <div id="pagination" class="mt-3 d-flex justify-content-center"></div>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
 
-<script>
-  let paginator;
-let originalData = [];
-let filteredData = [];
+  <script>
+    let paginator;
+    let originalData = [];
+    let filteredData = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-  fetch('api/delivery/getPulled_out.php')
-    .then(res => res.json())
-    .then(data => {
-      const now = new Date();
-      document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('api/delivery/getPulled_out.php')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
+          originalData = data;
+          filteredData = data;
 
-      // Store original data and initialize the paginator
-      originalData = data;
-      filteredData = data;  // Initially, filtered data is the same as original data
+          paginator = createPaginator({
+            data: filteredData,
+            rowsPerPage: 10,
+            paginationContainerId: 'pagination',
+            renderPageCallback: renderPulledOutTable,
+            defaultSortFn: (a, b) => new Date(b.date_needed) - new Date(a.date_needed)
+          });
+          paginator.render();
 
-      paginator = createPaginator({
-        data: filteredData, // Use filteredData for pagination
-        rowsPerPage: 10,
-        paginationContainerId: 'pagination',
-        renderPageCallback: renderPulledOutTable,
-        defaultSortFn: (a, b) => new Date(b.date_needed) - new Date(a.date_needed)
-      });
+          setupSearchFilter({
+            filterColumnSelector: '#column-select',
+            filterInputSelector: '#search-input',
+            data: originalData,
+            onFilter: (filtered) => {
+              filteredData = filtered;
+              paginator.setData(filteredData);
+            }
+          });
+        })
+        .catch(console.error);
+    });
 
-      paginator.render();
-    })
-    .catch(console.error);
-});
 
-function renderPulledOutTable(pageData) {
-  const tbody = document.getElementById('data-body');
-  tbody.innerHTML = ''; // Clear the existing rows
+    function renderPulledOutTable(pageData) {
+      const tbody = document.getElementById('data-body');
+      tbody.innerHTML = ''; // Clear existing rows
 
-  pageData.forEach(item => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
+      pageData.forEach(item => {
+        const row = document.createElement('tr');
+
+        const actionButton = item.action ?
+          `<button class="btn btn-sm btn-success" disabled>DONE</button>` :
+          `<button class="btn btn-sm btn-warning" onclick='handleAction(${JSON.stringify(item)})'>CONFIRM</button>
+`;
+
+        row.innerHTML = `
       <td style="text-align: center;">${item.material_no}</td>
       <td style="text-align: center;">${item.model_name}</td>
       <td style="text-align: center;">${item.quantity}</td>
@@ -119,36 +138,83 @@ function renderPulledOutTable(pageData) {
       <td style="text-align: center;">${item.shift}</td>
       <td style="text-align: center;">${item.lot_no}</td>
       <td style="text-align: center;">${item.date_needed || '<i>NONE</i>'}</td>
+      <td style="text-align: center;">${item.date_loaded || '<i>NONE</i>'}</td>
+      <td style="text-align: center;">${item.truck || '<i>NONE</i>'}</td>
+      <td style="text-align: center;">${actionButton}</td>
     `;
-    tbody.appendChild(row);
-  });
-}
+        tbody.appendChild(row);
+      });
+    }
 
-function dynamicSearch() {
-  const column = document.getElementById('column-select').value;
-  const searchText = document.getElementById('search-input').value.trim().toLowerCase();
+    function handleAction(item) {
+      fetch('/mes/api/delivery/getTruck.php')
+        .then(res => res.json())
+        .then(truckList => {
+          const options = truckList.map(truck =>
+            `<option value="${truck.name}">${truck.name}</option>`
+          ).join('');
 
-  // Filter the data based on the selected column and search text
-  filteredData = originalData.filter(item =>
-    (item[column] ?? '').toString().toLowerCase().includes(searchText)
-  );
+          Swal.fire({
+            title: 'Confirm Action',
+            html: `
+          <p><strong>Material No:</strong> ${item.material_no}</p>
+          <p><strong>Component:</strong> ${item.material_description}</p>
+          <p>Are you sure you want to confirm?</p>
+          <label for="truck-select">Select Truck:</label>
+          <select id="truck-select" class="swal2-input">
+            <option value="" disabled selected>Select a truck</option>
+            ${options}
+          </select>
+        `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Confirm',
+            cancelButtonText: 'Cancel',
+            preConfirm: () => {
+              const truck = document.getElementById('truck-select').value;
+              if (!truck) {
+                Swal.showValidationMessage('Please select a truck');
+                return false;
+              }
+              return truck;
+            }
+          }).then(result => {
+            if (result.isConfirmed) {
+              const selectedTruck = result.value;
 
-  // Update the paginator with the filtered data
-  paginator.setData(filteredData);
-}
+              // Send all needed data
+              fetch('/mes/api/delivery/postAction.php', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    id: item.id,
+                    truck: selectedTruck,
+                    material_no: item.material_no,
+                    model_name: item.model_name,
+                    material_description: item.material_description,
+                    total_quantity: item.total_quantity
+                  })
+                })
+                .then(res => res.json())
+                .then(data => {
+                  console.log(data);
+                  Swal.fire('Success', 'Action confirmed and truck selected.', 'success');
+                })
+                .catch(error => {
+                  console.error('Post error:', error);
+                  Swal.fire('Error', 'Something went wrong.', 'error');
+                });
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Truck fetch error:', error);
+          Swal.fire('Error', 'Failed to load truck list.', 'error');
+        });
+    }
 
-const columnSelect = document.getElementById('column-select');
-const searchInput = document.getElementById('search-input');
 
-// Disable search input by default
-searchInput.disabled = true;
-
-columnSelect.addEventListener('change', () => {
-  searchInput.disabled = !columnSelect.value;
-  dynamicSearch();  // Apply the filter immediately when a column is selected
-});
-
-searchInput.addEventListener('input', dynamicSearch);  // Apply filter when user types in search
-
-  enableTableSorting(".table");
-</script>
+    enableTableSorting(".table");
+  </script>
