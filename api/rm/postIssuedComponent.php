@@ -67,6 +67,7 @@ try {
             throw new Exception($result3);
         }
         if ($result2 && $result3) {
+            $rmModel->updateIssuedRawmaterials($id, $material_no, $component_name, $quantity);
             $db->commit();
             echo json_encode([
                 'status' => 'success',

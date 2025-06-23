@@ -183,12 +183,15 @@ $production_location = $_SESSION['production_location'];
         groupRow.classList.add('group-header');
         groupRow.style.backgroundColor = '#e6e6e6';
         groupRow.style.cursor = 'pointer';
+        const componentName = group[0].components_name || '<i>Null</i>';
         groupRow.setAttribute('data-batch', batch);
+        groupRow.setAttribute('data-component', componentName);
         groupRow.innerHTML = `
-      <td colspan="9" style="font-weight: bold; text-align: left;">
-        🔽 Batch: ${batch}
-      </td>
-    `;
+  <td colspan="9" style="font-weight: bold; text-align: left;">
+    🔽  Batch: ${batch} - ${componentName}
+  </td>
+`;
+
         dataBody.appendChild(groupRow);
 
         // Child rows
@@ -246,8 +249,9 @@ $production_location = $_SESSION['production_location'];
         row.style.display = isVisible ? 'none' : '';
       });
 
-      // Toggle arrow icon and label
-      groupRow.querySelector('td').innerHTML = `${isVisible ? '▶️' : '🔽'} Batch: ${batch}`;
+      const componentName = groupRow.getAttribute('data-component');
+      groupRow.querySelector('td').innerHTML = `${isVisible ? '▶️' : '🔽'} Batch: ${batch} - ${componentName}`;
+
     });
 
 

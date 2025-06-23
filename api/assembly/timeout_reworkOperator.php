@@ -54,7 +54,7 @@ try {
             if ($total === $total_quantity) {
 
                 if ($material_no && $total_replace > 0) {
-                    $assemblyModel->updateComponentInventoryAfterReplace($material_no, $total_replace);
+                    $assemblyModel->updateComponentInventoryAfterReplace($material_no,  $total_replace, $time_out, $reference_no,);
                 }
                 $assemblyModel->markReworkAssemblyAsDone($reference_no);
                 $assemblyModel->insertReworkQC($reference_no, $result, $total, $time_out);

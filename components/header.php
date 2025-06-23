@@ -39,8 +39,6 @@ if (!empty($_SESSION['production_location'])) {
   <link rel="shortcut icon" href="assets/images/roberts_icon.png" />
   <link rel="stylesheet" href="assets/css/all.min.css">
 
-</head>
-
 <body>
   <div class="main-wrapper">
 
@@ -72,6 +70,7 @@ if (!empty($_SESSION['production_location'])) {
           <?php if (isset($role) && isset($production)) {
             $role = strtolower($role);
             $production = strtolower($production);
+
 
             if ($role == 'administrator' || $role == 'user manager') {
               echo '
@@ -116,136 +115,164 @@ if (!empty($_SESSION['production_location'])) {
             if ($role == 'administrator' || ($production == 'delivery' && $role == 'supervisor')) {
               echo '
     <li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#delivery" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="calendar"></i>
-    <span class="link-title">Delivery</span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="delivery">
-    <ul class="nav sub-menu">
-        <li class="nav-item">
-        <a href="?page_active=pulled_out" class="nav-link" data-page="pulled_out">Pulled-Out</a>
-      </li>
-        </li>
-    </ul>
-  </div>
-</li>
-    
-    ';
+      <a class="nav-link" data-toggle="collapse" href="#delivery" role="button" aria-expanded="false" aria-controls="tables">
+        <i class="link-icon" data-feather="calendar"></i>
+        <span class="link-title">Delivery (<span id="delivery-badge">0</span>)</span>
+        <i class="link-arrow" data-feather="chevron-down"></i>
+      </a>
+      <div class="collapse" id="delivery">
+        <ul class="nav sub-menu">
+          <li class="nav-item">
+            <a href="?page_active=pulled_out" class="nav-link" data-page="pulled_out">
+              Pulled-Out (<span id="pulledout-badge">0</span>)
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>';
             }
+
 
             if ($role == 'administrator' || ($production == 'fg_warehouse' && $role == 'supervisor')) {
               echo '
     <li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#wh" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="layout"></i>
-
-
-    <span class="link-title">Warehouse </span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="wh">
-    <ul class="nav sub-menu">
-      <li class="nav-item">
-        <a href="?page_active=materials_inventory" class="nav-link" data-page="materials_inventory">Materials Inventory</a>
-      </li>
-      <li class="nav-item">
-        <a href="?page_active=for_pulling" class="nav-link" data-page="for_pulling">For Pulling </a>
-      </li>
-     <li class="nav-item">
-        <a href="?page_active=pulling_history" class="nav-link" data-page="pulling_history">Pulling History </a>
-      </li>
-    </ul>
-  </div>
-</li>
-    ';
+      <a class="nav-link" data-toggle="collapse" href="#wh" role="button" aria-expanded="false" aria-controls="tables">
+        <i class="link-icon" data-feather="layout"></i>
+        <span class="link-title">
+          Warehouse (<span id="warehouse-badge">0</span>)
+        </span>
+        <i class="link-arrow" data-feather="chevron-down"></i>
+      </a>
+      <div class="collapse" id="wh">
+        <ul class="nav sub-menu">
+          <li class="nav-item">
+            <a href="?page_active=materials_inventory" class="nav-link" data-page="materials_inventory">Materials Inventory</a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=for_pulling" class="nav-link" data-page="for_pulling">
+              For Pulling (<span id="forpulling-badge">0</span>)
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=pulling_history" class="nav-link" data-page="pulling_history">Pulling History</a>
+          </li>
+        </ul>
+      </div>
+    </li>';
             }
+
             if ($role == 'administrator' || ($production == 'qc' && $role == 'supervisor')) {
               echo '
     <li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#qc" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="layout"></i>
-
-
-    <span class="link-title">QA/QC </span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="qc">
-    <ul class="nav sub-menu">
-      <li class="nav-item">
-        <a href="?page_active=qc_todolist" class="nav-link" data-page="qc_todolist">Todo-List</a>
-      </li>
-      <li class="nav-item">
-        <a href="?page_active=qc_rework" class="nav-link" data-page="qc_rework">Queue Rework</a>
-      </li>
-     <li class="nav-item">
-        <a href="?page_active=qc_manpower_efficiency" class="nav-link" data-page="qc_manpower_efficiency">Manpower Data</a>
-      </li>
-      <li class="nav-item">
-        <a href="?page_active=qc_worklogs" class="nav-link" data-page="qc_worklogs">Work Logs</a>
-      </li>
-    </ul>
-  </div>
-</li>
-    ';
-            }
-            if ($role == 'administrator' || ($production == 'assembly' && $role == 'supervisor')) {
-              echo '<li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#assembly" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="calendar"></i>
-    <span class="link-title">Assembly</span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="assembly">
-    <ul class="nav sub-menu">
- 
-    <li class="nav-item">
-        <a href="?page_active=assembly_todolist" class="nav-link" data-page="assembly_todolist">Todo-List</a>
-      </li>
+      <a class="nav-link" data-toggle="collapse" href="#qc" role="button" aria-expanded="false" aria-controls="tables">
+        <i class="link-icon" data-feather="layout"></i>
+        <span class="link-title">
+          QA/QC (<span id="qc-badge">0</span>)
+        </span>
+        <i class="link-arrow" data-feather="chevron-down"></i>
+      </a>
+      <div class="collapse" id="qc">
+        <ul class="nav sub-menu">
           <li class="nav-item">
-        <a href="?page_active=assembly_rework" class="nav-link" data-page="assembly_rework">Queue Rework</a>
-      </li>
-      <li class="nav-item">
-        <a href="?page_active=assembly_manpower_efficiency" class="nav-link" data-page="assembly_manpower_efficiency">Manpower Data</a>
-      </li>
-      <li class="nav-item">
-        <a href="?page_active=assembly_worklogs" class="nav-link" data-page="assembly_worklogs">Work Logs</a>
-      </li>
-    </ul>
-  </div>
-</li>
-';
+            <a href="?page_active=qc_todolist" class="nav-link" data-page="qc_todolist">
+              Todo-List (<span id="qc-todolist-badge">0</span>)
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=qc_rework" class="nav-link" data-page="qc_rework">
+              Queue Rework (<span id="qc-rework-badge">0</span>)
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=qc_manpower_efficiency" class="nav-link" data-page="qc_manpower_efficiency">
+              Manpower Data 
+      
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=qc_worklogs" class="nav-link" data-page="qc_worklogs">
+              Work Logs 
+              
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>';
             }
+
+            // ASSEMBLY Sidebar
+            if ($role == 'administrator' || ($production == 'assembly' && $role == 'supervisor')) {
+              echo '
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#assembly" role="button" aria-expanded="false" aria-controls="tables">
+        <i class="link-icon" data-feather="calendar"></i>
+        <span class="link-title">
+          Assembly (<span id="assembly-badge">0</span>)
+        </span>
+        <i class="link-arrow" data-feather="chevron-down"></i>
+      </a>
+      <div class="collapse" id="assembly">
+        <ul class="nav sub-menu">
+          <li class="nav-item">
+            <a href="?page_active=assembly_todolist" class="nav-link" data-page="assembly_todolist">
+              Todo-List (<span id="assembly-todolist-badge">0</span>)
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=assembly_rework" class="nav-link" data-page="assembly_rework">
+              Queue Rework (<span id="assembly-rework-badge">0</span>)
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=assembly_manpower_efficiency" class="nav-link" data-page="assembly_manpower_efficiency">
+              Manpower Data 
+    
+            </a>
+          </li>
+          <li class="nav-item">
+       <a href="?page_active=assembly_worklogs" class="nav-link" data-page="assembly_worklogs">
+  Work Logs 
+
+</a>
+
+          </li>
+        </ul>
+      </div>
+    </li>';
+            }
+
 
 
             if ($role == 'administrator' || ($production == 'stamping' && ($role == 'supervisor' || $role == 'line leader'))) {
-
               echo '
     <li class="nav-item">
       <a class="nav-link" data-toggle="collapse" href="#stamping" role="button" aria-expanded="false" aria-controls="stamping">
         <i class="link-icon" data-feather="layout"></i>
-        <span class="link-title">Stamping</span>
+        <span class="link-title">Stamping (<span id="stamping-badge">0</span>)</span>
         <i class="link-arrow" data-feather="chevron-down"></i>
       </a>
       <div class="collapse" id="stamping">
         <ul class="nav sub-menu">
-
-  
           <li class="nav-item">
-            <a href="?page_active=stamping_todolist" class="nav-link" data-page="stamping_todolist">To-do List</a>
+            <a href="?page_active=stamping_todolist" class="nav-link" data-page="stamping_todolist">
+              To-do List (<span id="stamping-todolist-badge">0</span>)
+            </a>
           </li>
           <li class="nav-item">
-            <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">Components Inventory</a>
+            <a href="?page_active=components_inventory" class="nav-link" data-page="components_inventory">
+              Components Inventory
+            </a>
           </li>
           <li class="nav-item">
-            <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">Manpower Data</a>
+            <a href="?page_active=stamping_monitoring_data" class="nav-link" data-page="stamping_monitoring_data">
+              Manpower Data
+            </a>
           </li>
           <li class="nav-item">
-            <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">Work Logs</a>
+            <a href="?page_active=stamping_work_logs" class="nav-link" data-page="stamping_work_logs">
+              Work Logs
+            </a>
           </li>
-    
-
-
         </ul>
       </div>
     </li>';
@@ -256,28 +283,30 @@ if (!empty($_SESSION['production_location'])) {
 
 
 
+
             if ($role == 'administrator' || ($production == 'rm_warehouse' && $role == 'supervisor')) {
               echo '
     <li class="nav-item">
-  <a class="nav-link" data-toggle="collapse" href="#rmw" role="button" aria-expanded="false" aria-controls="tables">
-    <i class="link-icon" data-feather="layout"></i>
-
-
-    <span class="link-title">RM Warehouse </span>
-    <i class="link-arrow" data-feather="chevron-down"></i>
-  </a>
-  <div class="collapse" id="rmw">
-    <ul class="nav sub-menu">
-      <li class="nav-item">
-        <a href="?page_active=for_issue" class="nav-link" data-page="for_issue">For Issue</a>
-      </li>
-      <li class="nav-item">
-        <a href="?page_active=issued_history" class="nav-link" data-page="issued_history">Issuance History</a>
-      </li>
-    </ul>
-  </div>
-</li>
-    ';
+      <a class="nav-link" data-toggle="collapse" href="#rmw" role="button" aria-expanded="false" aria-controls="tables">
+        <i class="link-icon" data-feather="layout"></i>
+        <span class="link-title">
+          RM Warehouse (<span id="rmw-badge">0</span>)
+        </span>
+        <i class="link-arrow" data-feather="chevron-down"></i>
+      </a>
+      <div class="collapse" id="rmw">
+        <ul class="nav sub-menu">
+          <li class="nav-item">
+            <a href="?page_active=for_issue" class="nav-link" data-page="for_issue">
+              For Issue (<span id="forissue-badge">0</span>)
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=issued_history" class="nav-link" data-page="issued_history">Issuance History</a>
+          </li>
+        </ul>
+      </div>
+    </li>';
             }
           } ?>
 
@@ -443,4 +472,111 @@ if (!empty($_SESSION['production_location'])) {
             }
           });
         }
+        document.addEventListener('DOMContentLoaded', function() {
+          let lastTriggerTime = new Date().toISOString();
+          fetchDeliveryCounts();
+          fetchWarehouseCounts();
+          fetchStampingCounts();
+          fetchAssemblyCounts();
+          fetchQcCounts();
+          fetchRmwCounts();
+
+          function fetchAssemblyCounts() {
+            fetch(`/mes/api/header/getAssemblyCounts.php`)
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) {
+                  const data = res.data;
+
+
+                  document.querySelector('#assembly-todolist-badge').textContent = data.assembly_todolist;
+                  document.querySelector('#assembly-rework-badge').textContent = data.assembly_rework;
+                  const badge = document.querySelector('#assembly-badge');
+                  if (badge) badge.textContent = data.total;
+
+                }
+              })
+              .catch(err => console.error('Assembly Fetch error:', err));
+          }
+
+          function fetchQcCounts() {
+            fetch(`/mes/api/header/getQcCounts.php`)
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) {
+                  const data = res.data;
+
+                  document.querySelector('#qc-todolist-badge').textContent = data.qc_todolist;
+                  document.querySelector('#qc-rework-badge').textContent = data.qc_rework;
+                  document.querySelector('#qc-badge').textContent = data.total;
+
+                }
+              })
+              .catch(err => console.error('QC Fetch error:', err));
+          }
+
+          function fetchDeliveryCounts() {
+            fetch(`/mes/api/header/getDeliveryCounts.php`)
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) {
+                  const data = res.data;
+                  document.querySelector('#pulledout-badge').textContent = data.pulled_out;
+                  document.querySelector('#delivery-badge').textContent = data.total;
+                }
+              })
+              .catch(err => console.error('Delivery fetch error:', err));
+          }
+
+          function fetchWarehouseCounts() {
+            fetch(`/mes/api/header/getWarehouseCounts.php`)
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) {
+                  const data = res.data;
+                  document.querySelector('#forpulling-badge').textContent = data.for_pulling;
+                  document.querySelector('#warehouse-badge').textContent = data.total;
+                }
+              })
+              .catch(err => console.error('Warehouse fetch error:', err));
+          }
+
+
+          function fetchRmwCounts() {
+            fetch(`/mes/api/header/getRmwCounts.php`)
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) {
+                  const data = res.data;
+                  document.querySelector('#forissue-badge').textContent = data.for_issue;
+                  document.querySelector('#rmw-badge').textContent = data.total;
+                }
+              })
+              .catch(err => console.error('RM Warehouse fetch error:', err));
+          }
+
+          function fetchStampingCounts() {
+            fetch(`/mes/api/header/getStampingCounts.php`)
+              .then(res => res.json())
+              .then(res => {
+                if (res.success) {
+                  const data = res.data;
+                  document.querySelector('#stamping-todolist-badge').textContent = data.stamping_todolist;
+                  document.querySelector('#stamping-badge').textContent = data.total;
+                }
+              })
+              .catch(err => console.error('Stamping Fetch error:', err));
+          }
+
+
+          setInterval(() => {
+            fetchStampingCounts();
+            fetchDeliveryCounts();
+            fetchWarehouseCounts();
+            fetchRmwCounts();
+
+            fetchAssemblyCounts();
+            fetchQcCounts();
+          }, 10000);
+        })
       </script>

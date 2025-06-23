@@ -30,7 +30,8 @@ try {
         'assembly_list',
         'qc_list',
         'rework_assembly',
-        'rework_qc'
+        'rework_qc',
+        'issued_rawmaterials'
     ];
     foreach ($tablesToTruncate as $table) {
         $db->Update("TRUNCATE TABLE `$table`");

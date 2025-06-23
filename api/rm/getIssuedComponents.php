@@ -7,7 +7,8 @@ use Model\RM_WarehouseModel;
 try {
     $rmModel = new RM_WarehouseModel($db);
 
-    $results = $rmModel->getIssued();
+
+    $results = $rmModel->getIssuedComponents();
 
     echo json_encode([
         'status' => 'success',

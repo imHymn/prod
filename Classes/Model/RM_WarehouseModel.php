@@ -10,19 +10,57 @@ class RM_WarehouseModel
     {
         $this->db = $db;
     }
-    public function getComponents()
+    public function getIssuedComponents()
     {
-        $sql = "SELECT * FROM components_inventory WHERE actual_inventory < normal;";
+        $sql = "
+        SELECT 
+            i.*, 
+            ci.stage_name, ci.process_quantity,ci.usage_type,
+            (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'material_no', r.material_no,
+                        'material_description', r.material_description,
+                        'usage', r.usage
+                    )
+                )
+                FROM rawmaterials_inventory r
+                WHERE r.components_material_no = i.material_no
+            ) AS raw_materials
+        FROM issued_rawmaterials i
+        LEFT JOIN components_inventory ci 
+            ON ci.material_no = i.material_no 
+            AND ci.components_name = i.component_name
+        WHERE i.delivered_at IS NULL
+    ";
+
         return $this->db->Select($sql);
     }
-    public function getIssued()
-    {
-        $sql = " SELECT * FROM rm_warehouse WHERE created_at >= CURDATE();";
-        return $this->db->Select($sql);
-    }
+
+
     public function getIssuedHistory()
     {
-        $sql = "SELECT * FROM rm_warehouse";
+        $sql = "
+        SELECT 
+            i.*, 
+            ci.usage_type,
+            (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'material_no', r.material_no,
+                        'material_description', r.material_description,
+                        'usage', r.usage
+                    )
+                )
+                FROM rawmaterials_inventory r
+                WHERE r.components_material_no = i.material_no
+            ) AS raw_materials
+        FROM issued_rawmaterials i
+        LEFT JOIN components_inventory ci 
+            ON ci.material_no = i.material_no 
+            AND ci.components_name = i.component_name
+        WHERE i.delivered_at IS NOT NULL
+    ";
         return $this->db->Select($sql);
     }
     public function updateComponentInventoryStatus(string $material_no, string $component_name, int $rm_stocks): bool
@@ -133,5 +171,24 @@ class RM_WarehouseModel
         }
 
         return true;
+    }
+
+
+    public function updateIssuedRawmaterials($id, $material_no, $component_name, $quantity)
+    {
+        $sql = "UPDATE issued_rawmaterials 
+            SET delivered_at = NOW() ,rm_quantity =:quantity
+            WHERE id = :id 
+              AND material_no = :material_no 
+              AND component_name = :component_name";
+
+        $params = [
+            ':id' => $id,
+            ':material_no' => $material_no,
+            ':component_name' => $component_name,
+            ':quantity' => $quantity
+        ];
+
+        return $this->db->Update($sql, $params);
     }
 }
