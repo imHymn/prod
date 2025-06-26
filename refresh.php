@@ -16,7 +16,7 @@ require_once __DIR__ . '/Classes/Database/DatabaseClass.php'; // Adjust the path
 $db = new DatabaseClass();
 
 try {
-    $sql1 = "UPDATE components_inventory SET actual_inventory = 500, rm_stocks=0";
+    $sql1 = "UPDATE components_inventory SET actual_inventory = 300, rm_stocks=0";
     $db->Update($sql1);
 
     $sql2 = "UPDATE material_inventory SET quantity = 100";

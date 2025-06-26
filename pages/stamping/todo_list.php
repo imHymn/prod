@@ -117,6 +117,7 @@ $production_location = $_SESSION['production_location'];
     let paginator = null;
     let section = '';
 
+
     const filterColumnSelect = document.getElementById('filter-column');
     const filterInput = document.getElementById('filter-input');
     const dataBody = document.getElementById('data-body');
@@ -125,18 +126,33 @@ $production_location = $_SESSION['production_location'];
     const production = "<?= htmlspecialchars($production, ENT_QUOTES) ?>";
     const production_location = "<?= htmlspecialchars($production_location, ENT_QUOTES) ?>";
 
-    console.log(role, production, production_location);
 
-
-    if (role === "line leader" && production === "stamping") {
-      section = production_location;
-    } else if (role === "administrator") {
-      section = "all";
+    if (role === "administrator") {
+      section = "stamping";
+    } else {
+      section = production;
     }
+    console.log(role, production, production_location)
 
-    fetch(`api/stamping/getTodoList.php?section=${encodeURIComponent(section)}`)
+    function filterRows(data) {
+      const hide = ['spot welding', 'finishing'];
+      return data.filter(item =>
+        item.status !== 'done' &&
+        !hide.includes((item.section || '').toLowerCase())
+      );
+    }
+    //  function filterRows(data) {
+    //             const include = ['spot welding', 'finishing'];
+    //             return data.filter(item =>
+    //                 item.status !== 'done' &&
+    //                 include.includes((item.section || '').toLowerCase())
+    //             );
+    //         }
+
+    fetch(`api/stamping/getTodoList.php`)
       .then(response => response.json())
       .then(data => {
+        console.log(data)
         fullData = preprocessData(data); // ⬅️ Clean it up before paginating
         paginator = createPaginator({
           data: fullData,
@@ -161,78 +177,85 @@ $production_location = $_SESSION['production_location'];
           group.sort((a, b) => (parseInt(a.stage || 0) - parseInt(b.stage || 0)))
         );
 
-      return sorted.filter(item => item.status !== 'done');
+      return sorted;
     }
 
+
     function renderTable(data, page = 1) {
+      console.log(data)
+      const filtered = filterRows(data)
+
+      /* 2) GROUP the remaining rows by batch */
       const grouped = {};
-      data.forEach(item => {
+      filtered.forEach(item => {
         if (!grouped[item.batch]) grouped[item.batch] = [];
         grouped[item.batch].push(item);
       });
 
       const dataBody = document.getElementById('data-body');
-      dataBody.innerHTML = ''; // Clear table
+      dataBody.innerHTML = ''; // clear the table body
 
+      /* 3) RENDER each batch exactly as before */
       Object.entries(grouped).forEach(([batch, group]) => {
-        // Sort group by stage
         group.sort((a, b) => parseInt(a.stage || 0) - parseInt(b.stage || 0));
 
-        // Group header row
+        /* ── group header row ── */
         const groupRow = document.createElement('tr');
         groupRow.classList.add('group-header');
         groupRow.style.backgroundColor = '#e6e6e6';
         groupRow.style.cursor = 'pointer';
+
         const componentName = group[0].components_name || '<i>Null</i>';
         groupRow.setAttribute('data-batch', batch);
         groupRow.setAttribute('data-component', componentName);
         groupRow.innerHTML = `
-  <td colspan="9" style="font-weight: bold; text-align: left;">
-    🔽  Batch: ${batch} - ${componentName}
-  </td>
-`;
-
+      <td colspan="9" style="font-weight:bold;text-align:left;">
+        🔽 Batch: ${batch} - ${componentName}
+      </td>`;
         dataBody.appendChild(groupRow);
 
-        // Child rows
+        /* ── child rows ── */
         group.forEach(item => {
-          if (item.status === 'done') return;
+          if (item.status === 'done') return; // skip rows already marked done
 
           const itemDataAttr = encodeURIComponent(JSON.stringify(item));
-          const hasTimeIn = item.time_in !== null && item.time_in !== '';
-          const hasTimeOut = item.time_out !== null && item.time_out !== '';
+          const hasTimeIn = !!item.time_in;
+          const hasTimeOut = !!item.time_out;
 
-          let actionButton = '';
-          if (hasTimeIn && hasTimeOut) {
-            actionButton = `<span class="btn btn-sm btn-primary">Done</span>`;
-          } else {
-            actionButton = hasTimeIn ?
-              `<button type="button" class="btn btn-sm btn-success time-action-btn" data-item="${itemDataAttr}" data-mode="time-out">Time Out</button>` :
-              `<button type="button" class="btn btn-sm btn-primary time-action-btn" data-item="${itemDataAttr}" data-mode="time-in">Time In</button>`;
-          }
+          const actionButton = hasTimeIn && hasTimeOut ?
+            `<span class="btn btn-sm btn-primary">Done</span>` :
+            `<button type="button"
+                   class="btn btn-sm btn-${hasTimeIn ? 'success' : 'primary'} time-action-btn"
+                   data-item="${itemDataAttr}"
+                   data-mode="${hasTimeIn ? 'time-out' : 'time-in'}">
+             ${hasTimeIn ? 'Time Out' : 'Time In'}
+           </button>`;
 
           const row = document.createElement('tr');
           row.classList.add(`batch-group-${batch}`, 'ref-item-row');
-          row.style.display = 'none'; // initially hidden
+          row.style.display = 'none'; // keep rows collapsed initially
           row.innerHTML = `
-        <td style="text-align: center;">${item.components_name || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.section || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.stage_name || ''}</td>
-        <td style="text-align: center;">${item.total_quantity != null ? item.total_quantity : '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.pending_quantity != null ? item.pending_quantity : '<i>0</i>'}</td>
-        <td style="text-align: center;">${item.person_incharge || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}</td>
-        <td style="text-align: center;">${actionButton}</td>
-        <td style="text-align: center;">
-          <button onclick="viewStageStatus('${item.material_no}', '${item.components_name}', '${item.batch}')" class="btn btn-sm" title="View Stages">🔍</button>
-        </td>
-      `;
+        <td style="text-align:center;">${item.components_name || '<i>Null</i>'}</td>
+        <td style="text-align:center;">${item.section || '<i>Null</i>'}</td>
+        <td style="text-align:center;">${item.stage_name || ''}</td>
+        <td style="text-align:center;">${item.total_quantity ?? '<i>Null</i>'}</td>
+        <td style="text-align:center;">${item.pending_quantity ?? '<i>0</i>'}</td>
+        <td style="text-align:center;">${item.person_incharge || '<i>Null</i>'}</td>
+        <td style="text-align:center;">${item.time_in || '<i>Null</i>'} / ${item.time_out || '<i>Null</i>'}</td>
+        <td style="text-align:center;">${actionButton}</td>
+        <td style="text-align:center;">
+          <button class="btn btn-sm"
+                  onclick="viewStageStatus('${item.material_no}', '${item.components_name}', '${item.batch}')"
+                  title="View Stages">🔍</button>
+        </td>`;
           dataBody.appendChild(row);
         });
       });
 
-      document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleString()}`;
+      document.getElementById('last-updated').textContent =
+        `Last updated: ${new Date().toLocaleString()}`;
     }
+
 
     document.getElementById('data-body').addEventListener('click', function(event) {
       const groupRow = event.target.closest('.group-header');
@@ -253,52 +276,6 @@ $production_location = $_SESSION['production_location'];
       groupRow.querySelector('td').innerHTML = `${isVisible ? '▶️' : '🔽'} Batch: ${batch} - ${componentName}`;
 
     });
-
-
-
-
-
-
-
-    // Enable/disable filter input based on dropdown
-    filterColumnSelect.addEventListener('change', () => {
-      filterInput.value = '';
-      filterInput.disabled = !filterColumnSelect.value;
-      filterInput.focus();
-      applyFilter();
-    });
-
-    filterInput.addEventListener('input', applyFilter);
-
-    function applyFilter() {
-      const column = filterColumnSelect.value;
-      const filterValue = filterInput.value.trim().toLowerCase();
-
-      if (!column) {
-        paginator.setData(fullData);
-        return;
-      }
-
-      const filtered = fullData.filter(item => {
-        let val = item[column];
-        if (val === null || val === undefined) return false;
-        return String(val).toLowerCase().includes(filterValue);
-      });
-
-      paginator.setData(filtered);
-    }
-
-    function showConfirmation(mode, materialNo, componentName) {
-      return Swal.fire({
-        icon: 'question',
-        title: `Confirm ${mode === 'time-in' ? 'Time-In' : 'Time-Out'}`,
-        html: `<b>Material No:</b> ${materialNo}<br><b>Component:</b> ${componentName}`,
-        showCancelButton: true,
-        confirmButtonText: 'Yes, Proceed',
-        cancelButtonText: 'Cancel'
-      });
-    }
-
     document.getElementById('data-body').addEventListener('click', (event) => {
       const btn = event.target.closest('.time-action-btn');
       if (!btn) return;
@@ -307,7 +284,6 @@ $production_location = $_SESSION['production_location'];
       const mode = btn.getAttribute('data-mode');
 
       selectedRowData = JSON.parse(decodeURIComponent(encodedItem));
-      console.log('Selected Row:', selectedRowData);
 
       const {
         material_no,
@@ -316,8 +292,10 @@ $production_location = $_SESSION['production_location'];
 
       if (mode === 'time-in') {
         const stage = parseInt(selectedRowData.stage || 0);
-        const referenceNo = selectedRowData.reference_no;
-        const relatedItems = fullData.filter(item => item.reference_no === referenceNo);
+        const batch = selectedRowData.batch;
+        const relatedItems = fullData.filter(item => item.batch === batch);
+        console.log('🧾 Related Items for Batch:', batch, relatedItems);
+
         const maxTotalQuantity = Math.max(...relatedItems.map(i => i.total_quantity || 0));
 
         if (stage === 1) {
@@ -334,15 +312,37 @@ $production_location = $_SESSION['production_location'];
 
         if (stage > 1) {
           const prevStage = stage - 1;
-          const previousStageItem = relatedItems.find(item =>
-            parseInt(item.stage) === prevStage && item.status?.toLowerCase() === 'ongoing'
-          );
           const prevStageItems = relatedItems.filter(item => parseInt(item.stage) === prevStage);
-          const allPrevStageDone = prevStageItems.every(item => item.status?.toLowerCase() === 'done');
-          const sumPrevStageQuantity = prevStageItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-          const prevStageCompleted = sumPrevStageQuantity >= maxTotalQuantity;
 
-          if (!previousStageItem && !prevStageCompleted && !allPrevStageDone) {
+          const hasOngoing = prevStageItems.some(item => item.status?.toLowerCase() === 'ongoing');
+          const allDone = prevStageItems.length > 0 && prevStageItems.every(item => item.status?.toLowerCase() === 'done');
+          const quantityCompleted = prevStageItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+          const maxTotalQuantity = Math.max(...relatedItems.map(i => i.total_quantity || 0));
+          const prevStageCompleted = quantityCompleted >= maxTotalQuantity;
+
+          const isSpecialSection = ['finishing', 'spot welding'].includes((selectedRowData.section || '').toLowerCase());
+
+          // 👇 allow FINISHING / SPOT WELDING only if quantity and done
+          if (isSpecialSection) {
+            const prevStageValidItems = relatedItems.filter(item =>
+              parseInt(item.stage) === stage - 1 &&
+              item.status?.toLowerCase() === 'done' &&
+              (item.quantity || 0) > 0
+            );
+
+            if (prevStageValidItems.length === 0) {
+              Swal.fire({
+                icon: 'warning',
+                title: `Cannot Time-In`,
+                text: `${selectedRowData.section} stage requires previous stage to have quantity and status "done".`,
+              });
+              return;
+            }
+          }
+
+
+          // 🚫 regular logic for all other sections
+          if (!hasOngoing && !allDone && !prevStageCompleted && !isSpecialSection) {
             Swal.fire({
               icon: 'warning',
               title: `Cannot Time-In for Stage ${stage}`,
@@ -351,6 +351,7 @@ $production_location = $_SESSION['production_location'];
             return;
           }
         }
+
 
         showConfirmation(mode, material_no, components_name).then(result => {
           if (result.isConfirmed) openQRModal(mode);
@@ -420,6 +421,52 @@ $production_location = $_SESSION['production_location'];
         quantityModal.show();
       }
     });
+
+
+
+
+
+
+
+    // Enable/disable filter input based on dropdown
+    filterColumnSelect.addEventListener('change', () => {
+      filterInput.value = '';
+      filterInput.disabled = !filterColumnSelect.value;
+      filterInput.focus();
+      applyFilter();
+    });
+
+    filterInput.addEventListener('input', applyFilter);
+
+    function applyFilter() {
+      const column = filterColumnSelect.value;
+      const filterValue = filterInput.value.trim().toLowerCase();
+
+      if (!column) {
+        paginator.setData(fullData);
+        return;
+      }
+
+      const filtered = fullData.filter(item => {
+        let val = item[column];
+        if (val === null || val === undefined) return false;
+        return String(val).toLowerCase().includes(filterValue);
+      });
+
+      paginator.setData(filtered);
+    }
+
+    function showConfirmation(mode, materialNo, componentName) {
+      return Swal.fire({
+        icon: 'question',
+        title: `Confirm ${mode === 'time-in' ? 'Time-In' : 'Time-Out'}`,
+        html: `<b>Material No:</b> ${materialNo}<br><b>Component:</b> ${componentName}`,
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Proceed',
+        cancelButtonText: 'Cancel'
+      });
+    }
+
 
 
 
@@ -515,8 +562,9 @@ $production_location = $_SESSION['production_location'];
         Swal.fire('Error', 'No data selected for processing.', 'error');
         return;
       }
-
+      const section = "STAMPING";
       scanQRCodeForUser({
+        section,
         onSuccess: ({
           user_id,
           full_name
@@ -584,7 +632,7 @@ $production_location = $_SESSION['production_location'];
             });
         },
         onCancel: () => {
-          console.log("QR scan canceled or modal closed.");
+
         }
       });
     }

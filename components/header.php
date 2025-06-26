@@ -127,6 +127,11 @@ if (!empty($_SESSION['production_location'])) {
               Pulled-Out (<span id="pulledout-badge">0</span>)
             </a>
           </li>
+           <li class="nav-item">
+            <a href="?page_active=pulled_history" class="nav-link" data-page="pulled_history">
+              Pulled History
+            </a>
+          </li>
         </ul>
       </div>
     </li>';
@@ -145,9 +150,7 @@ if (!empty($_SESSION['production_location'])) {
       </a>
       <div class="collapse" id="wh">
         <ul class="nav sub-menu">
-          <li class="nav-item">
-            <a href="?page_active=materials_inventory" class="nav-link" data-page="materials_inventory">Materials Inventory</a>
-          </li>
+      
           <li class="nav-item">
             <a href="?page_active=for_pulling" class="nav-link" data-page="for_pulling">
               For Pulling (<span id="forpulling-badge">0</span>)
@@ -155,6 +158,9 @@ if (!empty($_SESSION['production_location'])) {
           </li>
           <li class="nav-item">
             <a href="?page_active=pulling_history" class="nav-link" data-page="pulling_history">Pulling History</a>
+          </li>
+              <li class="nav-item">
+            <a href="?page_active=materials_inventory" class="nav-link" data-page="materials_inventory">Materials Inventory</a>
           </li>
         </ul>
       </div>
@@ -200,7 +206,6 @@ if (!empty($_SESSION['production_location'])) {
     </li>';
             }
 
-            // ASSEMBLY Sidebar
             if ($role == 'administrator' || ($production == 'assembly' && $role == 'supervisor')) {
               echo '
     <li class="nav-item">
@@ -214,8 +219,13 @@ if (!empty($_SESSION['production_location'])) {
       <div class="collapse" id="assembly">
         <ul class="nav sub-menu">
           <li class="nav-item">
-            <a href="?page_active=assembly_todolist" class="nav-link" data-page="assembly_todolist">
-              Todo-List (<span id="assembly-todolist-badge">0</span>)
+            <a href="?page_active=assembly_todolist_sku" class="nav-link" data-page="assembly_todolist_sku">
+              Todo-List(SKU) (<span id="assembly-todolist-badge">0</span>)
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="?page_active=assembly_todolist_component" class="nav-link" data-page="assembly_todolist_component">
+              Todo-List (Components) (<span id="assembly-todolist-stamping-badge">0</span>)
             </a>
           </li>
           <li class="nav-item">
@@ -493,6 +503,7 @@ if (!empty($_SESSION['production_location'])) {
                   document.querySelector('#assembly-rework-badge').textContent = data.assembly_rework;
                   const badge = document.querySelector('#assembly-badge');
                   if (badge) badge.textContent = data.total;
+                  document.querySelector('#assembly-todolist-stamping-badge').textContent = data.assembly_staping_stages;
 
                 }
               })
@@ -569,14 +580,14 @@ if (!empty($_SESSION['production_location'])) {
           }
 
 
-          setInterval(() => {
-            fetchStampingCounts();
-            fetchDeliveryCounts();
-            fetchWarehouseCounts();
-            fetchRmwCounts();
+          // setInterval(() => {
+          //   fetchStampingCounts();
+          //   fetchDeliveryCounts();
+          //   fetchWarehouseCounts();
+          //   fetchRmwCounts();
 
-            fetchAssemblyCounts();
-            fetchQcCounts();
-          }, 10000);
+          //   fetchAssemblyCounts();
+          //   fetchQcCounts();
+          // }, 10000);
         })
       </script>

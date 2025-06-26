@@ -5,23 +5,11 @@ use Model\StampingModel;
 use Validation\StampingValidator;
 
 try {
-    $section = $_GET['section'] ?? null;
 
-    $errors = StampingValidator::validateSection($section);
-    if (!empty($errors)) {
-        echo json_encode([
-            'success' => false,
-            'message' => $errors
-        ]);
-    }
+    $model = new StampingModel($db);
 
-    $stampingModel = new StampingModel($db);
-    if ($section === "all") {
-        $data = $stampingModel->getTodoListAllSection();
-    } else {
 
-        $data = $stampingModel->getTodoListSpecificSection($section);
-    }
+    $data = $model->getTodoListAllSection();
 
     echo json_encode($data);
 } catch (PDOException $e) {

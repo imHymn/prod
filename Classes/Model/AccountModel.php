@@ -11,19 +11,6 @@ class AccountModel
     {
         $this->db = $db;
     }
-
-    public function getAllUsers(): array
-    {
-        return $this->db->Select("SELECT * FROM users");
-    }
-
-    public function getUserById(int $id): ?array
-    {
-        return $this->db->SelectOne("SELECT * FROM users WHERE id = :id", [
-            ':id' => $id
-        ]);
-    }
-
     public function getUserByUserId(string $user_id): ?array
     {
         $result = $this->db->SelectOne("SELECT * FROM users WHERE user_id = :user_id", [
@@ -50,6 +37,30 @@ class AccountModel
         ]);
     }
 
+    public function getUserById(int $id): ?array
+    {
+        return $this->db->SelectOne("SELECT * FROM users WHERE id = :id", [
+            ':id' => $id
+        ]);
+    }
+    public function deleteUser(int $id): int
+    {
+        return $this->db->Update("DELETE FROM users WHERE id = :id", [
+            ':id' => $id
+        ]);
+    }
+
+
+
+    public function getAllUsers(): array
+    {
+        return $this->db->Select("SELECT * FROM users");
+    }
+
+
+
+
+
     public function updateUser(int $id, array $data): int
     {
         $sql = "UPDATE users SET 
@@ -69,13 +80,6 @@ class AccountModel
             ':production' => $data['production'] ?? null,
             ':role' => $data['role'] ?? null,
             ':production_location' => $data['production_location'] ?? null
-        ]);
-    }
-
-    public function deleteUser(int $id): int
-    {
-        return $this->db->Update("DELETE FROM users WHERE id = :id", [
-            ':id' => $id
         ]);
     }
 }

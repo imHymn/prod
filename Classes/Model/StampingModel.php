@@ -16,8 +16,13 @@ class StampingModel
     }
     public function getManpowerData()
     {
-        return $this->db->Select("SELECT * FROM `stamping` WHERE status ='done'");
+        return $this->db->Select("
+        SELECT * FROM `stamping`
+        WHERE status = 'done'
+        AND LOWER(section) NOT IN ('finishing', 'spot welding')
+    ");
     }
+
     public function getWorkLogs()
     {
         return $this->db->Select("SELECT * FROM `stamping` WHERE status ='done'");
@@ -26,12 +31,8 @@ class StampingModel
     {
         return $this->db->Select("SELECT * FROM stamping WHERE created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)");
     }
-    public function getTodoListSpecificSection($section)
-    {
-        $normalizedSection = str_replace('-', ' ', $section);
-        $sql = "SELECT * FROM stamping WHERE REPLACE(section, '-', ' ') = :section AND created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
-        return $this->db->Select($sql, [':section' => $normalizedSection]);
-    }
+
+
     public function fetchStageStatus($data)
     {
         $sql = "SELECT stage_name,section,stage, status FROM stamping 

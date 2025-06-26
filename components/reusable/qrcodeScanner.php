@@ -1,96 +1,101 @@
-<script src="assets/js/html5.qrcode.js"></script>
-
-<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="qrModalLabel">Scan QR Code</h5>
-
-      </div>
-      <div class="modal-body">
-        <div id="qr-reader" style="width: 100%"></div>
-        <div id="qr-result" class="mt-3 text-center fw-bold text-success"></div>
-      </div>
+<!-- Reusable Modal for Selecting User -->
+<div class="modal fade" id="accountSelectModal" tabindex="-1" aria-labelledby="accountSelectLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="accountSelectLabel">Select Account</h5>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="account-search" class="form-control mb-3" placeholder="Search by name or ID...">
+                <div id="account-list" style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-muted text-center">Loading accounts...</p>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 <script>
-  let html5QrcodeScanner = null;
+    function scanQRCodeForUser({
+        onSuccess,
+        onCancel,
+        section = null,
+        role = null
+    }) {
+        const modalElement = document.getElementById('accountSelectModal');
+        const searchInput = document.getElementById('account-search');
+        const listContainer = document.getElementById('account-list');
+        const modal = new bootstrap.Modal(modalElement);
 
-  function scanQRCodeForUser({
-    onSuccess,
-    onCancel
-  }) {
-    const modalElement = document.getElementById('qrModal');
-    const resultContainer = document.getElementById('qr-result');
-    const qrReader = new Html5Qrcode("qr-reader");
+        modal.show();
+        listContainer.innerHTML = `<p class="text-muted text-center">Loading accounts...</p>`;
+        searchInput.value = '';
 
-    html5QrcodeScanner = qrReader;
+        let accountData = [];
 
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
+        fetch('/mes/api/accounts/getAccounts.php')
+            .then(res => res.json())
+            .then(data => {
+                if (section) {
+                    accountData = data.filter(acc => {
+                        const okSection = !section || (acc.production ?? '').toUpperCase() === section.toUpperCase();
+                        const okRole = !role || (Array.isArray(role) ?
+                            role.map(r => r.toUpperCase()).includes((acc.role ?? '').toUpperCase()) :
+                            (acc.role ?? '').toUpperCase() === role.toUpperCase());
+                        return okSection && okRole;
+                    });
 
-    resultContainer.textContent = "Waiting for QR scan...";
+                } else {
+                    accountData = data;
+                }
+                renderAccountList(accountData);
+            })
+            .catch(err => {
+                listContainer.innerHTML = `<p class="text-danger text-center">Failed to load accounts.</p>`;
+            });
 
-    qrReader.start({
-        facingMode: "environment"
-      }, {
-        fps: 10,
-        qrbox: 550
-      },
-      async (decodedText, decodedResult) => {
-          resultContainer.textContent = `QR Code Scanned: ${decodedText}`;
-          qrReader.pause();
-
-          const confirm = await Swal.fire({
-            title: 'Confirm Scan',
-            text: `Is this the correct QR code?\n${decodedText}`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, confirm',
-            cancelButtonText: 'No, rescan'
-          });
-
-          if (confirm.isConfirmed) {
-            const user_id = (decodedText.match(/ID:\s*([^\n]+)/)?.[1] || '').trim();
-            const full_name = (decodedText.match(/Name:\s*(.+)/)?.[1] || '').trim();
-
-            if (user_id && full_name) {
-              onSuccess({
-                user_id,
-                full_name
-              });
-              modal.hide();
-              cleanupQRScanner(qrReader);
-            } else {
-              Swal.fire('Error', 'Could not extract user ID or name.', 'error');
-              qrReader.resume();
+        // Render list
+        function renderAccountList(data) {
+            if (!data.length) {
+                listContainer.innerHTML = `<p class="text-muted text-center">No accounts found.</p>`;
+                return;
             }
-          } else {
-            resultContainer.textContent = "Waiting for QR scan...";
-            qrReader.resume();
-          }
-        },
-        (errorMessage) => {
-          // Optional: Handle scan errors here
+
+            listContainer.innerHTML = data.map(acc => `
+        <button class="list-group-item list-group-item-action" data-userid="${acc.user_id}" data-name="${acc.name}">
+          <strong>${acc.name}</strong><br><small>ID: ${acc.user_id}</small>
+        </button>
+      `).join('');
         }
-    ).catch(err => {
-      resultContainer.textContent = `Unable to start scanner: ${err}`;
-    });
 
-    modalElement.addEventListener('hidden.bs.modal', () => {
-      cleanupQRScanner(qrReader);
-      if (onCancel) onCancel();
-    }, {
-      once: true
-    });
-  }
+        // Handle selection
+        listContainer.addEventListener('click', e => {
+            if (e.target.closest('button')) {
+                const btn = e.target.closest('button');
+                const user_id = btn.dataset.userid;
+                const full_name = btn.dataset.name;
+                if (onSuccess) onSuccess({
+                    user_id,
+                    full_name
+                });
+                modal.hide();
+            }
+        });
 
-  function cleanupQRScanner(reader) {
-    if (reader) {
-      reader.stop().then(() => reader.clear()).catch(err => {
-        console.warn("QR scanner stop failed:", err);
-      });
+        // Handle search
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            const filtered = accountData.filter(acc =>
+                acc.name.toLowerCase().includes(query) || acc.user_id.toLowerCase().includes(query)
+            );
+            renderAccountList(filtered);
+        });
+
+        // On modal close
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            if (onCancel) onCancel();
+            listContainer.innerHTML = '';
+        }, {
+            once: true
+        });
     }
-  }
 </script>

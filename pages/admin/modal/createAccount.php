@@ -19,6 +19,8 @@
           <label for="password" class="form-label">Password</label>
           <input type="password" id="password" name="password" class="form-control" required minlength="5">
         </div>
+
+
         <div class="mb-3">
           <label for="role" class="form-label">Role</label>
           <select name="role" id="role" class="form-control">
@@ -30,7 +32,6 @@
             <option value="worker">Worker</option>
           </select>
         </div>
-
 
         <div class="mb-3 d-none" id="productionWrapper"> <!-- Fix: added id -->
           <label for="production" class="form-label">Production</label>
@@ -56,6 +57,8 @@
             <option value="BIG-HYD">BIG-HYD</option>
             <option value="MUFFLER-COMPS">MUFFLER-COMPS</option>
             <option value="OEM-SMALL">OEM-SMALL</option>
+            <option value="SPOT WELDING">SPOT WELDING</option>
+            <option value="FINISHING">FINISHING</option>
           </select>
         </div>
       </div>
@@ -92,7 +95,7 @@
         productionLocationWrapper.classList.add('d-none');
       } else if (role) {
         productionWrapper.classList.remove('d-none');
-        if (role === 'line leader' && production === 'stamping') {
+        if ((role === 'line leader' || role === 'worker') && production === 'stamping') {
           productionLocationWrapper.classList.remove('d-none');
         } else {
           productionLocationWrapper.classList.add('d-none');

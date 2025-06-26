@@ -25,27 +25,59 @@ class CycleTimeModel
 
     public function getAssemblyCycleTimes(): array
     {
-        $sql = "SELECT material_no, assembly_cycletime FROM material_inventory";
+        $sql = "SELECT material_no, assembly_cycletime, stamping_spotwelding, stamping_finishing FROM material_inventory";
         $rows = $this->db->Select($sql);
-        $data = [];
+
+        $cycleTimes = [
+            'materials' => [],  // keyed by material_no
+            'stamping_spotwelding' => null,
+            'stamping_finishing' => null
+        ];
+
         foreach ($rows as $row) {
-            $data[$row['material_no']] = $row['assembly_cycletime']; // ✅ FIXED
+            $cycleTimes['materials'][$row['material_no']] = $row['assembly_cycletime'];
+
+            // Assumes the same values for all rows, so set once
+            if ($cycleTimes['stamping_spotwelding'] === null) {
+                $cycleTimes['stamping_spotwelding'] = $row['stamping_spotwelding'];
+            }
+
+            if ($cycleTimes['stamping_finishing'] === null) {
+                $cycleTimes['stamping_finishing'] = $row['stamping_finishing'];
+            }
         }
 
-        return $data;
+        return $cycleTimes;
     }
+
     public function getAssemblyProcessTimes(): array
     {
-        $sql = "SELECT material_no, assembly_processtime FROM material_inventory";
+        $sql = "SELECT material_no, assembly_processtime, stamping_spotwelding, stamping_finishing FROM material_inventory";
         $rows = $this->db->Select($sql);
-        $data = [];
+
+        $processTimes = [
+            'materials' => [],  // keyed by material_no
+            'stamping_spotwelding' => null,
+            'stamping_finishing' => null
+        ];
+
         foreach ($rows as $row) {
-            $data[$row['material_no']] = $row['assembly_processtime']; // ✅ FIXED
+            $processTimes['materials'][$row['material_no']] = $row['assembly_processtime'];
+
+            // Set stamping times once (assuming all rows contain the same)
+            if ($processTimes['stamping_spotwelding'] === null) {
+                $processTimes['stamping_spotwelding'] = $row['stamping_spotwelding'];
+            }
+
+            if ($processTimes['stamping_finishing'] === null) {
+                $processTimes['stamping_finishing'] = $row['stamping_finishing'];
+            }
         }
 
-        return $data;
+        return $processTimes;
     }
-    // Inside CycleTimeModel.php
+
+
     public function getStampingCycleTimes(): array
     {
         $sql = "

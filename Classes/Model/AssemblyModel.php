@@ -11,21 +11,15 @@ class AssemblyModel
     {
         $this->db = $db;
     }
-
-    public function getAllUsers(): array
-    {
-        return $this->db->Select("SELECT * FROM users");
-    }
-
     public function getAllAssemblyData()
     {
-        $sql = "SELECT * FROM assembly_list";
-        return $this->db->Select($sql);
-    }
-    public function getTodoList()
-    {
-        $sql = "SELECT * FROM assembly_list WHERE  created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
-        return $this->db->Select($sql);
+        $assembly = $this->db->Select("SELECT * FROM assembly_list WHERE time_out IS NOT NULL");
+        $stamping = $this->db->Select("SELECT * FROM stamping WHERE section IN ('FINISHING','SPOT WELDING') AND time_out IS NOT NULL");
+
+        return [
+            'assembly' => $assembly,
+            'stamping' => $stamping
+        ];
     }
     public function getManpowerRework()
     {
@@ -42,7 +36,32 @@ class AssemblyModel
         $sql = "SELECT * FROM `components_inventory` WHERE material_no ='$materialId'";
         return $this->db->Select($sql);
     }
+    public function getTodoList()
+    {
+        $sql = "SELECT * FROM assembly_list WHERE  created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
+        return $this->db->Select($sql);
+    }
+    public function markReworkAssemblyTimeIn(int $id, string $full_name, string $time_in)
+    {
+        if (empty($id) || empty($full_name)) {
+            return "Missing ID or Full Name.";
+        }
 
+        $sql = "UPDATE rework_assembly 
+                SET assembly_person_incharge = :full_name, 
+                    assembly_timein = :time_in 
+                WHERE id = :id";
+
+        $params = [
+            ':id' => $id,
+            ':full_name' => $full_name,
+            ':time_in' => $time_in
+        ];
+
+        $updated = $this->db->Update($sql, $params);
+
+        return $updated ? true : "Failed to update rework_assembly.";
+    }
     public function updateDeliveryFormSection(int $id): int
     {
         $sql = "UPDATE delivery_form SET section = 'ASSEMBLY' WHERE id = :id";
@@ -87,6 +106,7 @@ class AssemblyModel
             ':created_at'          => $data['time_in'], // Reused timestamp
         ]);
     }
+
     public function deductComponentInventory(string $material_no, string $reference_no, int $total_qty, string $time_in): void
     {
         $sqlSelect = "SELECT id, components_name, usage_type, actual_inventory, 
@@ -139,7 +159,7 @@ class AssemblyModel
             } elseif ($newInventory >= $minimum && $newInventory < $reorder) {
                 $status = 'Minimum';
             } elseif ($newInventory < $minimum) {
-                $status = 'Critical';
+                $status = 'Reorder';
             }
 
 
@@ -178,161 +198,6 @@ class AssemblyModel
                 }
             }
         }
-    }
-
-
-    public function updateAssemblyListTimeout(
-        int $done_quantity,
-        int $pending_quantity,
-        string $itemID,
-        string $time_out,
-        string $status,
-        string $section
-    ): bool {
-        $sqlUpdate = "UPDATE assembly_list SET 
-                        done_quantity = :done_quantity,
-                        pending_quantity = :pending_quantity,
-                        status = :status,
-                        section = :section,
-                        time_out = :time_out
-                    WHERE itemID = :itemID";
-
-        $paramsUpdate = [
-            ':done_quantity' => $done_quantity,
-            ':pending_quantity' => $pending_quantity,
-            ':itemID' => $itemID,
-            ':time_out' => $time_out,
-            ':status' => $status,
-            ':section' => $section,
-        ];
-
-        return $this->db->Update($sqlUpdate, $paramsUpdate);
-    }
-
-    public function getPendingAssembly($id)
-    {
-        $sql = "SELECT assembly_pending, total_quantity
-                        FROM delivery_form 
-                        WHERE id = :id 
-                        ORDER BY created_at DESC 
-                        LIMIT 1";
-        return $this->db->SelectOne($sql, [':id' => $id]);
-    }
-    public function updateDeliveryFormPending($id, $remainingPending)
-    {
-        $sql = "UPDATE delivery_form SET section = :section, status = :status, assembly_pending = :remainingPending WHERE id = :id";
-        $params = [
-            ':section' => 'QC',
-            ':status' => 'done',
-            ':remainingPending' => $remainingPending,
-            ':id' => $id,
-        ];
-
-        return $this->db->Update($sql, $params);
-    }
-    public function getTotalDoneAndRequired(string $reference_no): ?array
-    {
-        $sql = "SELECT SUM(done_quantity) AS total_done, MAX(total_quantity) AS total_required FROM assembly_list WHERE reference_no = :reference_no";
-        return $this->db->SelectOne($sql, [':reference_no' => $reference_no]);
-    }
-    public function moveToQCList(array $data): ?int
-    {
-        // 1. Insert into `qc_list`
-        $sqlInsert = "INSERT INTO qc_list
-        (model, shift, lot_no, date_needed, reference_no, material_no, material_description, total_quantity, status, section, created_at)
-        VALUES 
-        (:model, :shift, :lot_no, :date_needed, :reference_no, :material_no, :material_description, :total_quantity, :status, :section, :created_at)";
-
-        $paramsInsert = [
-            ':model' => $data['model'],
-            ':shift' => $data['shift'],
-            ':lot_no' => $data['lot_no'],
-            ':date_needed' => $data['date_needed'],
-            ':reference_no' => $data['reference_no'],
-            ':material_no' => $data['material_no'],
-            ':material_description' => $data['material_description'],
-            ':total_quantity' => $data['total_quantity'],
-            ':status' => 'pending',
-            ':section' => 'qc',
-            ':created_at' => $data['created_at']
-        ];
-
-        $insertedId = $this->db->Insert($sqlInsert, $paramsInsert);
-
-        if (!$insertedId) return null;
-
-        $sqlUpdateDelivery = "UPDATE delivery_form 
-                          SET section = 'QC' 
-                          WHERE reference_no = :reference_no";
-
-        $this->db->Update($sqlUpdateDelivery, [':reference_no' => $data['reference_no']]);
-
-        $sqlUpdateAssembly = "UPDATE assembly_list 
-                          SET status = 'done', section = 'qc' 
-                          WHERE reference_no = :reference_no";
-
-        $this->db->Update($sqlUpdateAssembly, [':reference_no' => $data['reference_no']]);
-
-        return $insertedId;
-    }
-    public function duplicateDeliveryFormWithPendingUpdate(int $id, string $time_out, int $remainingPending): bool
-    {
-        $selectSql = "SELECT * FROM delivery_form WHERE id = :id";
-        $row = $this->db->SelectOne($selectSql, [':id' => $id]);
-
-        if (!$row) {
-            return false;
-        }
-
-        $newRow = [
-            'material_no'        => $row['material_no'],
-            'material_description' => $row['material_description'],
-            'model_name'         => $row['model_name'],
-            'quantity'           => $row['quantity'],
-            'total_quantity'     => $row['total_quantity'],
-            'assembly_pending'   => $remainingPending,
-            'supplement_order'   => $row['supplement_order'],
-            'date_needed'        => $row['date_needed'],
-            'lot_no'             => $row['lot_no'],
-            'reference_no'       => $row['reference_no'],
-            'shift'              => $row['shift'],
-            'status'             => 'continue',
-            'section'            => 'ASSEMBLY',
-            'created_at'         => $time_out,
-        ];
-
-        $insertSql = "INSERT INTO delivery_form (
-        reference_no, material_no, material_description, model_name,
-        quantity, total_quantity, assembly_pending, supplement_order,
-        date_needed, lot_no, shift, status, section, created_at
-    ) VALUES (
-        :reference_no, :material_no, :material_description, :model_name,
-        :quantity, :total_quantity, :assembly_pending, :supplement_order,
-        :date_needed, :lot_no, :shift, :status, :section, :created_at
-    )";
-
-        return $this->db->Insert($insertSql, $newRow) !== false;
-    }
-    public function markReworkAssemblyTimeIn(int $id, string $full_name, string $time_in)
-    {
-        if (empty($id) || empty($full_name)) {
-            return "Missing ID or Full Name.";
-        }
-
-        $sql = "UPDATE rework_assembly 
-                SET assembly_person_incharge = :full_name, 
-                    assembly_timein = :time_in 
-                WHERE id = :id";
-
-        $params = [
-            ':id' => $id,
-            ':full_name' => $full_name,
-            ':time_in' => $time_in
-        ];
-
-        $updated = $this->db->Update($sql, $params);
-
-        return $updated ? true : "Failed to update rework_assembly.";
     }
     public function updateReworkAssemblyTimeout(array $data): bool
     {
@@ -460,7 +325,6 @@ class AssemblyModel
             }
         }
     }
-
     public function markReworkAssemblyAsDone(string $reference_no): void
     {
         $sql = "UPDATE rework_assembly 
@@ -469,7 +333,6 @@ class AssemblyModel
 
         $this->db->Update($sql, [':reference_no' => $reference_no]);
     }
-
     public function insertReworkQC(string $reference_no, array $result, int $total, string $time_out): void
     {
         $sql = "INSERT INTO rework_qc (
@@ -555,5 +418,145 @@ class AssemblyModel
     )";
 
         return $this->db->Insert($insertSql, $newData); // returns inserted row count
+    }
+    public function updateAssemblyListTimeout(
+        int $done_quantity,
+        int $pending_quantity,
+        string $itemID,
+        string $time_out,
+        string $status,
+        string $section
+    ): bool {
+        $sqlUpdate = "UPDATE assembly_list SET 
+                        done_quantity = :done_quantity,
+                        pending_quantity = :pending_quantity,
+                        status = :status,
+                        section = :section,
+                        time_out = :time_out
+                    WHERE itemID = :itemID";
+
+        $paramsUpdate = [
+            ':done_quantity' => $done_quantity,
+            ':pending_quantity' => $pending_quantity,
+            ':itemID' => $itemID,
+            ':time_out' => $time_out,
+            ':status' => $status,
+            ':section' => $section,
+        ];
+
+        return $this->db->Update($sqlUpdate, $paramsUpdate);
+    }
+    public function getPendingAssembly($id)
+    {
+        $sql = "SELECT assembly_pending, total_quantity
+                        FROM delivery_form 
+                        WHERE id = :id 
+                        ORDER BY created_at DESC 
+                        LIMIT 1";
+        return $this->db->SelectOne($sql, [':id' => $id]);
+    }
+    public function updateDeliveryFormPending($id, $remainingPending)
+    {
+        $sql = "UPDATE delivery_form SET section = :section, status = :status, assembly_pending = :remainingPending WHERE id = :id";
+        $params = [
+            ':section' => 'QC',
+            ':status' => 'done',
+            ':remainingPending' => $remainingPending,
+            ':id' => $id,
+        ];
+
+        return $this->db->Update($sql, $params);
+    }
+    public function getTotalDoneAndRequired(string $reference_no): ?array
+    {
+        $sql = "SELECT SUM(done_quantity) AS total_done, MAX(total_quantity) AS total_required FROM assembly_list WHERE reference_no = :reference_no";
+        return $this->db->SelectOne($sql, [':reference_no' => $reference_no]);
+    }
+    public function moveToQCList(array $data): ?int
+    {
+        // 1. Insert into `qc_list`
+        $sqlInsert = "INSERT INTO qc_list
+        (model, shift, lot_no, date_needed, reference_no, material_no, material_description, total_quantity, status, section, created_at)
+        VALUES 
+        (:model, :shift, :lot_no, :date_needed, :reference_no, :material_no, :material_description, :total_quantity, :status, :section, :created_at)";
+
+        $paramsInsert = [
+            ':model' => $data['model'],
+            ':shift' => $data['shift'],
+            ':lot_no' => $data['lot_no'],
+            ':date_needed' => $data['date_needed'],
+            ':reference_no' => $data['reference_no'],
+            ':material_no' => $data['material_no'],
+            ':material_description' => $data['material_description'],
+            ':total_quantity' => $data['total_quantity'],
+            ':status' => 'pending',
+            ':section' => 'qc',
+            ':created_at' => $data['created_at']
+        ];
+
+        $insertedId = $this->db->Insert($sqlInsert, $paramsInsert);
+
+        if (!$insertedId) return null;
+
+        $sqlUpdateDelivery = "UPDATE delivery_form 
+                          SET section = 'QC' 
+                          WHERE reference_no = :reference_no";
+
+        $this->db->Update($sqlUpdateDelivery, [':reference_no' => $data['reference_no']]);
+
+        $sqlUpdateAssembly = "UPDATE assembly_list 
+                          SET status = 'done', section = 'qc' 
+                          WHERE reference_no = :reference_no";
+
+        $this->db->Update($sqlUpdateAssembly, [':reference_no' => $data['reference_no']]);
+
+        return $insertedId;
+    }
+    public function duplicateDeliveryFormWithPendingUpdate(int $id, string $time_out, int $remainingPending): bool
+    {
+        $selectSql = "SELECT * FROM delivery_form WHERE id = :id";
+        $row = $this->db->SelectOne($selectSql, [':id' => $id]);
+
+        if (!$row) {
+            return false;
+        }
+
+        $newRow = [
+            'material_no'        => $row['material_no'],
+            'material_description' => $row['material_description'],
+            'model_name'         => $row['model_name'],
+            'quantity'           => $row['quantity'],
+            'total_quantity'     => $row['total_quantity'],
+            'assembly_pending'   => $remainingPending,
+            'supplement_order'   => $row['supplement_order'],
+            'date_needed'        => $row['date_needed'],
+            'lot_no'             => $row['lot_no'],
+            'reference_no'       => $row['reference_no'],
+            'shift'              => $row['shift'],
+            'status'             => 'continue',
+            'section'            => 'ASSEMBLY',
+            'created_at'         => $time_out,
+        ];
+
+        $insertSql = "INSERT INTO delivery_form (
+        reference_no, material_no, material_description, model_name,
+        quantity, total_quantity, assembly_pending, supplement_order,
+        date_needed, lot_no, shift, status, section, created_at
+    ) VALUES (
+        :reference_no, :material_no, :material_description, :model_name,
+        :quantity, :total_quantity, :assembly_pending, :supplement_order,
+        :date_needed, :lot_no, :shift, :status, :section, :created_at
+    )";
+
+        return $this->db->Insert($insertSql, $newRow) !== false;
+    }
+
+
+
+
+
+    public function getAllUsers(): array
+    {
+        return $this->db->Select("SELECT * FROM users");
     }
 }

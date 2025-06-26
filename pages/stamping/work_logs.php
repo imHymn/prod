@@ -57,16 +57,17 @@ $production_location = $_SESSION['production_location'];
           <table class="table table" style="table-layout: fixed; width: 100%;">
             <thead>
               <tr>
-                <th style="width: 7%; text-align: center;">Date <span class="sort-icon"></span></th>
-                <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+                <th style="width: 8%; text-align: center;">Date <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Component Name <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
                 <th style="width: 7%; text-align: center;">Section <span class="sort-icon"></span></th>
                 <th style="width: 7%; text-align: center;">Process <span class="sort-icon"></span></th>
                 <th style="width: 7%; text-align: center;">Quantity <span class="sort-icon"></span></th>
                 <th style="width: 7%; text-align: center;">Time In <span class="sort-icon"></span></th>
                 <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Actual Cycle Time <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;white-space: normal; word-wrap: break-word;">Total Working Time <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;white-space: normal; word-wrap: break-word;">Target Cycle Time <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;white-space: normal; word-wrap: break-word;">Actual Cycle Time <span class="sort-icon"></span></th>
               </tr>
             </thead>
             <tbody id="data-body"></tbody>
@@ -95,7 +96,7 @@ $production_location = $_SESSION['production_location'];
     ]).then(([cycleTimeData, manpowerData]) => {
       cycleTimes = cycleTimeData;
       fullData = manpowerData;
-      console.log(cycleTimes, fullData)
+
       const grouped = {};
       manpowerData.forEach(item => {
         if (!grouped[item.reference_no]) grouped[item.reference_no] = [];
@@ -121,14 +122,14 @@ $production_location = $_SESSION['production_location'];
 
     function renderTable(data, page = 1) {
       const merged = {};
-      console.log(data)
+
       data.forEach(item => {
         if (!item.person_incharge || !item.created_at) return;
 
         const createdDate = item.created_at.split(' ')[0];
         const stageName = item.stage_name || 'unknown';
         const key = `${item.section}_${stageName}_${item.person_incharge}_${createdDate}`;
-
+        console.log(key)
         if (!merged[key]) {
           merged[key] = {
             person: item.person_incharge,
@@ -257,9 +258,10 @@ $production_location = $_SESSION['production_location'];
           const row = document.createElement('tr');
           row.innerHTML = `
   <td style="text-align: center;">${group.date}</td>
+  <td style="text-align: center;white-space: normal; word-wrap: break-word;">${group.components_name}</td>
   <td style="text-align: center;">${group.person}</td>
   <td style="text-align: center;">${group.section}</td>
-  <td style="text-align: center;">${group.stage_name}</td>
+  <td style="text-align: center;white-space: normal; word-wrap: break-word;">${group.stage_name}</td>
   <td style="text-align: center;">${group.totalQuantity || '<i>Null</i>'}</td>
   <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
   <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>

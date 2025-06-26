@@ -1,293 +1,252 @@
-<div class="page-content">
-  <nav class="page-breadcrumb">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#">Pages</a></li>
-      <li class="breadcrumb-item" aria-current="page">Delivery Submit Form</li>
-    </ol>
-  </nav>
-
-  <div class="row">
-    <div class="col-md-12 grid-margin stretch-card">
-      <div class="card">
-        <div class="card-body">
-          <h6 class="card-title">Submit Form</h6>
-
-          <form id="delivery_form">
-            <div class="form-row">
-              <!-- <div class="form-group col-md-3">
-  <label for="qty">Handler Name</label>
-  <div class="input-group">
-
-    <input type="text" class="form-control text-center" id="name" name="name">
-  
-  </div>
-</div> -->
-              <div class="form-group col-md-2">
-                <label for="customer_name">Customer Name</label>
-                <select class="form-control" id="customerSelect" name="customer_name" required>
-
-                  <!-- Add more customer options here -->
-                </select>
-              </div>
-
-              <div class="form-group col-md-2">
-                <label for="model_name">Model Name</label>
-                <select class="form-control" id="modelSelect" name="model_name" required>
-
-                </select>
-              </div>
-
-
-
-
-              <div class="form-group col-md-2">
-                <label for="lot">Lot No.</label>
-                <div class="input-group">
-
-                  <input type="number" class="form-control text-center" id="lot" name="lot">
-
-                </div>
-              </div>
-
-              <div class="form-group col-md-2">
-                <label for="qty">QTY</label>
-                <div class="input-group">
-
-                  <button type="button" class="btn btn-outline-secondary" id="increaseQty">+</button>
-                  <input type="number" class="form-control text-center" id="qty" name="qty" value="0" readonly>
-                  <button type="button" class="btn btn-outline-secondary" id="decreaseQty">-</button>
-                </div>
-              </div>
-              <div class="form-group col-md-2">
-                <label for="shifting">Shift Schedule</label>
-                <div class="input-group">
-                  <select class="form-control" id="shifting" name="shifting" required>
-                    <option disabled selected>Choose Shift:</option>
-                    <option value="1st Shift">1st Shift</option>
-                    <option value="2nd Shift">2nd Shift</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group col-md-2">
-                <label for="date_needed">Due Date</label>
-                <div class="input-group">
-                  <input type='date' class='form-control form-control-sm' id='date_needed' name='date_needed' style='width: 160px;'>
-                </div>
-              </div>
-            </div>
-
-            </style>
-            <hr>
-            <div id="title">
-              <h6 class="card-title">COMPONENTS LIST</h6>
-            </div>
-            <div id="material_components">
-
-
-            </div>
-
-            <button id="delivery_submit_btn" type="button" class="btn btn-primary">Submit Request</button>
-          </form>
-
-
-
-
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Confirmation Modal -->
-
-
   <script src="assets/js/sweetalert2@11.js"></script>
   <script src="assets/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/jquery.min.js"></script>
   <link rel="stylesheet" href="assets/css/choices.min.css" />
-
-  <!-- Choices.js JS -->
   <script src="assets/js/choices.min.js"></script>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      let choicesInstance = null; // Track the Choices instance for SKU
+  <div class="page-content">
+    <nav class="page-breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Pages</a></li>
+        <li class="breadcrumb-item" aria-current="page">Delivery Submit Form</li>
+      </ol>
+    </nav>
 
-      // Use fetch to make the GET request to get customer data
-      fetch('api/delivery/getCustomers.php')
-        .then(response => response.json()) // Parse the JSON response
-        .then(customers => {
-          // Get the <select> element for customers and models
-          const customerSelect = document.getElementById('customerSelect');
-          const modelSelect = document.getElementById('modelSelect');
+    <div class="row">
+      <div class="col-md-12 grid-margin stretch-card">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-title">Submit Form</h6>
+            <form id="delivery_form">
+              <div class="form-row">
+                <div class="form-group col-md-2">
+                  <label for="customer_name">Customer Name</label>
+                  <select class="form-control" id="customerSelect" name="customer_name" required>
+                  </select>
+                </div>
 
-          const skuOption = document.getElementById('choices-sku'); // Get the SKU select element
+                <div class="form-group col-md-2">
+                  <label for="model_name">Model Name</label>
+                  <select class="form-control" id="modelSelect" name="model_name" required>
+                  </select>
+                </div>
 
-          // Clear any existing options in the customer dropdown (if any)
-          customerSelect.innerHTML = '<option value="">Select a customer</option>';
+                <div class="form-group col-md-2">
+                  <label for="lot">Lot No.</label>
+                  <div class="input-group">
 
-          // Loop through each customer and create an option element
-          customers.forEach(function(customer) {
-            const option = document.createElement('option');
-            option.value = customer.customer_name; // Use 'customer_name' as the value
-            option.textContent = customer.customer_name; // Use 'customer_name' as the display text
-            customerSelect.appendChild(option); // Add the option to the customer select dropdown
-          });
+                    <input type="number" class="form-control text-center" id="lot" name="lot">
 
-          // Add an event listener to handle customer selection changes
-          customerSelect.addEventListener('change', function() {
-            const selectedCustomer = customerSelect.value; // Get the selected customer
-            if (selectedCustomer) {
-              // Fetch models based on the selected customer
-              fetch(`api/delivery/getModels.php?customer=${selectedCustomer}`)
-                .then(response => response.json()) // Parse the JSON response
-                .then(models => {
-                  // Clear the existing options in the model select dropdown
-                  document.getElementById('material_components').innerHTML = '';
-                  modelSelect.innerHTML = '<option value="">Select a model</option>';
+                  </div>
+                </div>
 
-                  // Loop through each model and create an option element
-                  models.forEach(function(model) {
-                    const option = document.createElement('option');
-                    option.value = model.model_name; // Use 'model_name' as the value
-                    option.textContent = model.model_name; // Use 'model_name' as the display text
-                    modelSelect.appendChild(option); // Add the option to the model select dropdown
+                <div class="form-group col-md-2">
+                  <label for="qty">QTY</label>
+                  <div class="input-group">
 
-                  });
+                    <button type="button" class="btn btn-outline-secondary" id="increaseQty">+</button>
+                    <input type="number" class="form-control text-center" id="qty" name="qty" value="0" readonly>
+                    <button type="button" class="btn btn-outline-secondary" id="decreaseQty">-</button>
+                  </div>
+                </div>
+                <div class="form-group col-md-2">
+                  <label for="shifting">Shift Schedule</label>
+                  <div class="input-group">
+                    <select class="form-control" id="shifting" name="shifting" required>
+                      <option disabled selected>Choose Shift:</option>
+                      <option value="1st Shift">1st Shift</option>
+                      <option value="2nd Shift">2nd Shift</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group col-md-2">
+                  <label for="date_needed">Due Date</label>
+                  <div class="input-group">
+                    <input type='date' class='form-control form-control-sm' id='date_needed' name='date_needed' style='width: 160px;'>
+                  </div>
+                </div>
+              </div>
 
-                })
-                .catch(error => {
-                  console.error('Error fetching models:', error); // Log any errors
-                });
+              </style>
+              <hr>
+              <div id="title">
+                <h6 class="card-title">COMPONENTS LIST</h6>
+              </div>
+              <div id="material_components">
 
-            } else {
-              // If no customer is selected, clear the models and SKU dropdowns
-              modelSelect.innerHTML = '<option value="">Select a model</option>';
-              skuOption.innerHTML = ''; // Clear SKU options
+
+              </div>
+
+              <button id="delivery_submit_btn" type="button" class="btn btn-primary">Submit Request</button>
+            </form>
+
+
+
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        fetch('/mes/api/delivery/getCustomerAndModel.php')
+          .then(response => response.json())
+          .then(result => {
+
+            const data = result.data;
+            if (!Array.isArray(data)) {
+              throw new Error('Invalid data format from API');
             }
+
+            const customers = [...new Set(data.map(item => item.customer_name))];
+            const models = [...new Set(data.map(item => item.model_name))];
+
+            populateDropdown('customerSelect', customers);
+            populateDropdown('modelSelect', models);
+          })
+          .catch(error => {
+            console.error('Error fetching customer/model data:', error);
+            Swal.fire('Error', 'Failed to load customer and model data.', 'error');
           });
 
-          // Model change event listener
-          modelSelect.addEventListener('change', function() {
-            const selectedModel = modelSelect.value;
-            const customerValue = customerSelect.value;
+        function populateDropdown(selectId, items) {
+          const select = document.getElementById(selectId);
+          select.innerHTML = '<option disabled selected>Select</option>';
+          items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            select.appendChild(option);
+          });
+        }
+      });
 
+      document.getElementById('modelSelect').addEventListener('change', handleModelOrCustomerChange);
 
-            fetch(`api/delivery/getLotNo.php?model_name=${selectedModel}`)
-              .then(response => response.json()) // Parse the JSON response
-              .then(lotNo => {
-                console.log(lotNo[0].lot_no)
-                document.getElementById('lot').value = lotNo[0].lot_no + 1;
+      function handleModelOrCustomerChange() {
+        const model = document.getElementById('modelSelect').value;
+        const customer = document.getElementById('customerSelect').value;
+        if (model) {
+          fetch(`/mes/api/delivery/getLotNo.php?model_name=${encodeURIComponent(model)}`)
+            .then(response => response.json())
+            .then(result => {
+              if (Array.isArray(result) && result.length > 0) {
+                // Assuming lot_no is in the first object of the array
+                const lotNo = parseInt(result[0].lot_no);
+                document.getElementById('lot').value = lotNo > 0 ? lotNo : 1;
+              } else {
+                document.getElementById('lot').value = 1;
 
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching lot number:', error);
+              Swal.fire('Error', 'Something went wrong while retrieving lot number.', 'error');
+            });
+        }
+        if (model && customer) {
+          const params = new URLSearchParams({
+            model_name: model,
+            customer_name: customer
+          });
 
+          fetch(`/mes/api/delivery/getAllComponents.php?${params.toString()}`)
+            .then(response => response.json())
+            .then(result => {
 
-              })
-              .catch(error => {
-                console.error('Error fetching models:', error); // Log any errors
+              if (!Array.isArray(result) || result.length === 0) {
+                document.getElementById('material_components').innerHTML = `
+      <div class="alert alert-warning text-center">No components found for the selected model and customer.</div>
+    `;
+                return;
+              }
+
+              const table = document.createElement('table');
+              table.className = 'table table-bordered table-striped';
+              table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Material No.</th>
+        <th>Material Description</th>
+        <th>Supplement Order</th>
+        <th class="text-center">Total Quantity</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${result.map((row, index) => `
+        <tr>
+   
+          <td class="materialNo">${row.material_no}</td>
+          <td class="materialDesc">${row.material_description}</td>
+           <td class="process" style="display: none;">${row.process || ''}</td>
+
+          <td>
+            <input type="number" class="form-control supplementInput" data-index="${index}" value="0" min="0" step="1" />
+          </td>
+          <td class="text-center">
+            <span class="totalQty" id="totalQty${index}">0</span>
+          </td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+
+              const container = document.getElementById('material_components');
+              container.innerHTML = '';
+              container.appendChild(table);
+
+              // Initialize supplement logic
+              const qtyInput = document.getElementById('qty');
+              const supplementInputs = container.querySelectorAll('.supplementInput');
+
+              function updateAllTotalQuantities() {
+                const baseQty = parseInt(qtyInput.value) || 0;
+                supplementInputs.forEach(input => {
+                  const idx = input.dataset.index;
+                  const suppQty = parseInt(input.value) || 0;
+                  const total = baseQty + suppQty;
+                  const display = document.getElementById(`totalQty${idx}`);
+                  if (display) display.textContent = total;
+                });
+              }
+
+              // Bind events
+              qtyInput.addEventListener('input', updateAllTotalQuantities);
+              supplementInputs.forEach(input => {
+                input.addEventListener('input', updateAllTotalQuantities);
               });
 
-
-            if (selectedModel && customerValue) {
-              // Fetch models based on the selected customer
-              fetch(`api/delivery/getSku.php?customer=${customerValue}&model=${selectedModel}`)
-                .then(response => response.json())
-                .then(data => {
-                  document.getElementById('material_components').innerHTML = data.tableHtml;
+              updateAllTotalQuantities(); // Initial call
 
 
-                  const inputQty = document.getElementById('qty');
-                  const btnIncrease = document.getElementById('increaseQty');
-                  const btnDecrease = document.getElementById('decreaseQty');
-                  const container = document.getElementById('material_components');
-                  const qtyValues = [];
-                  const totalQty = [];
-
-                  function updateTotalQtys() {
-                    const totalQtyElements = container.getElementsByClassName('totalQty');
-                    const supplementInputs = container.querySelectorAll('input[id^="supplement"]');
-                    const currentQty = parseFloat(inputQty.value) || 0;
-
-                    qtyValues.length = 0;
-                    totalQty.length = 0;
-
-                    for (let i = 0; i < totalQtyElements.length; i++) {
-                      const supplementVal = parseFloat(supplementInputs[i]?.value) || 0;
-
-                      qtyValues[i] = {
-                        qty: currentQty,
-                        supplement: supplementVal
-                      };
-
-                      totalQty[i] = currentQty + supplementVal;
-
-                      totalQtyElements[i].innerText = totalQty[i];
-                    }
-                  }
-
-                  btnIncrease.addEventListener('click', function() {
-                    inputQty.value = parseFloat(inputQty.value || 0) + 30;
-                    updateTotalQtys();
-                  });
-
-                  btnDecrease.addEventListener('click', function() {
-                    inputQty.value = Math.max(0, parseFloat(inputQty.value || 0) - 30); // Prevent negative values
-                    updateTotalQtys();
-                  });
-
-
-
-                  container.addEventListener('input', function(event) {
-                    const target = event.target;
-                    if (target.matches('input[id^="supplement"]')) {
-                      const totalQtyElements = container.getElementsByClassName('totalQty');
-                      const supplementInputs = container.querySelectorAll('input[id^="supplement"]');
-                      const currentQty = parseFloat(inputQty.value) || 0;
-
-                      qtyValues.length = 0;
-                      totalQty.length = 0;
-
-                      for (let i = 0; i < totalQtyElements.length; i++) {
-                        const supplementVal = parseFloat(supplementInputs[i]?.value) || 0;
-                        qtyValues[i] = {
-                          qty: currentQty,
-                          supplement: supplementVal
-                        };
-
-                        totalQty[i] = currentQty + supplementVal;
-
-                        totalQtyElements[i].innerText = totalQty[i];
-                      }
-                    }
-                  });
-                })
-                .catch(error => {
-                  console.error('Error fetching models:', error); // Log any errors
-                });
-
-            } else {
-
-            }
-
-
-
-          });
-        })
-        .catch(error => {
-          console.error('Error fetching customers:', error); // Log any errors
-        });
-
+            })
+            .catch(error => {
+              console.error('Error fetching data:', error);
+              Swal.fire('Error', 'Failed to fetch additional data.', 'error');
+            });
+        }
+      }
 
 
       document.getElementById('delivery_submit_btn').addEventListener('click', function() {
         const currentQty = parseFloat(document.getElementById('qty').value) || 0;
-        const rows = document.querySelectorAll('#material_components table tr');
+        const rows = document.querySelectorAll('#material_components table tbody tr');
         const results = [];
 
-        for (let i = 1; i < rows.length; i++) {
+        for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
+          const rawProcess = row.querySelector('.process')?.innerText;
+          const process = rawProcess?.trim() || null;
+
           const material_no = row.querySelector('.materialNo')?.innerText.trim() || '';
           const material_description = row.querySelector('.materialDesc')?.innerText.trim() || '';
-          const supplementInput = row.querySelector('input[id^="supplement"]');
+          const supplementInput = row.querySelector('.supplementInput');
           const supplementVal = parseFloat(supplementInput?.value) || 0;
           const totalQty = currentQty + supplementVal;
+
           const shift = document.getElementById('shifting').value;
           const lot_no = document.getElementById('lot').value || 0;
           const model_name = document.getElementById('modelSelect').value || '';
@@ -306,11 +265,11 @@
             section: 'DELIVERY',
             shift,
             lot_no,
-            date_needed
+            date_needed,
+            process
           });
         }
 
-        // ✅ Prioritize checking results before confirmation
         if (results.length === 0) {
           Swal.fire({
             icon: 'error',
@@ -318,7 +277,7 @@
             text: 'No valid materials found to submit.',
             confirmButtonColor: '#d33'
           });
-          return; // stop execution
+          return;
         }
 
         const lot_value = document.getElementById('lot').value || 1;
@@ -338,9 +297,7 @@
           buttonsStyling: false
         }).then((result) => {
           if (result.isConfirmed) {
-            console.log('Compiled values:', results);
-
-            fetch('api/delivery/postForms.php', {
+            fetch('/mes/api/delivery/postForms.php', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
@@ -349,8 +306,6 @@
               })
               .then(response => response.json())
               .then(responseData => {
-                console.log('Server response:', responseData);
-
                 if (responseData.status === 'error') {
                   let itemList = responseData.insufficient_items?.map(item => `
               <li><strong>${item.material_no}</strong>: ${item.material_description}<br/><small>${item.reason}</small></li>
@@ -375,6 +330,7 @@
                   text: 'Your operation was successful!',
                   confirmButtonColor: '#3085d6'
                 }).then(() => {
+                  // Optionally reset or reload
                   // location.reload();
                 });
 
@@ -391,8 +347,6 @@
                   confirmButtonColor: '#d33'
                 });
               });
-          } else {
-            console.log('Action canceled.');
           }
         });
       });
@@ -400,5 +354,21 @@
 
 
 
-    });
-  </script>
+
+
+      document.getElementById('increaseQty').addEventListener('click', () => {
+        const qtyInput = document.getElementById('qty');
+        let val = parseInt(qtyInput.value) || 0;
+        qtyInput.value = val + 30;
+        qtyInput.dispatchEvent(new Event('input')); // trigger update
+      });
+
+      document.getElementById('decreaseQty').addEventListener('click', () => {
+        const qtyInput = document.getElementById('qty');
+        let val = parseInt(qtyInput.value) || 0;
+        if (val >= 30) {
+          qtyInput.value = val - 30;
+          qtyInput.dispatchEvent(new Event('input')); // trigger update
+        }
+      });
+    </script>

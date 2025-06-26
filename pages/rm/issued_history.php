@@ -4,8 +4,8 @@
 <?php include './components/reusable/tablesorting.php'; ?>
 <?php include './components/reusable/tablepagination.php'; ?>
 <?php include './components/reusable/searchfilter.php'; ?>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="assets/css/all.min.css" />
+<script src="assets/js/bootstrap.bundle.min.js"></script>
 
 <div class="page-content">
   <nav class="page-breadcrumb">
@@ -43,7 +43,8 @@
               <tr>
                 <th style="width: 5%; text-align: center;">Material No <span class="sort-icon"></span></th>
                 <th style="width: 10%; text-align: center;">Material Description <span class="sort-icon"></span></th>
-                <th style="width: 5%; text-align: center;">Raw Materials <span class="sort-icon"></span></th>
+                <th style="width: 20%; text-align: center;">Raw Materials <span class="sort-icon"></span></th>
+                <th style="width: 5%; text-align: center;">Quantity <span class="sort-icon"></span></th>
                 <th style="width: 10%; text-align: center;">Time & Date <span class="sort-icon"></span></th>
               </tr>
             </thead>
@@ -57,28 +58,7 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="rawMaterialModal" tabindex="-1" aria-labelledby="rawMaterialModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="rawMaterialModalLabel">Raw Materials</h5>
 
-      </div>
-      <div class="modal-body">
-        <table class="table table-bordered table-sm">
-          <thead>
-            <tr>
-              <th>Material No</th>
-              <th>Description</th>
-              <th>Usage</th>
-            </tr>
-          </thead>
-          <tbody id="raw-material-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
   let fullData = [];
@@ -89,7 +69,6 @@
   const filterInput = document.getElementById('filter-input');
 
   function renderTable(data) {
-    console.log(data);
     dataBody.innerHTML = '';
 
     if (!data || data.length === 0) {
@@ -98,75 +77,58 @@
     }
 
     data.forEach(item => {
+      const rawMaterials = (() => {
+        try {
+          return typeof item.raw_materials === 'string' ?
+            JSON.parse(item.raw_materials) :
+            item.raw_materials || [];
+        } catch {
+          return [];
+        }
+      })();
+
+      const quantity = parseInt(item.rm_quantity) || 0;
+
+      const rawHTML = rawMaterials.length ? `
+      <div style="overflow-x:auto;">
+        <table class="table table-sm table-bordered mb-0" style="margin:0; table-layout: fixed; width: 100%;">
+          <thead>
+            <tr>
+              <th style="font-size:10px; padding: 2px; width: 20%;">No</th>
+              <th style="font-size:10px; padding: 2px; width: 50%;">Desc</th>
+              <th style="font-size:10px; padding: 2px; width: 20%;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rawMaterials.map(rm => `
+              <tr>
+                <td style="font-size:10px; padding: 2px;">${rm.material_no}</td>
+                <td style="font-size:10px; padding: 2px;">${rm.material_description}</td>
+                <td style="font-size:10px; padding: 2px;">${(parseFloat(rm.usage) * quantity).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>` : '<em style="font-size:12px;">None</em>';
+
       const row = document.createElement('tr');
       row.innerHTML = `
       <td style="text-align: center;">${item.material_no || ''}</td>
-      <td style="text-align: center;">${item.component_name || ''}</td>
       <td style="text-align: center;">
-        ${item.rm_quantity || 0}
-       <button class="btn btn-sm view-btn" 
-        data-material="${item.material_no}" 
-        data-component="${item.component_name}" 
-        data-raw="${encodeURIComponent(JSON.stringify(item.raw_materials || []))}"
-        data-quantity="${item.rm_quantity || 0}"
-        title="View Details">
-  <i class="fas fa-eye" style="font-size:16px;margin-left:-15px;margin-top:-2px;"></i>
-</button>
-
+        ${item.component_name || ''}
 
       </td>
+            <td style="text-align: center;">${rawHTML}</td>
+      <td style="text-align: center;">${quantity}</td>
       <td style="text-align: center;">${item.delivered_at || ''}</td>
     `;
+
       dataBody.appendChild(row);
     });
 
     const now = new Date();
     document.getElementById('last-updated').textContent = `Last updated: ${now.toLocaleString()}`;
   }
-  document.addEventListener('click', function(e) {
-    const btn = e.target.closest('.view-btn');
-    if (!btn) return;
-
-    const rawEncoded = btn.dataset.raw;
-    const baseQty = parseInt(btn.dataset.quantity) || 0; // rm_quantity
-
-    let rawMaterials;
-
-    try {
-      const rawDecoded = decodeURIComponent(rawEncoded);
-      rawMaterials = typeof rawDecoded === 'string' ? JSON.parse(rawDecoded) : rawDecoded;
-
-      // Handle double-encoded JSON
-      if (typeof rawMaterials === 'string') {
-        rawMaterials = JSON.parse(rawMaterials);
-      }
-    } catch (err) {
-      console.error("Invalid raw materials:", err);
-      return;
-    }
-
-    const tbody = document.getElementById('raw-material-body');
-    tbody.innerHTML = '';
-
-    if (Array.isArray(rawMaterials) && rawMaterials.length > 0) {
-      rawMaterials.forEach(mat => {
-        const totalUsage = (parseFloat(mat.usage) || 0) * baseQty;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-        <td>${mat.material_no}</td>
-        <td>${mat.material_description}</td>
-        <td>${totalUsage}</td>
-      `;
-        tbody.appendChild(tr);
-      });
-    } else {
-      tbody.innerHTML = '<tr><td colspan="3" class="text-center">No raw materials found</td></tr>';
-    }
-
-    const modal = new bootstrap.Modal(document.getElementById('rawMaterialModal'));
-    modal.show();
-  });
-
 
 
   fetch('api/rm/getIssuedHistory.php')

@@ -424,8 +424,9 @@
 
 
     function openQRModal(selectedRowData, mode, timeoutData) {
-
+      const section = "QC";
       scanQRCodeForUser({
+        section,
         onSuccess: ({
           user_id,
           full_name

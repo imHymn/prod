@@ -19,7 +19,7 @@ $data = [
     'password' => $input['password'] ?? null,
     'production' => trimOrNull($input['production'] ?? null),
     'role' => trimOrNull($input['role'] ?? null),
-    'production_location' => trimOrNull($input['production_location'] ?? null),
+    'production_location' => trimOrNull($input['production_location'] ?? $input['production']),
     'created_at' => date('Y-m-d H:i:s')
 ];
 
