@@ -51,18 +51,17 @@ $production_location = $_SESSION['production_location'];
           <table class="table table" style="table-layout: fixed; width: 100%;">
             <thead>
               <tr>
-                <th style="width: 7%; text-align: center;">Date <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Component Name <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Section <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Process <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Quantity <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
-                <!-- 
+                <th style="width: 10%; text-align: center;">Date <span class="sort-icon"></span></th>
+                <th style="width: 15%; text-align: center;">Person Incharge <span class="sort-icon"></span></th>
+
+                <th style="width: 10%; text-align: center;">Quantity <span class="sort-icon"></span></th>
+
+
                 <th style="width: 7%; text-align: center;">Time In <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th> -->
-                <th style="width: 7%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
-                <th style="width: 7%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
+                <th style="width: 7%; text-align: center;">Time Out <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Total Working Time <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">Target Cycle Time <span class="sort-icon"></span></th>
+                <th style="width: 10%; text-align: center;">MPEFF <span class="sort-icon"></span></th>
               </tr>
             </thead>
             <tbody id="data-body"></tbody>
@@ -111,8 +110,7 @@ $production_location = $_SESSION['production_location'];
         fetch('api/stamping/getManpowerData.php').then(res => res.json())
       ])
       .then(([cycleTimeData, manpowerData]) => {
-        console.log(cycleTimeData);
-        console.log(manpowerData);
+
 
         if (!Array.isArray(cycleTimeData)) {
           console.error("❌ Invalid cycleTimeData format:", cycleTimeData);
@@ -250,13 +248,12 @@ $production_location = $_SESSION['production_location'];
           const row = document.createElement('tr');
           row.innerHTML = `
   <td style="text-align: center;">${group.date}</td>
-  <td style="text-align: center;white-space: normal; word-wrap: break-word;">${group.component_name || '-'}</td>
-  <td style="text-align: center;">${group.section || '-'}</td>
-  <td style="text-align: center;">${group.process || '-'}</td>
+   <td style="text-align: center;white-space: normal; word-wrap: break-word;">${group.person}</td>
+ 
   <td style="text-align: center;">${group.totalFinished}</td>
-  <td style="text-align: center;white-space: normal; word-wrap: break-word;">${group.person}</td>
- <!-- <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
-  <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>-->
+
+  <td style="text-align: center;">${firstIn.toTimeString().slice(0, 5)}</td>
+  <td style="text-align: center;">${lastOut.toTimeString().slice(0, 5)}</td>
   <td style="text-align: center;">
     ${Math.round(totalWorkSeconds)}s  
     (${Math.round(standbySeconds)}s)

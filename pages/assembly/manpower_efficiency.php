@@ -86,10 +86,47 @@
 
     function renderPageCallback(pageData, cycleData) {
       tbody.innerHTML = '';
+      console.log(cycleData)
+      // Extract merged cycle data
+      const cycleTimesByMaterial = cycleData.materials || {};
+      const spotCycleTime = parseFloat(cycleData.stamping_spotwelding) || 0;
+      const finishCycleTime = parseFloat(cycleData.stamping_finishing) || 0;
+
+      console.log(finishCycleTime, spotCycleTime)
+      // Step 1: Group by person + date
+      const grouped = {};
 
       pageData.forEach(entry => {
-        const firstIn = new Date(Math.min(...entry.timeIns.map(t => t.getTime())));
-        const lastOut = new Date(Math.max(...entry.timeOuts.map(t => t.getTime())));
+        const key = `${entry.date}_${entry.person || 'UNKNOWN'}`;
+
+        if (!grouped[key]) {
+          grouped[key] = {
+            date: entry.date,
+            person: entry.person || 'UNKNOWN',
+            totalFinished: 0,
+            totalWorkMinutes: 0,
+            timeIns: [],
+            timeOuts: [],
+            material_no: entry.material_no,
+            section: entry.section || ''
+          };
+        }
+
+        const group = grouped[key];
+        group.totalFinished += entry.totalFinished || 0;
+        group.totalWorkMinutes += entry.totalWorkMinutes || 0;
+        group.timeIns.push(...entry.timeIns);
+        group.timeOuts.push(...entry.timeOuts);
+
+        if (!group.material_no && entry.material_no) {
+          group.material_no = entry.material_no;
+        }
+      });
+
+      // Step 2: Render grouped results
+      Object.values(grouped).forEach(entry => {
+        const firstIn = new Date(Math.min(...entry.timeIns.map(t => new Date(t).getTime())));
+        const lastOut = new Date(Math.max(...entry.timeOuts.map(t => new Date(t).getTime())));
 
         const spanSeconds = (lastOut - firstIn) / 1000;
         const workSeconds = entry.totalWorkMinutes * 60;
@@ -99,28 +136,42 @@
         const timePerUnit = totalQty > 0 ? (workSeconds / totalQty) : 0;
 
         const materialNo = entry.material_no?.toString?.().trim() || '';
-        const targetCycleTime = parseFloat(cycleData?.[materialNo] || 0);
+        const section = entry.section || '';
+        console.log(entry.section)
+        let targetCycleTime = 0;
+
+        if (section === 'FINISHING') {
+          targetCycleTime = finishCycleTime;
+        } else if (section === 'SPOT WELDING') {
+          targetCycleTime = spotCycleTime;
+        } else {
+          targetCycleTime = parseFloat(cycleTimesByMaterial[materialNo] || 0);
+        }
+
+        // Fallbacks if no specific cycle time is found
+        // const targetCycleTime = assemblyCycleTime || spotCycleTime || finishCycleTime;
+
         const timeInStr = firstIn.toTimeString().slice(0, 5);
         const timeOutStr = lastOut.toTimeString().slice(0, 5);
+
         const mpeff = targetCycleTime && workSeconds > 0 ?
           ((targetCycleTime * totalQty) / workSeconds) * 100 :
           0;
 
         const row = document.createElement('tr');
         row.innerHTML = `
-        <td style="text-align: center;">${entry.date}</td>
-        <td style="text-align: center; white-space: normal; word-wrap: break-word;">${entry.person || '-'}</td>
-        <td style="text-align: center;">${totalQty}</td>
-     <td style="text-align: center;">${timeInStr}</td>
-  <td style="text-align: center;">${timeOutStr}</td>
-      
-        <td style="text-align: center;">
-          ${workSeconds.toFixed(0)} sec
-          ${standbySeconds > 0 ? ` (${standbySeconds.toFixed(0)} sec)` : ''}
-        </td>
-        <td style="text-align: center;">${targetCycleTime} sec</td>
-        <td style="text-align: center;">${mpeff ? mpeff.toFixed(1) + '%' : '-'}</td>
-      `;
+      <td style="text-align: center;">${entry.date}</td>
+      <td style="text-align: center; white-space: normal; word-wrap: break-word;">${entry.person}</td>
+      <td style="text-align: center;">${totalQty}</td>
+      <td style="text-align: center;">${timeInStr}</td>
+      <td style="text-align: center;">${timeOutStr}</td>
+      <td style="text-align: center;">
+        ${workSeconds.toFixed(0)} sec
+        ${standbySeconds > 0 ? ` (${standbySeconds.toFixed(0)} sec)` : ''}
+      </td>
+      <td style="text-align: center;">${targetCycleTime.toFixed(1)} sec</td>
+      <td style="text-align: center;">${mpeff ? mpeff.toFixed(1) + '%' : '-'}</td>
+    `;
 
         tbody.appendChild(row);
       });
@@ -129,15 +180,22 @@
     }
 
 
+
+
     Promise.all([
         fetch('api/assembly/getAssemblyData.php').then(res => res.json()),
         fetch('api/assembly/getManpowerRework.php').then(res => res.json()),
         fetch('api/mpeff_cycle/assembly_cycletime.php').then(res => res.json())
       ])
-      .then(([qcData, reworkData, cycleData]) => {
+      .then(([assemblyData, reworkData, cycleData]) => {
         const mergedData = {};
+        console.log(assemblyData)
+        stampingData = assemblyData.stamping || []; // get the 'stamping' array
+        assemblyData = assemblyData.assembly || []; // get the 'assembly' array
 
-        function addEntry(person, date, reference, timeIn, timeOut, finishedQty, source = 'qc', material_no = '', material_description = '', good = 0, no_good = 0, lot = '', model = '') {
+
+        function addEntry(person, date, reference, timeIn, timeOut, finishedQty, source = 'qc', material_no = '', material_description = '', good = 0, no_good = 0, lot = '', model = '', section = '') {
+
           const key = `${person}_${date}_${material_description}`;
 
           if (!mergedData[key]) {
@@ -153,7 +211,8 @@
               material_no,
               material_description,
               lot,
-              model
+              model,
+              section
             };
           }
 
@@ -180,7 +239,7 @@
 
 
         // For QC data
-        qcData.forEach(item => {
+        assemblyData.forEach(item => {
           if (!item.time_in || !item.time_out || !item.person_incharge || !item.reference_no || !item.created_at) return;
 
           const day = extractDateOnly(item.created_at);
@@ -212,6 +271,23 @@
           addEntry(item.qc_person_incharge, day, item.reference_no, item.qc_timein, item.qc_timeout, finishedQty, 'rework', material_no, material_description, good, no_good, lot, model);
 
         });
+        // For Stamping data (FINISHING / SPOT WELDING only)
+        stampingData.forEach(item => {
+          if (!item.time_in || !item.time_out || !item.person_incharge || !item.reference_no || !item.created_at) return;
+
+          const day = extractDateOnly(item.created_at);
+          const finishedQty = parseInt(item.quantity) || 0;
+          const material_no = item.material_no || '';
+          const material_description = item.material_description || '';
+          const good = parseInt(item.good) || 0;
+          const no_good = parseInt(item.no_good) || 0;
+          const lot = item.lot_no || '';
+          const model = item.model || '';
+          const section = item.section || '';
+
+          addEntry(item.person_incharge, day, item.reference_no, item.time_in, item.time_out, finishedQty, 'stamping', material_no, material_description, good, no_good, lot, model, section);
+        });
+
 
         mergedDataArray = Object.values(mergedData);
         filteredData = mergedDataArray.slice();

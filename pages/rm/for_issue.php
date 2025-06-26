@@ -40,14 +40,14 @@
           <table class="table" style="table-layout: fixed; width: 100%;">
             <thead>
               <tr>
-                <th style="width: 10%; text-align: center;">Material No <span class="sort-icon"></span></th>
-                <th style="width: 10%; text-align: center;">Component Name <span class="sort-icon"></span></th>
-                <th style="width: 5%; text-align: center;">Issued Quantity <span class="sort-icon"></span></th>
-                <th style="width: 5%; text-align: center;">Status <span class="sort-icon"></span></th>
-                <th style="width: 5%; text-align: center;">Action</th> <!-- No sort icon for action -->
-
+                <th style="width: 5%; text-align: center;">Material No</th>
+                <th style="width: 10%; text-align: center;">Component Name</th>
+                <th style="width: 20%; text-align: center;">Raw Materials</th>
+                <th style="width: 10%; text-align: center;">Status</th>
+                <th style="width: 10%; text-align: center;">Action</th>
               </tr>
             </thead>
+
             <tbody id="data-body"></tbody>
           </table>
           <div id="pagination" class="mt-3 d-flex justify-content-center"></div>
@@ -59,6 +59,8 @@
       </div>
     </div>
   </div>
+
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -76,7 +78,6 @@
 
       function renderIssuedComponentsTable(data) {
 
-        console.log(data);
         const tbody = document.getElementById('data-body');
         tbody.innerHTML = '';
 
@@ -124,7 +125,6 @@
           'Minimum': 'color: orange; font-weight: bold; text-shadow: -1px -1px 0 #cc6600, 1px -1px 0 #cc6600, -1px 1px 0 #cc6600, 1px 1px 0 #cc6600;',
           'Reorder': 'color: yellow; font-weight: bold; text-shadow: -1px -1px 0 #999900, 1px -1px 0 #999900, -1px 1px 0 #999900, 1px 1px 0 #999900;'
         };
-
         data.forEach(item => {
           let status = item.status || 'Pending';
 
@@ -139,11 +139,54 @@
 
           const style = statusStyleMap[status] || '';
 
+          const baseValue = 300;
+          const quantity = item.usage_type * baseValue;
+
+
+          const rawMaterials = (() => {
+            try {
+              const all = JSON.parse(item.raw_materials || '[]');
+              return all.filter(rm =>
+                rm.component_name === item.component_name
+              );
+            } catch {
+              return [];
+            }
+          })();
+
+          console.log(item)
+          const rawHTML = rawMaterials.length ? `
+  <table class="table table-sm table-bordered mb-0" style="margin:0; table-layout: fixed; width: 100%;">
+    <thead>
+      <tr>
+        <th style="font-size:10px; padding:2px; width:15%;">No</th>
+        <th style="font-size:10px; padding:2px; width:50%;">Desc</th>
+        <th style="font-size:10px; padding:2px; width:10%;">Usage</th>
+        <th style="font-size:10px; padding:2px; width:10%;">Total</th>   <!-- NEW -->
+      </tr>
+    </thead>
+    <tbody>
+      ${rawMaterials.map(rm => {
+        const usage  = Number(rm.usage) || 0;          // per-unit usage
+        const total  = Math.ceil(usage * quantity);    // round-UP total
+        return `
+          <tr>
+            <td style="font-size:10px; padding:2px;">${rm.material_no}</td>
+            <td style="font-size:10px; padding:2px;">${rm.material_description}</td>
+            <td style="font-size:10px; padding:2px;">${usage}</td>
+            <td style="font-size:10px; padding:2px;">${total}</td>       <!-- NEW -->
+          </tr>
+        `;
+      }).join('')}
+    </tbody>
+  </table>` : '<em style="font-size:12px;">None</em>';
+
+
           const info = {
             id: item.id,
             material_no: item.material_no,
             component_name: item.component_name,
-            quantity: item.quantity ?? 300,
+            quantity,
             process_quantity: item.process_quantity ?? 300,
             stage_name: item.stage_name,
             raw_materials: item.raw_materials,
@@ -152,20 +195,24 @@
 
           const row = document.createElement('tr');
           row.innerHTML = `
-      <td class="text-center">${item.material_no || '-'}</td>
-      <td class="text-center">${item.component_name || '-'}</td>
-      <td class="text-center">${item.quantity || '-'}</td>
-      <td class="text-center" style="${style}">${status.toUpperCase()}</td>
-      <td class="text-center align-middle">
-        <button class="btn btn-sm btn-success deliver-btn"
-          data-info="${encodeURIComponent(JSON.stringify(info))}">
-          Deliver
-        </button>
-      </td>
-    `;
+    <td class="text-center">${item.material_no || '-'}</td>
+    <td class="text-center">
+      ${item.component_name || '-'}
+    </td>    <td class="text-center align-middle">${rawHTML}</td>
+    <!--<td class="text-center">${quantity}</td>-->
+
+    <td class="text-center" style="${style}">${status.toUpperCase()}</td>
+    <td class="text-center align-middle">
+      <button class="btn btn-sm btn-success deliver-btn"
+        data-info="${encodeURIComponent(JSON.stringify(info))}">
+        Deliver
+      </button>
+    </td>
+  `;
 
           tbody.appendChild(row);
         });
+
 
         attachDeliverButtonEvents();
       }
@@ -188,42 +235,55 @@
               usage
             } = info;
 
-            const rawMaterials = JSON.parse(raw_materials || '[]');
+            const rawMaterials = (() => {
+              try {
+                const all = JSON.parse(raw_materials || '[]');
+                return all.filter(rm => rm.component_name === component_name);
+              } catch {
+                return [];
+              }
+            })();
+
             const baseInput = 300 * usage;
 
             function buildRawMaterialList(qty) {
               if (!rawMaterials.length) return '<em>No raw materials listed.</em>';
               return `
-          <table class="table table-sm table-bordered mt-2">
-            <thead>
-              <tr>
-                <th style="font-size:12px;">Material No</th>
-                <th style="font-size:12px;">Description</th>
-                <th style="font-size:12px;">Usage</th>
-                <th style="font-size:12px;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rawMaterials.map(rm => `
-                <tr>
-                  <td style="font-size:12px;">${rm.material_no}</td>
-                  <td style="font-size:12px;">${rm.material_description}</td>
-                  <td style="font-size:12px;">${rm.usage}</td>
-                  <td style="font-size:12px;">${parseInt(rm.usage) * qty}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+    <table class="table table-sm table-bordered mt-2">
+      <thead>
+        <tr>
+          <th style="font-size:12px;">Material No</th>
+          <th style="font-size:12px;">Description</th>
+          <th style="font-size:12px;">Usage</th>
+          <th style="font-size:12px;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rawMaterials.map(rm => {
+          const usage = Number(rm.usage) || 0;
+          const total = Math.ceil(usage * qty);
+          return `
+            <tr>
+              <td style="font-size:12px;">${rm.material_no}</td>
+              <td style="font-size:12px;">${rm.material_description}</td>
+              <td style="font-size:12px;">${usage}</td>
+              <td style="font-size:12px;">${total}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
             }
+
 
             Swal.fire({
               title: 'Confirm Issue',
               html: `
-          <p>Are you sure you want to issue <strong>${baseInput}</strong> items for <strong>${component_name}</strong>?</p>
-          <hr/>
-          ${buildRawMaterialList(baseInput)}
-        `,
+    <p>Are you sure you want to issue these raw materials, which are equivalent to <strong>${baseInput}</strong> items of <strong>${component_name}</strong>?</p>
+    <hr/>
+    ${buildRawMaterialList(baseInput)}
+  `,
               icon: 'warning',
               showCancelButton: true,
               confirmButtonText: 'Yes, Issue it',
@@ -290,7 +350,7 @@
 
 
       function sendIssueRequest(data) {
-        console.log(data)
+
         fetch('/mes/api/rm/postIssuedComponent.php', {
             method: 'POST',
             headers: {

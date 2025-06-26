@@ -10,13 +10,37 @@ class DeliveryModel
     {
         $this->db = $db;
     }
+
+    public function getCustomerAndModel()
+    {
+        $sql = $this->db->Select("SELECT DISTINCT model_name, customer_name FROM material_inventory");
+        echo json_encode([
+            'data' => $sql
+        ]);
+        exit;
+    }
+    public function getAllComponents(string $modelName, string $customerName): array
+    {
+        $sql = "SELECT * FROM material_inventory
+            WHERE model_name = :model_name
+            AND customer_name = :customer_name";
+
+        $params = [
+            ':model_name'     => $modelName,
+            ':customer_name'  => $customerName,
+        ];
+
+        return $this->db->Select($sql, $params);
+    }
+
+
     public function getTruck(): array
     {
         return $this->db->Select("SELECT * FROM truck");
     }
     public function getAllCustomers(): array
     {
-        return $this->db->Select("SELECT * FROM delivery_form WHERE created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)");
+        return $this->db->Select("SELECT * FROM delivery_form WHERE process IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)");
     }
 
     public function getDistinctCustomerNames(): array
@@ -32,9 +56,12 @@ class DeliveryModel
 
     public function getPulledOut(): array
     {
-        $sql = "SELECT * FROM delivery_form WHERE (status = 'pending' OR status = 'continue') 
-                AND (section = 'ASSEMBLY' OR section = 'DELIVERY')
-                AND created_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)";
+        $sql = "SELECT * FROM delivery_form WHERE date_loaded is null";
+        return $this->db->Select($sql);
+    }
+    public function getPulledHistory(): array
+    {
+        $sql = "SELECT * FROM delivery_form WHERE date_loaded is not null";
         return $this->db->Select($sql);
     }
     public function postAction(
@@ -180,82 +207,72 @@ class DeliveryModel
     public function processDeliveryForm(array $input, string $lot_value, string $today, string $currentDateTime): array
     {
         $insertedCount = 0;
-        $lastNumber = (int)substr($this->selectReferenceNo($today), -4);
+        $qcCount       = 0;
+        $lastNumber    = (int)substr($this->selectReferenceNo($today), -4);
         $inventoryList = $this->recheckInventory($input);
-
-        $autoQCDescriptions = [
-            'COVER ECU',
-            '09-MIT-SS3-MB136313-SIDE PANEL,FRT LH',
-            '09-MIT-SS3-MB136314-SIDE PANEL,FRT RH'
-        ];
 
         foreach ($input as $index => $item) {
             $lastNumber++;
             $reference_no = $today . '-' . str_pad($lastNumber, 4, '0', STR_PAD_LEFT);
 
             $currentInventory = $inventoryList[$index]['quantity'] ?? 0;
-            $requiredQty = (int)$item['total_quantity'];
-            $newQty = $currentInventory - $requiredQty;
-
+            $requiredQty      = (int)$item['total_quantity'];
             if ($currentInventory < $requiredQty) {
-                continue;
+                continue; // not enough stock
             }
 
-            // ➤ Insert into delivery_form
-            $insertSql = "INSERT INTO delivery_form
-        (reference_no, model_name, material_no, material_description, quantity, supplement_order, total_quantity, status, section, shift, lot_no, created_at, updated_at, date_needed)
-        VALUES
-        (:reference_no, :model_name, :material_no, :material_description, :quantity, :supplement_order, :total_quantity, :status, :section, :shift, :lot_no, :created_at, :updated_at, :date_needed)";
+            $process = isset($item['process']) && strtolower(trim((string)$item['process'])) !== 'null'
+                ? strtolower(trim($item['process']))
+                : null;
+
+
+            /* ---------- QC INSERT IF IMPORT ---------- */
+            if ($process === 'import') {
+                $this->insertToQCListFromDelivery($item, $reference_no, $lot_value, $currentDateTime);
+                $qcCount++;
+            }
+
+            /* ---------- ALWAYS INSERT INTO delivery_form ---------- */
+            $insertSql = "
+            INSERT INTO delivery_form
+              (reference_no, model_name, material_no, material_description,
+               quantity, supplement_order, total_quantity, status, section,
+               shift, lot_no, process, created_at, updated_at, date_needed)
+            VALUES
+              (:reference_no, :model_name, :material_no, :material_description,
+               :quantity, :supplement_order, :total_quantity, :status, :section,
+               :shift, :lot_no, :process, :created_at, :updated_at, :date_needed)";
 
             $insertParams = [
-                ':reference_no' => $reference_no,
-                ':model_name' => $item['model_name'] ?? '',
-                ':material_no' => $item['material_no'],
+                ':reference_no'       => $reference_no,
+                ':model_name'         => $item['model_name'] ?? '',
+                ':material_no'        => $item['material_no'],
                 ':material_description' => $item['material_description'],
-                ':quantity' => $item['quantity'] ?? 0,
-                ':supplement_order' => is_numeric($item['supplement_order']) ? (int)$item['supplement_order'] : null,
-                ':total_quantity' => $item['total_quantity'] ?? 0,
-                ':status' => $item['status'] ?? '',
-                ':section' => $item['section'] ?? '',
-                ':shift' => $item['shift'] ?? '',
-                ':lot_no' => $lot_value,
-                ':created_at' => $currentDateTime,
-                ':updated_at' => $currentDateTime,
-                ':date_needed' => $item['date_needed']
+                ':quantity'           => $item['quantity'] ?? 0,
+                ':supplement_order'   => is_numeric($item['supplement_order']) ? (int)$item['supplement_order'] : null,
+                ':total_quantity'     => $requiredQty,
+                ':status'             => $item['status'] ?? '',
+                ':section'            => $item['section'] ?? '',
+                ':shift'              => $item['shift'] ?? '',
+                ':lot_no'             => $lot_value,
+                ':process'            => $process,
+                ':created_at'         => $currentDateTime,
+                ':updated_at'         => $currentDateTime,
+                ':date_needed'        => $item['date_needed']
             ];
 
-            $insertResult = $this->db->Insert($insertSql, $insertParams);
-
-            if ($insertResult !== false) {
+            if ($this->db->Insert($insertSql, $insertParams) !== false) {
                 $insertedCount++;
-
-                // ✅ Immediately add to qc_list if matched
-                if (in_array(trim($item['material_description']), $autoQCDescriptions)) {
-                    $this->insertToQCListFromDelivery($item, $reference_no, $lot_value, $currentDateTime);
-                }
-
-                // Optional: Update inventory
-                /*
-            $updateSql = "UPDATE material_inventory 
-                      SET quantity = :new_quantity 
-                      WHERE material_no = :material_no 
-                      AND material_description = :material_description 
-                      AND model_name = :model_name";
-
-            $updateParams = [
-                ':new_quantity' => $newQty,
-                ':material_no' => $item['material_no'],
-                ':material_description' => $item['material_description'],
-                ':model_name' => $item['model_name']
-            ];
-
-            $this->db->Update($updateSql, $updateParams);
-            */
             }
         }
 
-        return ['success' => true, 'inserted' => $insertedCount];
+        return [
+            'success'      => true,
+            'inserted'     => $insertedCount,
+            'qc_inserted'  => $qcCount
+        ];
     }
+
 
     private function insertToQCListFromDelivery(array $item, string $reference_no, string $lot_value, string $created_at): void
     {

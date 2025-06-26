@@ -132,7 +132,7 @@
             .then(response => response.json())
             .then(fetchedAssemblyData => {
               assemblyData = fetchedAssemblyData;
-
+              console.log(assemblyData)
               let filteredDeliveryData = deliveryData.filter(
                 item => item.section === 'DELIVERY' || item.section === 'ASSEMBLY'
               );
@@ -297,9 +297,7 @@
         const mode = button.getAttribute('data-mode');
         const itemId = button.getAttribute('data-itemid');
         const id = button.getAttribute('data-id');
-        console.log(item)
-        console.log('Material ID:', materialId);
-        console.log('Mode:', mode);
+
 
         if (mode === 'timeIn') {
           // Fetch component stock information
@@ -413,8 +411,6 @@
     });
     document.getElementById('quantityForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      console.log('currentItem', currentItem);
-      console.log('assembly', assemblyData);
 
       const quantityInput = document.getElementById('quantityInput');
       const quantity = parseInt(quantityInput.value, 10);
@@ -470,27 +466,35 @@
       console.log(item, assemblyData);
 
       const matchingData = Array.isArray(assemblyData) ?
-        assemblyData.find(data => data.material_no === item.material_no) :
+        assemblyData.find(data => String(data.itemID) === String(item.id)) :
         null;
 
       const pending_quantity = matchingData?.pending_quantity || 0;
-      const expectedPersonInCharge = matchingData?.person_incharge || '';
-      console.log(pending_quantity, expectedPersonInCharge);
+
+      const section = "ASSEMBLY";
+      const role = "worker";
 
       scanQRCodeForUser({
+        section,
+        role,
         onSuccess: ({
           user_id,
           full_name
         }) => {
-          // ✅ Only check person-in-charge during timeout
-          if (mode === 'timeOut' && full_name !== expectedPersonInCharge) {
-            Swal.fire({
-              icon: 'warning',
-              title: 'Person In-Charge Mismatch',
-              text: `Scanned name "${full_name}" does not match assigned person "${expectedPersonInCharge}".`,
-              confirmButtonText: 'OK'
-            });
-            return;
+          if (mode === 'timeOut') {
+            // ✅ Get correct person_incharge from matching itemID
+            const matchedById = assemblyData.find(data => String(data.itemID) === String(item.id));
+            const expectedPersonInCharge = matchedById?.person_incharge || '';
+
+            if (full_name !== expectedPersonInCharge) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Person In-Charge Mismatch',
+                text: `Scanned name "${full_name}" does not match assigned person "${expectedPersonInCharge}".`,
+                confirmButtonText: 'OK'
+              });
+              return;
+            }
           }
 
           const data = {
@@ -543,10 +547,11 @@
             });
         },
         onCancel: () => {
-          console.log("QR scan cancelled or modal closed");
+          // Optional cancel handling
         }
       });
     }
+
 
 
 

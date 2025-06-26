@@ -183,7 +183,7 @@
       fetch('api/warehouse/getPending_pulling.php')
         .then(response => response.json())
         .then(data => {
-          console.log(data)
+
           allData = data; // cache all data
           renderTable(allData);
         })

@@ -21,7 +21,8 @@ class RM_WarehouseModel
                     JSON_OBJECT(
                         'material_no', r.material_no,
                         'material_description', r.material_description,
-                        'usage', r.usage
+                        'usage', r.usage,
+                        'component_name',r.component_name
                     )
                 )
                 FROM rawmaterials_inventory r
